@@ -1,0 +1,205 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return signedIn()
+        ? get(/databases/$(database)/documents/utilizadores/$(request.auth.uid))
+        : null;
+    }
+
+    function userData() {
+      return userDoc() != null && userDoc().data != null
+        ? userDoc().data
+        : null;
+    }
+
+    function isAdmin() {
+      return signedIn() && userData() != null && userData().role == 'admin';
+    }
+
+    function isActiveUser() {
+      return signedIn() && userData() != null && userData().ativo != false;
+    }
+
+    // Verifica permissão canónica via map.get — funciona com qualquer módulo/ação
+    // sem precisar de switch hardcoded.
+    function canonicalPerm(module, action) {
+      return userData() != null
+        && userData().permissoes != null
+        && userData().permissoes.modules != null
+        && userData().permissoes.modules.get(module, {}).get(action, false) == true;
+    }
+
+    // Compatibilidade com permissões legacy (escritas em campos raiz).
+    // ATENÇÃO: manter em sincronia com PERMISSION_DEFINITIONS em js/auth.js —
+    // se adicionares legacyKeys lá, adiciona o mapeamento equivalente aqui.
+    function legacyPerm(module, action) {
+      return userData() != null
+        && userData().permissoes != null
+        && (
+          (module == 'tarefas'     && action == 'create'  && userData().permissoes.criarTarefas == true) ||
+          (module == 'tarefas'     && action == 'resolve' && userData().permissoes.resolverTarefas == true) ||
+          (module == 'comunicados' && action == 'manage'  && userData().permissoes.gerirComunicados == true) ||
+          (module == 'calendario'  && action == 'edit'    && userData().permissoes.editarCalendario == true) ||
+          (module == 'admissoes'   && action == 'create'  && userData().permissoes.criarAdmissoes == true) ||
+          (module == 'admissoes'   && action == 'resolve' && userData().permissoes.resolverAdmissoes == true) ||
+          (module == 'reclamacoes' && action == 'manage'  && userData().permissoes.criarReclamacoes == true)
+        );
+    }
+
+    function hasPerm(module, action) {
+      return isAdmin() || canonicalPerm(module, action) || legacyPerm(module, action);
+    }
+
+    function officeMatches(officeId) {
+      return isAdmin()
+        || officeId == null
+        || officeId == ''
+        || (userData() != null && userData().escritorio == officeId);
+    }
+
+    function destinosMatch(destinos) {
+      return isAdmin()
+        || destinos == null
+        || destinos.size() == 0
+        || destinos.hasAny(['todos', userData().escritorio]);
+    }
+
+    match /utilizadores/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || hasPerm('utilizadores', 'manage'));
+      // Colaboradores só listam utilizadores do seu próprio escritório
+      allow list: if isAdmin()
+        || (isActiveUser() && resource.data.ativo != false && officeMatches(resource.data.escritorio));
+      // Auto-criação ao primeiro login: role obrigatoriamente 'colaborador'
+      // Criação por admin: qualquer role
+      allow create: if signedIn() && (
+        isAdmin()
+        || (request.auth.uid == uid && request.resource.data.role == 'colaborador')
+      );
+      allow update: if signedIn() && (
+        isAdmin()
+        // Gestor de utilizadores pode editar mas NÃO pode escalar role para 'admin'
+        || (hasPerm('utilizadores', 'manage')
+          && (!request.resource.data.diff(resource.data).changedKeys().hasAny(['role'])
+              || request.resource.data.role != 'admin'))
+        || (request.auth.uid == uid
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'ultimoAcesso',
+            'nome',
+            'apelido',
+            'nomeCompleto',
+            'funcao',
+            'preferencias'
+          ]))
+      );
+      allow delete: if hasPerm('utilizadores', 'manage');
+    }
+
+    match /config/{docId} {
+      allow read: if isActiveUser();
+      allow write: if hasPerm('definicoes', 'manage')
+        || (docId == 'perfis' && hasPerm('perfis', 'manage'));
+    }
+
+    match /tarefas_todo/{docId} {
+      allow read: if isActiveUser() && hasPerm('tarefas', 'view') && officeMatches(resource.data.escritorio);
+      allow create: if isActiveUser() && hasPerm('tarefas', 'create') && officeMatches(request.resource.data.escritorio);
+      allow update: if isActiveUser() && (
+        (hasPerm('tarefas', 'resolve') && officeMatches(resource.data.escritorio))
+        || (hasPerm('tarefas', 'create')
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['notas'])
+          && officeMatches(resource.data.escritorio))
+      );
+      allow delete: if isActiveUser() && hasPerm('tarefas', 'resolve') && officeMatches(resource.data.escritorio);
+    }
+
+    match /comunicados/{docId} {
+      allow read: if isActiveUser() && hasPerm('comunicados', 'view') && destinosMatch(resource.data.destinosEscritorio);
+      allow create: if isActiveUser() && hasPerm('comunicados', 'manage');
+      allow update, delete: if isActiveUser() && hasPerm('comunicados', 'manage');
+    }
+
+    match /admissoes/{docId} {
+      allow read: if isActiveUser() && hasPerm('admissoes', 'view') && officeMatches(resource.data.escritorio);
+      allow create: if isActiveUser() && hasPerm('admissoes', 'create') && officeMatches(request.resource.data.escritorio);
+      allow update, delete: if isActiveUser() && hasPerm('admissoes', 'resolve') && officeMatches(resource.data.escritorio);
+    }
+
+    match /reclamacoes_horas/{docId} {
+      allow read: if isActiveUser() && hasPerm('reclamacoes', 'view') && officeMatches(resource.data.escritorio);
+      allow create: if isActiveUser() && hasPerm('reclamacoes', 'manage') && officeMatches(request.resource.data.escritorio);
+      allow update, delete: if isActiveUser() && hasPerm('reclamacoes', 'manage') && officeMatches(resource.data.escritorio);
+    }
+
+    match /calendarios/{docId} {
+      allow read: if isActiveUser() && hasPerm('calendario', 'view');
+      allow write: if isActiveUser() && hasPerm('calendario', 'edit');
+    }
+
+    match /clientes/{docId} {
+      allow read: if isActiveUser() && hasPerm('clientes', 'view');
+      allow create: if isActiveUser() && hasPerm('clientes', 'import');
+      allow update: if isActiveUser() && (hasPerm('clientes', 'import') || hasPerm('clientes', 'edit'));
+      allow delete: if false;
+    }
+
+    // Escalas separadas por escritório: escalas/{escritorioId}/dias/{dateKey}
+    match /escalas/{escritorioId}/dias/{dateKey} {
+      allow read: if isActiveUser() && hasPerm('escalas', 'view') && officeMatches(escritorioId);
+      allow create, update, delete: if isActiveUser() && hasPerm('escalas', 'manage') && officeMatches(escritorioId);
+    }
+
+    match /auditoria/{docId} {
+      allow read: if isActiveUser() && hasPerm('auditoria', 'view');
+      // Valida que o uid e email no log correspondem ao utilizador autenticado
+      allow create: if isActiveUser()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email;
+      allow update, delete: if false;
+    }
+
+    match /conversas/{conversaId} {
+      allow read: if isActiveUser()
+        && (resource == null || request.auth.uid in resource.data.participantes);
+
+      allow create: if isActiveUser()
+        && request.auth.uid in request.resource.data.participantes
+        && request.resource.data.participantes.size() >= 2;
+
+      // Só permite atualizar o preview da última mensagem
+      allow update: if isActiveUser()
+        && request.auth.uid in resource.data.participantes
+        && request.resource.data.diff(resource.data).changedKeys()
+           .hasOnly(['ultimaMensagem', 'ultimaMensagemTs', 'ultimaMensagemUid']);
+
+      allow delete: if false;
+
+      match /mensagens/{msgId} {
+        allow read: if isActiveUser()
+          && request.auth.uid in get(/databases/$(database)/documents/conversas/$(conversaId)).data.participantes;
+
+        allow create: if isActiveUser()
+          && request.resource.data.autorUid == request.auth.uid
+          && request.auth.uid in get(/databases/$(database)/documents/conversas/$(conversaId)).data.participantes;
+
+        allow update, delete: if false; // mensagens são imutáveis
+      }
+    }
+
+    match /chat_lidos/{docId} {
+      allow create: if isActiveUser()
+        && request.auth.uid == request.resource.data.uid;
+
+      allow read, update, delete: if isActiveUser()
+        && request.auth.uid == resource.data.uid;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
