@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clientes</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/clientes.css">
+<script>if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+
+<div class="page clientes-page">
+  <div class="header-row">
+    <div class="header-top">
+      <h1>Clientes</h1>
+      <span id="syncStatus"></span>
+    </div>
+    <p class="subtitle" id="pageSubtitle">Base consolidada de clientes, preços e histórico de importações.</p>
+  </div>
+
+  <div class="cli-stats" id="statsBar">
+    <div class="cli-stat">
+      <div class="cli-stat-lbl">A carregar</div>
+      <div class="cli-stat-val"><span class="skeleton" style="width:48px;height:26px;display:block;border-radius:5px;"></span></div>
+    </div>
+  </div>
+
+  <section class="form-panel clientes-import-panel" id="importPanel">
+    <div class="panel-title panel-toggle" onclick="window.ClientesPage.toggleImportPanel()">
+      <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M8 2v8"/><path d="M5 7.5L8 10.5l3-3"/><path d="M3 13.5h10"/>
+      </svg>
+      Importar Excel
+      <span class="clientes-import-hint" id="importPermissionHint">A validar permissões…</span>
+      <span class="panel-toggle-chevron">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+      </span>
+    </div>
+
+    <div class="form-panel-body">
+      <div class="clientes-import-drop" id="importDropzone">
+        <div class="clientes-import-copy">
+          <div class="clientes-import-title">Ficheiro de preços por cliente</div>
+          <p>Formato esperado: folha principal com cabeçalho na linha 2 e colunas de cliente, categoria e preços.</p>
+        </div>
+        <label class="btn btn-primary" for="clientesImportFile">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2v8"/><path d="M5 7.5L8 10.5l3-3"/><path d="M3 13.5h10"/></svg>
+          Selecionar ficheiro
+        </label>
+        <input type="file" id="clientesImportFile" accept=".xlsx,.xls,.xlsm,.csv">
+      </div>
+
+      <div class="clientes-import-status" id="importBusyState" hidden>
+        <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+        <p>A analisar o ficheiro e a preparar o preview…</p>
+      </div>
+
+      <div id="importPreviewWrap"></div>
+    </div>
+  </section>
+
+  <div class="cli-toolbar">
+    <div class="cli-search-wrap">
+      <svg class="cli-search-icon" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/>
+      </svg>
+      <input class="filter-input cli-search-input" id="filterSearch" type="search" placeholder="Nome, nº cliente, grupo ou escritório">
+    </div>
+    <select class="filter-select" id="filterOffice">
+      <option value="">Todos os escritórios</option>
+    </select>
+    <select class="filter-select" id="filterStatus">
+      <option value="todos">Todos</option>
+      <option value="com-precos">Com preços</option>
+      <option value="sem-precos">Sem preços</option>
+    </select>
+    <div class="cli-view-toggle">
+      <button class="cli-view-btn active" data-view="tabela" id="viewBtnTabela">
+        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="12" height="3" rx="1"/><rect x="2" y="7" width="12" height="3" rx="1"/><rect x="2" y="12" width="12" height="2" rx="1"/></svg>
+        Tabela
+      </button>
+      <button class="cli-view-btn" data-view="cards" id="viewBtnCards">
+        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="5.5" height="5.5" rx="1.5"/><rect x="8.5" y="2" width="5.5" height="5.5" rx="1.5"/><rect x="2" y="8.5" width="5.5" height="5.5" rx="1.5"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5"/></svg>
+        Cards
+      </button>
+    </div>
+  </div>
+
+  <div class="cli-count-row">
+    <span id="clientsCountLabel">A carregar registos…</span>
+  </div>
+
+  <div id="clientesList"></div>
+</div>
+
+<!-- Detail Drawer -->
+<div class="drawer-overlay" id="drawerOverlay" hidden>
+  <div class="drawer-overlay-bg" onclick="window.ClientesPage.closeDetail()"></div>
+  <aside class="side-drawer" id="clienteDetail"></aside>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/module-registry.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/offices-service.js"></script>
+<script src="js/config-escritorios.js"></script>
+<script src="js/app-platform.js"></script>
+<script src="js/auditoria.js"></script>
+<script src="js/clientes-service.js"></script>
+<script src="js/clientes.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comunicados</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/comunicados.css">
+<script>if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ── Page header ── -->
+  <div class="page-head">
+    <div>
+      <div class="kicker">Comunicação interna</div>
+      <h1>Comunicados</h1>
+      <p class="lede">Anúncios, actualizações e notícias partilhadas com as equipas.</p>
+    </div>
+    <div class="hd-actions">
+      <span id="syncStatus"></span>
+      <select id="filterEscritorioCom" style="display:none;" class="filter-escritorio-select" onchange="setFiltroEscritorioCom(this.value)"></select>
+      <button class="btn btn-primary btn-sm" id="btnNovoCom" style="display:none;" onclick="openNovoModal()">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 2v12M2 8h12"/></svg>
+        Novo comunicado
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Stats ── -->
+  <div class="stat-grid" id="statsBar"></div>
+
+  <!-- ── Toolbar ── -->
+  <div class="toolbar-card">
+    <div class="seg-ctrl" id="catFilters">
+      <button class="seg-btn active" data-cat="todos" onclick="setCat('todos')">Todos</button>
+      <button class="seg-btn" data-cat="geral" onclick="setCat('geral')">Geral</button>
+      <button class="seg-btn" data-cat="urgente" onclick="setCat('urgente')">Urgente</button>
+      <button class="seg-btn" data-cat="info" onclick="setCat('info')">Info</button>
+      <button class="seg-btn" data-cat="aviso" onclick="setCat('aviso')">Aviso</button>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-search">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="6.5" cy="6.5" r="5"/><path d="M10.5 10.5l3.5 3.5"/>
+      </svg>
+      <input type="search" id="comSearch" placeholder="Pesquisar…" oninput="onSearchInput(this.value)" autocomplete="off">
+    </div>
+    <div class="tb-right">
+      <label class="arq-toggle">
+        <input type="checkbox" id="showArq" onchange="toggleShowArquivados(this.checked)">
+        Arquivados
+      </label>
+      <span class="count-badge" id="countBadge"></span>
+    </div>
+  </div>
+
+  <!-- ── Urgente banners ── -->
+  <div id="urgenteBanner"></div>
+
+  <!-- ── Urgente / featured grid ── -->
+  <div id="pinnedSection" style="display:none;">
+    <div class="section-label">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M8 2L1.5 13h13L8 2z"/><path d="M8 7v3M8 11.5v.5"/>
+      </svg>
+      Urgentes
+    </div>
+    <div class="com-grid" id="comGrid"></div>
+  </div>
+
+  <!-- ── Remaining as rows ── -->
+  <div id="listSection">
+    <div class="section-label-row">
+      <div class="section-label">Recentes</div>
+    </div>
+    <div class="com-list" id="comunicadosList"></div>
+  </div>
+
+</div><!-- /.page -->
+
+<!-- ══ Detail modal ══ -->
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div class="modal-title" id="detailTitle" style="display:flex;align-items:center;gap:10px;font-family:inherit;font-size:14px;">—</div>
+      <button class="modal-close" onclick="closeDetail()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeDetail()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Novo comunicado modal ══ -->
+<div class="modal-overlay" id="novoModal" onclick="if(event.target===this)closeNovoModal()">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <span class="modal-title">Novo comunicado</span>
+      <button class="modal-close" onclick="closeNovoModal()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field full">
+          <label class="field-label">Título *</label>
+          <input class="input" id="fTitulo" placeholder="ex: Manutenção no sistema na próxima semana" maxlength="120" autocomplete="off">
+        </div>
+        <div class="field full">
+          <label class="field-label">Mensagem *</label>
+          <textarea class="textarea" id="fTexto" rows="4" placeholder="Detalha o anúncio…" maxlength="2000"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">Tipo</label>
+          <div class="tipo-row">
+            <button type="button" class="tipo-pill sel" data-t="geral" onclick="selTipo('geral')">Geral</button>
+            <button type="button" class="tipo-pill" data-t="urgente" onclick="selTipo('urgente')">Urgente</button>
+            <button type="button" class="tipo-pill" data-t="info" onclick="selTipo('info')">Info</button>
+            <button type="button" class="tipo-pill" data-t="aviso" onclick="selTipo('aviso')">Aviso</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Autor</label>
+          <input class="input" id="fAutor" readonly>
+        </div>
+        <div class="field full">
+          <label class="field-label">Departamento</label>
+          <select class="select" id="fDept">
+            <option value="">Todos os departamentos</option>
+            <option>Contabilidade</option>
+            <option>Payroll / RH</option>
+            <option>Comercial</option>
+            <option>Operações</option>
+            <option>Direcção</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label class="field-label">Escritórios destino</label>
+          <div class="esc-pill-row" id="escDestRow"></div>
+          <div class="field-hint">Por defeito: todos os escritórios.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeNovoModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitComunicado()">Publicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Confirm modal ══ -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <span class="modal-title" id="confirmTitle">Confirmar</span>
+    </div>
+    <div class="confirm-body" id="confirmBody"></div>
+    <div class="confirm-foot">
+      <button class="btn btn-secondary" id="confirmCancel">Cancelar</button>
+      <button class="btn btn-danger" id="confirmOk">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/module-registry.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/auditoria.js"></script>
+<script src="js/offices-service.js"></script>
+<script src="js/config-escritorios.js"></script>
+<script src="js/app-platform.js"></script>
+<script src="js/users-service.js"></script>
+<script src="js/comunicados-service.js"></script>
+<script src="js/comunicados.js"></script>
+</body>
+</html>

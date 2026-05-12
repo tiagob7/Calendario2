@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Painel Geral</title>
+<link rel="stylesheet" href="css/dashboard.css">
+<script>if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+
+<!-- ═══════════════════════ TOOLTIPS ════════════════════════════ -->
+<div id="admTooltip"></div>
+<div id="taskTooltip"></div>
+<div id="recTooltip"></div>
+
+<!-- ═══════════════════════ PAGE ═════════════════════════════════ -->
+<main class="page">
+
+  <!-- Welcome bar — greeting + controls -->
+  <div class="dash-welcome-bar">
+    <div class="dash-welcome-left">
+      <h1 class="dash-greeting" id="dashGreeting">Painel de controlo</h1>
+      <div class="dash-date" id="dashDate"></div>
+    </div>
+    <div class="dash-welcome-right">
+      <!-- Admin: filtro de escritório -->
+      <div id="adminEscritorioPills" style="display:none;gap:6px;flex-wrap:wrap;align-items:center;"></div>
+      <span id="escritorioBadge"></span>
+      <span class="last-update" id="lastUpdate"></span>
+      <button class="layout-reset-btn" id="layoutResetBtn" onclick="resetLayout()" title="Repor layout original">
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8a6 6 0 1 0 1.5-4M2 4v4h4"/></svg>
+        Repor layout
+      </button>
+    </div>
+  </div>
+
+  <!-- subtitle row kept as hidden anchor for JS updateSubtitle() compat -->
+  <div id="subtitleRow" style="display:none"></div>
+
+  <!-- NAV LINKS (preenchidos pelo module-registry) -->
+  <div class="dash-section-label">Módulos</div>
+  <div class="nav-links">
+    <a class="nav-link" href="tarefas.html">
+      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="10" height="10" rx="1.5"/><path d="M6 7l1.5 1.5L10 6"/></svg>
+      Tarefas
+    </a>
+    <a class="nav-link" href="comunicados.html">
+      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2H3a1 1 0 00-1 1v9a1 1 0 001 1h3l2 2 2-2h3a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg>
+      Comunicados
+    </a>
+    <a class="nav-link" href="calendario.html">
+      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12"/></svg>
+      Calendário
+    </a>
+    <a class="nav-link" href="admissoes.html">
+      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5"/><path d="M11 8l2 2 3-3"/></svg>
+      Admissões
+    </a>
+    <a class="nav-link" href="reclamacoes.html">
+      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v4"/><circle cx="8" cy="11.5" r=".6" fill="currentColor"/></svg>
+      Reclamações
+    </a>
+    <!-- PESQUISA GLOBAL -->
+    <div style="margin-left:auto;position:relative;" id="globalSearchWrap">
+      <button onclick="toggleGlobalSearch()" id="globalSearchBtn" class="global-search-btn">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg>
+        Pesquisar
+      </button>
+      <div id="globalSearchPanel" style="display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:400;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);width:340px;padding:14px;">
+        <input type="text" id="globalSearchInput" placeholder="Pesquisar em tarefas, comunicados, reclamações…"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif;font-size:12px;padding:8px 12px;border-radius:8px;outline:none;margin-bottom:10px;"
+          oninput="doGlobalSearch(this.value)" autocomplete="off">
+        <div id="globalSearchResults" style="max-height:280px;overflow-y:auto;"></div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);">Ir para:</span>
+          <a href="tarefas.html" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">Tarefas</a>
+          <a href="comunicados.html" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">Comunicados</a>
+          <a href="reclamacoes.html" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">Reclamações</a>
+          <a href="admissoes.html" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">Admissões</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- URGENTE BANNER (preenchido pelo JS) -->
+  <div id="urgenteBanner" style="display:none;"></div>
+
+  <!-- KPI ROW (preenchida pelo JS) -->
+  <div class="dash-section-label">Indicadores</div>
+  <div class="kpi-row" id="kpiRow">
+    <div class="kpi-card"><div class="skeleton skeleton-line" style="width:40px;height:32px;margin-bottom:6px;border-radius:6px;"></div><div class="skeleton skeleton-line" style="height:8px;width:60%;"></div></div>
+    <div class="kpi-card"><div class="skeleton skeleton-line" style="width:40px;height:32px;margin-bottom:6px;border-radius:6px;"></div><div class="skeleton skeleton-line" style="height:8px;width:50%;"></div></div>
+    <div class="kpi-card"><div class="skeleton skeleton-line" style="width:40px;height:32px;margin-bottom:6px;border-radius:6px;"></div><div class="skeleton skeleton-line" style="height:8px;width:60%;"></div></div>
+  </div>
+
+  <!-- MAIN GRID — painéis arrastáveis e redimensionáveis -->
+  <div class="main-grid" id="mainGrid">
+
+    <!-- COMUNICADOS -->
+    <div class="panel full" data-panel-id="comunicados">
+      <div class="panel-header">
+        <span class="drag-handle" title="Arrastar">⠿</span>
+        <span class="panel-title"><svg class="panel-title-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Comunicados recentes</span>
+        <a class="panel-link" href="comunicados.html">Ver todos →</a>
+        <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
+      </div>
+      <div id="comList" class="com-grid">
+        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
+          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAREFAS -->
+    <div class="panel" data-panel-id="tarefas">
+      <div class="panel-header">
+        <span class="drag-handle" title="Arrastar">⠿</span>
+        <span class="panel-title"><svg class="panel-title-icon" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>Tarefas activas</span>
+        <a class="panel-link" href="tarefas.html">Ver todas →</a>
+        <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
+      </div>
+      <div id="tasksList">
+        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
+          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        </div>
+      </div>
+      <div class="progress-wrap" id="progressWrap" style="display:none;">
+        <div class="progress-row">
+          <span>Progresso geral</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- ADMISSÕES -->
+    <div class="panel" data-panel-id="admissoes">
+      <div class="panel-header">
+        <span class="drag-handle" title="Arrastar">⠿</span>
+        <span class="panel-title"><svg class="panel-title-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Processos de admissão / cessação</span>
+        <a class="panel-link" href="admissoes.html">Ver todos →</a>
+        <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
+      </div>
+      <div id="admList">
+        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
+          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECLAMAÇÕES -->
+    <div class="panel full" data-panel-id="reclamacoes" id="reclamacoesPanelWrap">
+      <div class="panel-header">
+        <span class="drag-handle" title="Arrastar">⠿</span>
+        <span class="panel-title"><svg class="panel-title-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg>Reclamações em aberto</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div id="recKpis" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+          <a class="panel-link" href="reclamacoes.html">Ver todas →</a>
+        </div>
+        <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
+      </div>
+      <div id="recList">
+        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
+          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDÁRIO MINI -->
+    <div class="panel full" data-panel-id="calendario">
+      <div class="panel-header">
+        <span class="drag-handle" title="Arrastar">⠿</span>
+        <span class="panel-title"><svg class="panel-title-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>Carga de trabalho do mês</span>
+        <a class="panel-link" href="calendario.html">Editar →</a>
+        <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
+      </div>
+      <div id="calMini">
+        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
+          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVENTOS -->
+    <div class="panel" data-panel-id="eventos">
+      <div class="panel-header">
+        <span class="drag-handle" title="Arrastar">⠿</span>
+        <span class="panel-title"><svg class="panel-title-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4M8 14h8M8 18h5"/></svg>Eventos do mês</span>
+        <a class="panel-link" href="calendario.html">Ver calendário →</a>
+        <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
+      </div>
+      <div id="evList">
+        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
+          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATIVIDADE RECENTE -->
+    <div class="panel" data-panel-id="actividade">
+      <div class="panel-header">
+        <span class="drag-handle" title="Arrastar">⠿</span>
+        <span class="panel-title"><svg class="panel-title-icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Actividade recente</span>
+        <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
+      </div>
+      <div id="activityList">
+        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
+          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
+          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+</main><!-- /page -->
+
+<div class="dashboard-editor-backdrop" id="dashboardEditorBackdrop" hidden onclick="closeDashboardEditor()"></div>
+<aside class="dashboard-editor" id="dashboardEditor" aria-hidden="true">
+  <div class="dashboard-editor-header">
+    <div>
+      <h2>Personalizar dashboard</h2>
+      <p>Escolhe o que cada utilizador vê e como o layout se comporta.</p>
+    </div>
+    <button class="dashboard-editor-close" type="button" onclick="closeDashboardEditor()" aria-label="Fechar editor">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3L3 13"/></svg>
+    </button>
+  </div>
+
+  <div class="dashboard-editor-body">
+    <section class="dashboard-editor-section">
+      <div class="dashboard-editor-section-head">
+        <h3>Layout</h3>
+        <p>Preset da grelha principal.</p>
+      </div>
+      <div class="editor-segmented" id="editorGridPreset"></div>
+    </section>
+
+    <section class="dashboard-editor-section">
+      <div class="dashboard-editor-section-head">
+        <h3>Tema</h3>
+        <p>Variações cromáticas para o modo claro.</p>
+      </div>
+      <div class="theme-options" id="themeOptions"></div>
+    </section>
+
+    <section class="dashboard-editor-section">
+      <div class="dashboard-editor-section-head">
+        <h3>Painéis</h3>
+        <p>Mostrar e destacar painéis.</p>
+      </div>
+      <div class="editor-list" id="panelEditorList"></div>
+    </section>
+
+    <section class="dashboard-editor-section">
+      <div class="dashboard-editor-section-head">
+        <h3>KPIs</h3>
+        <p>Mostrar ou dar destaque aos indicadores.</p>
+      </div>
+      <div class="editor-list" id="kpiEditorList"></div>
+    </section>
+  </div>
+
+  <div class="dashboard-editor-footer">
+    <button class="dashboard-editor-secondary" type="button" onclick="resetDashboardPersonalization()">Repor personalização</button>
+    <button class="dashboard-editor-primary" type="button" onclick="closeDashboardEditor()">Fechar</button>
+  </div>
+</aside>
+
+<!-- ═══════════════════════ SCRIPTS ══════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+
+<script src="js/firebase-init.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/module-registry.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/offices-service.js"></script>
+<script src="js/config-escritorios.js"></script>
+<script src="js/app-platform.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/dashboard-customizer.js"></script>
+
+<script>
+// ── Greeting ─────────────────────────────────────────────────────
+(function() {
+  const dateEl = document.getElementById('dashDate');
+  if (dateEl) {
+    dateEl.textContent = new Date().toLocaleDateString('pt-PT', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+  }
+})();
+
+document.addEventListener('authReady', function({ detail }) {
+  const profile = detail && detail.profile;
+  if (!profile) return;
+  const firstName = (profile.nomeCompleto || profile.nome || '').split(' ')[0];
+  const h = new Date().getHours();
+  const saudacao = h < 12 ? 'Bom dia' : h < 19 ? 'Boa tarde' : 'Boa noite';
+  const el = document.getElementById('dashGreeting');
+  if (el) el.textContent = firstName ? `${saudacao}, ${firstName}` : saudacao;
+});
+
+// ── Fechar search ao clicar fora ────────────────────────────────
+document.addEventListener('click', (e) => {
+  const wrap  = document.getElementById('globalSearchWrap');
+  const panel = document.getElementById('globalSearchPanel');
+  if (wrap && panel && !wrap.contains(e.target)) {
+    panel.style.display = 'none';
+  }
+});
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 600) {
+    if (typeof window.closeMobileModulesMenu === 'function') window.closeMobileModulesMenu();
+  }
+});
+</script>
+
+</body>
+</html>

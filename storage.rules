@@ -1,0 +1,74 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return signedIn()
+        ? firestore.get(/databases/(default)/documents/utilizadores/$(request.auth.uid))
+        : null;
+    }
+
+    function userData() {
+      return userDoc() != null && userDoc().data != null
+        ? userDoc().data
+        : null;
+    }
+
+    function isAdmin() {
+      return signedIn() && userData() != null && userData().role == 'admin';
+    }
+
+    function isActiveUser() {
+      return signedIn() && userData() != null && userData().ativo != false;
+    }
+
+    function hasOfficeAccess(officeId) {
+      return isAdmin()
+        || officeId == null
+        || officeId == ''
+        || (userData() != null && userData().escritorio == officeId);
+    }
+
+    // Limite de 50 MB por ficheiro
+    function withinSizeLimit() {
+      return request.resource.size < 52428800;
+    }
+
+    // Whitelist de tipos permitidos: imagens, PDF, Office, texto plano/CSV
+    function isAllowedContentType() {
+      return request.resource.contentType.matches('image/.+')
+        || request.resource.contentType == 'application/pdf'
+        || request.resource.contentType == 'application/msword'
+        || request.resource.contentType.matches('application/vnd\\.openxmlformats-officedocument\\..+')
+        || request.resource.contentType.matches('application/vnd\\.ms-.+')
+        || request.resource.contentType == 'text/plain'
+        || request.resource.contentType == 'text/csv';
+    }
+
+    function isAllowedUpload() {
+      return isActiveUser() && withinSizeLimit() && isAllowedContentType();
+    }
+
+    match /tarefas/{docId}/{fileName} {
+      allow read: if isActiveUser();
+      allow write: if isAllowedUpload();
+    }
+
+    match /admissoes/{docId}/{fileName} {
+      allow read: if isActiveUser();
+      allow write: if isAllowedUpload();
+    }
+
+    match /reclamacoes/{docId}/{fileName} {
+      allow read: if isActiveUser();
+      allow write: if isAllowedUpload();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

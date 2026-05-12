@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admissões &amp; Cessações</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/admissoes.css">
+<script>if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+<div class="page">
+
+  <!-- PAGE HEADER -->
+  <div class="page-head">
+    <div>
+      <div class="kicker">Recursos Humanos</div>
+      <h1>Admissões &amp; Cessações</h1>
+      <p class="lede">Pedidos de entrada e saída de trabalhadores temporários, submetidos pelos recrutadores e processados pela equipa de RH.</p>
+    </div>
+    <div class="hd-actions">
+      <span id="syncStatus"></span>
+      <button class="btn btn-secondary btn-sm" id="btnVozAdm" onclick="VozAI && VozAI.abrir('admissao')" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="1" width="6" height="9" rx="3"/><path d="M2 8c0 3.3 2.7 6 6 6s6-2.7 6-6"/><path d="M8 14v2"/></svg>
+        Voz
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btnGestor" onclick="openGestor()">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+        Modo Gestor
+      </button>
+      <button class="btn btn-primary btn-sm" id="btnNovoPedido" onclick="openModalNovo()" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>
+        Novo pedido
+      </button>
+    </div>
+  </div>
+
+  <!-- FLOW NOTE -->
+  <div class="adm-flow-note">
+    <span class="step-num">1</span>
+    <span><b>Recrutador</b> submete o pedido</span>
+    <span class="step-arrow">→</span>
+    <span class="step-num">2</span>
+    <span><b>RH</b> valida documentos e processa</span>
+    <span class="step-arrow">→</span>
+    <span class="step-num">3</span>
+    <span>Pedido <b>concluído</b> e arquivado</span>
+  </div>
+
+  <!-- KPI STRIP -->
+  <div class="stat-grid" id="statsBar">
+    <div class="stat-tile">
+      <div class="stat-lbl">
+        <span class="stat-ico" style="background:var(--green-bg);color:var(--green);border-color:var(--green-border);">↓</span>
+        Admissões ativas
+      </div>
+      <div class="stat-val" id="statAdm">—</div>
+      <div class="stat-note">em curso</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-lbl">
+        <span class="stat-ico" style="background:var(--amber-bg);color:var(--amber);border-color:var(--amber-border);">↑</span>
+        Cessações ativas
+      </div>
+      <div class="stat-val" id="statCes">—</div>
+      <div class="stat-note">a processar</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-lbl">
+        <span class="stat-ico" style="background:var(--red-bg);color:var(--red);border-color:var(--red-border);">!</span>
+        Alta prioridade
+      </div>
+      <div class="stat-val" id="statAlta">—</div>
+      <div class="stat-note up" id="statAltaNote">data iminente</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-lbl">
+        <span class="stat-ico">⏱</span>
+        Pendentes
+      </div>
+      <div class="stat-val" id="statPend">—</div>
+      <div class="stat-note">a aguardar docs</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-lbl">
+        <span class="stat-ico" style="background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border);">✓</span>
+        Concluídos
+      </div>
+      <div class="stat-val" id="statConc">—</div>
+      <div class="stat-note">arquivados</div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar-card">
+    <!-- Tipo segmented -->
+    <div class="seg-ctrl" id="segTipo">
+      <button class="seg-btn active" data-ft="todos"    onclick="setFilterTipo('todos')">Todos</button>
+      <button class="seg-btn"        data-ft="admissao" onclick="setFilterTipo('admissao')">Admissões</button>
+      <button class="seg-btn"        data-ft="cessacao" onclick="setFilterTipo('cessacao')">Cessações</button>
+    </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="5"/><path d="M10.5 10.5l3.5 3.5"/></svg>
+      <input class="form-input" id="searchInput" placeholder="Pesquisar nome, NIF, empresa…" oninput="setSearch(this.value)">
+    </div>
+
+    <!-- Estado -->
+    <select class="form-select" id="selEstado" onchange="setFilterEstado(this.value)" style="max-width:160px">
+      <option value="activos">Ativos</option>
+      <option value="todos">Todos os estados</option>
+      <option value="aguardar">A aguardar</option>
+      <option value="pendente">Pendentes</option>
+      <option value="concluido">Concluídos</option>
+      <option value="cancelado">Cancelados</option>
+    </select>
+
+    <!-- Prioridade -->
+    <select class="form-select" id="selPrio" onchange="setFilterPrio(this.value)" style="max-width:140px">
+      <option value="todos">Todas prio</option>
+      <option value="alta">Alta</option>
+      <option value="media">Média</option>
+      <option value="baixa">Baixa</option>
+    </select>
+
+    <!-- Escritório (só gestores/admin) -->
+    <select class="form-select" id="filterEscritorioAdm" onchange="setFiltroEscritorioAdm(this.value)" style="max-width:160px;display:none">
+      <option value="">Todos escritórios</option>
+    </select>
+
+    <!-- Count badge -->
+    <span class="count-badge" id="countBadge"></span>
+
+    <!-- View toggle -->
+    <div class="view-toggle">
+      <button class="view-btn active" id="btnViewCards" onclick="setView('cards')" title="Cards">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      </button>
+      <button class="view-btn" id="btnViewTable" onclick="setView('table')" title="Tabela">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 4h14M1 8h14M1 12h14M5 2v12M11 2v12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- LIST AREA -->
+  <div id="listArea"></div>
+
+</div><!-- /page -->
+
+<!-- ═══ DETAIL DRAWER ═══════════════════════════════════════════ -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()">
+  <aside class="adm-drawer" onclick="event.stopPropagation()">
+    <div class="drawer-head" id="drawerHead">
+      <!-- filled by JS -->
+    </div>
+    <div class="drawer-actions" id="drawerActions">
+      <!-- filled by JS -->
+    </div>
+    <div class="drawer-tabs" id="drawerTabs">
+      <button class="drawer-tab active" data-tab="detalhe"   onclick="switchTab('detalhe')">Detalhe</button>
+      <button class="drawer-tab"        data-tab="checklist" onclick="switchTab('checklist')">Checklist</button>
+      <button class="drawer-tab"        data-tab="anexos"    onclick="switchTab('anexos')">Anexos</button>
+      <button class="drawer-tab"        data-tab="historico" onclick="switchTab('historico')">Histórico</button>
+    </div>
+    <div class="drawer-body" id="drawerBody">
+      <!-- filled by JS -->
+    </div>
+  </aside>
+</div>
+
+<!-- ═══ MODAL NOVO PROCESSO ═════════════════════════════════════ -->
+<div class="modal-overlay" id="modalNovo" onclick="if(event.target===this) closeModalNovo()">
+  <div class="modal modal-novo">
+    <div class="modal-head">
+      <h2>Novo processo</h2>
+    </div>
+    <div class="modal-scroll-body">
+      <!-- Tipo -->
+      <div class="adm-tipo-select">
+        <button class="adm-tipo-card sel-green" id="tipoCardAdm" onclick="selTipo('admissao')">
+          <span class="adm-tipo-ic">🟢</span>
+          <div>
+            <div class="adm-tipo-lbl">Admissão</div>
+            <div class="adm-tipo-desc">Entrada de novo colaborador</div>
+          </div>
+        </button>
+        <button class="adm-tipo-card" id="tipoCardCes" onclick="selTipo('cessacao')">
+          <span class="adm-tipo-ic">🟠</span>
+          <div>
+            <div class="adm-tipo-lbl">Cessação</div>
+            <div class="adm-tipo-desc">Saída de colaborador</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Dados do colaborador -->
+      <div class="form-sec-lbl">Dados do colaborador</div>
+      <div class="form-grid">
+        <div class="full">
+          <label class="field-label">Nome completo <span class="req">*</span></label>
+          <input type="text" class="form-input" id="fNome" placeholder="ex: João Ferreira" maxlength="100">
+        </div>
+        <div>
+          <label class="field-label">Nº Colaborador</label>
+          <input type="text" class="form-input" id="fNumero" placeholder="ex: 00142" maxlength="20">
+        </div>
+        <div>
+          <label class="field-label">NIF</label>
+          <input type="text" class="form-input" id="fNif" placeholder="ex: 123456789" maxlength="9">
+        </div>
+        <div>
+          <label class="field-label">Escritório que trata</label>
+          <select class="form-select" id="fEscritorioAdm">
+            <option value="">A carregar…</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Submetido por</label>
+          <div class="form-input" id="fSubmetidoPorDisplay" style="background:var(--surface2);color:var(--muted);cursor:default;">—</div>
+        </div>
+      </div>
+
+      <!-- Campos admissão -->
+      <div id="blocoCamposAdmissao">
+        <div class="form-sec-lbl">Empresa &amp; categoria</div>
+        <div class="form-grid">
+          <div>
+            <label class="field-label">Empresa Utilizadora <span class="req">*</span></label>
+            <input type="text" class="form-input" id="fEmpresa" placeholder="ex: Empresa X, Lda" maxlength="100">
+          </div>
+          <div>
+            <label class="field-label">Categoria Profissional</label>
+            <input type="text" class="form-input" id="fCategoria" placeholder="ex: Técnico Contabilidade" maxlength="100">
+          </div>
+        </div>
+
+        <div class="form-sec-lbl">Condições contratuais</div>
+        <div style="margin-bottom:12px">
+          <label class="field-label">Tipo de pagamento</label>
+          <div class="pag-seg">
+            <button class="pag-seg-btn sel" data-p="mes" onclick="selPagamento('mes')">📅 Mensal</button>
+            <button class="pag-seg-btn" data-p="hora" onclick="selPagamento('hora')">⏱ À hora</button>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div>
+            <label class="field-label">Valor Base (€)</label>
+            <input type="number" class="form-input" id="fValorBase" placeholder="ex: 850.00" min="0" step="0.01">
+          </div>
+          <div>
+            <label class="field-label">Valor Mês (€)</label>
+            <input type="number" class="form-input" id="fValorMes" placeholder="ex: 900.00" min="0" step="0.01">
+          </div>
+          <div>
+            <label class="field-label">Valor Hora (€)</label>
+            <input type="number" class="form-input" id="fValorHora" placeholder="ex: 5.20" min="0" step="0.01">
+          </div>
+          <div>
+            <label class="field-label">Data de Entrada <span class="req">*</span></label>
+            <input type="date" class="form-input" id="fDataEntrada" oninput="updatePrioPreview()">
+          </div>
+        </div>
+        <div id="prioPreviewAdm" style="display:none"></div>
+      </div>
+
+      <!-- Campos cessação -->
+      <div id="blocoCamposCessacao" style="display:none">
+        <div class="form-sec-lbl">Dados da saída</div>
+        <div class="form-grid">
+          <div>
+            <label class="field-label">Data de Saída <span class="req">*</span></label>
+            <input type="date" class="form-input" id="fDataSaida" oninput="updatePrioPreviewCessacao()">
+          </div>
+          <div>
+            <label class="field-label">Motivo</label>
+            <select class="form-select" id="fMotivo">
+              <option value="">— Selecionar —</option>
+              <option value="Rescisão por iniciativa do trabalhador">Rescisão por iniciativa do trabalhador</option>
+              <option value="Caducidade do contrato">Caducidade do contrato</option>
+              <option value="Despedimento por justa causa">Despedimento por justa causa</option>
+              <option value="Despedimento coletivo">Despedimento coletivo</option>
+              <option value="Mútuo acordo">Mútuo acordo</option>
+            </select>
+          </div>
+          <div class="full">
+            <label class="field-label">Empresa</label>
+            <input type="text" class="form-input" id="fEmpresaCes" placeholder="ex: Empresa X, Lda" maxlength="100">
+          </div>
+        </div>
+        <div id="prioPreviewCes" style="display:none"></div>
+      </div>
+
+      <!-- Anexos -->
+      <div class="form-sec-lbl">Anexos (opcional)</div>
+      <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-bottom:8px">
+        📎 Adicionar ficheiros
+        <input type="file" id="fFicheirosAdm" multiple onchange="onPendingFilesAdmChange(this)" style="display:none">
+      </label>
+      <div id="pendingFilesAdmList"></div>
+      <div class="upload-status" id="formAdmUploadStatus"></div>
+
+    </div><!-- /scroll-body -->
+
+    <div class="modal-foot" style="padding-top:14px;border-top:1px solid var(--border);margin-top:4px">
+      <button class="btn btn-secondary" onclick="closeModalNovo()">Cancelar</button>
+      <button class="btn btn-primary" id="btnSubmeterProcesso" onclick="submitProcesso()">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 3L6 10M13 3H8M13 3V8"/></svg>
+        Submeter processo
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONFIRM MODAL ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-head"><h2 id="confirmTitle">Confirmar</h2></div>
+    <div class="modal-body" id="confirmBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/module-registry.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/offices-service.js"></script>
+<script src="js/config-escritorios.js"></script>
+<script src="js/app-platform.js"></script>
+<script src="js/auditoria.js"></script>
+<script src="js/admissoes-service.js"></script>
+<script src="js/voz-ai.js"></script>
+<script src="js/admissoes.js"></script>
+</body>
+</html>

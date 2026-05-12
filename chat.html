@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat</title>
+<link rel="stylesheet" href="css/chat.css">
+<script>if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+
+<div class="page">
+  <div class="chat-wrap" id="chatWrap">
+
+    <!-- ── Sidebar ── -->
+    <aside class="chat-sidebar" id="chatSidebar">
+      <div class="chat-sidebar-head">
+        <h2 class="chat-sidebar-title">Conversas</h2>
+        <button class="btn-new-chat" id="btnNewDm" title="Nova conversa">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M8 2v12M2 8h12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="chat-search-row">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="6.5" cy="6.5" r="5"/><path d="M10.5 10.5l3.5 3.5"/>
+        </svg>
+        <input type="search" id="chatSearch" placeholder="Pesquisar…" autocomplete="off">
+      </div>
+      <div class="chat-list" id="chatList"></div>
+    </aside>
+
+    <!-- ── Thread ── -->
+    <main class="chat-thread" id="chatThread">
+      <div class="chat-empty" id="chatEmpty">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        </svg>
+        <strong>Seleciona uma conversa</strong>
+        <span>Escolhe um grupo ou mensagem direta à esquerda para começar.</span>
+      </div>
+
+      <div class="chat-thread-inner" id="threadInner" style="display:none;">
+        <div class="chat-thread-head" id="threadHead"></div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-composer">
+          <div class="chat-composer-wrap">
+            <button class="attach-btn" title="Anexar ficheiro">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66L9.41 17.41a2 2 0 01-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </button>
+            <textarea id="chatInput" placeholder="Escreve uma mensagem…" rows="1"></textarea>
+          </div>
+          <button class="send-btn" id="btnSend" title="Enviar (Enter)" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- ── Info panel ── -->
+    <aside class="chat-info" id="chatInfoPanel" style="display:none;">
+      <div class="chat-info-head">
+        <h3>Detalhes</h3>
+        <button class="chat-info-close" id="btnCloseInfo" title="Fechar">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3l10 10M13 3L3 13"/>
+          </svg>
+        </button>
+      </div>
+      <div class="chat-info-body" id="chatInfoBody"></div>
+    </aside>
+
+  </div>
+</div>
+
+<!-- ══ Modal: nova conversa ══ -->
+<div class="modal-overlay" id="newChatModal">
+  <div class="new-chat-modal">
+    <div class="modal-head">
+      <span class="modal-title">Nova conversa</span>
+      <button class="modal-close" id="btnCloseNewChat">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 3l10 10M13 3L3 13"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" data-tab="dm">Mensagem direta</button>
+      <button class="modal-tab" data-tab="grupo">Grupo</button>
+    </div>
+    <div id="tabDm" style="display:flex;">
+      <input type="search" id="userSearch" placeholder="Pesquisar utilizador…" autocomplete="off">
+      <div id="userList" class="user-picker-list"></div>
+    </div>
+    <div id="tabGrupo" style="display:none;">
+      <input type="text" id="groupName" placeholder="Nome do grupo">
+      <input type="search" id="groupUserSearch" placeholder="Adicionar participante…" autocomplete="off">
+      <div id="groupSelected" class="group-selected-row"></div>
+      <div id="groupUserList" class="user-picker-list"></div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" id="btnCancelGroup">Cancelar</button>
+        <button class="modal-btn primary" id="btnCreateGroup">Criar grupo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/module-registry.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/auditoria.js"></script>
+<script src="js/offices-service.js"></script>
+<script src="js/config-escritorios.js"></script>
+<script src="js/app-platform.js"></script>
+<script src="js/users-service.js"></script>
+<script src="js/chat-service.js"></script>
+<script src="js/chat.js"></script>
+</body>
+</html>

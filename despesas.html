@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Despesas</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/despesas.css">
+<script>if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <div class="kicker">Financeiro</div>
+      <h1>Despesas</h1>
+      <p class="lede" id="pageSubtitle">Submissão e aprovação de notas de despesa.</p>
+    </div>
+    <div class="hd-actions">
+      <span id="syncStatus"></span>
+      <select id="filterEscritorio" class="filter-escritorio-sel" style="display:none;" onchange="setFiltroEscritorio(this.value)">
+        <option value="">Todos</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="openForm()">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 2v12M2 8h12"/></svg>
+        Nova despesa
+      </button>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-tile">
+      <div class="stat-tile-label">Pendente (€)</div>
+      <div class="stat-tile-val s-valor" id="statValor">—</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">Pendentes</div>
+      <div class="stat-tile-val s-pendente" id="statPendente">—</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">Aprovadas</div>
+      <div class="stat-tile-val s-aprovado" id="statAprovado">—</div>
+    </div>
+  </div>
+
+  <div class="toolbar-card">
+    <div class="seg-ctrl">
+      <button class="seg-btn active" data-f="todos" onclick="setFiltro('todos')">Todos</button>
+      <button class="seg-btn" data-f="pendente" onclick="setFiltro('pendente')">Pendentes</button>
+      <button class="seg-btn" data-f="aprovado" onclick="setFiltro('aprovado')">Aprovadas</button>
+      <button class="seg-btn" data-f="rejeitado" onclick="setFiltro('rejeitado')">Rejeitadas</button>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-right">
+      <span class="count-badge" id="countBadge"></span>
+    </div>
+  </div>
+
+  <div class="despesas-list" id="despesasList"></div>
+
+</div>
+
+<!-- Form modal -->
+<div class="modal-overlay" id="despesaFormModal" onclick="if(event.target===this)closeForm()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <span class="modal-title">Nova despesa</span>
+      <button class="modal-close" onclick="closeForm()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label">Categoria *</label>
+          <select class="select" id="fCategoria">
+            <option value="alimentacao">Alimentação</option>
+            <option value="transporte">Transporte</option>
+            <option value="alojamento">Alojamento</option>
+            <option value="material">Material de escritório</option>
+            <option value="comunicacoes">Comunicações</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Valor (€) *</label>
+          <input type="number" class="input" id="fValor" placeholder="0.00" min="0.01" step="0.01">
+        </div>
+        <div class="field">
+          <label class="field-label">Data *</label>
+          <input type="date" class="input" id="fData">
+        </div>
+        <div class="field" id="fEscritorioWrap">
+          <label class="field-label">Escritório</label>
+          <select class="select" id="fEscritorio"><option value="">A carregar…</option></select>
+        </div>
+        <div class="field full">
+          <label class="field-label">Descrição *</label>
+          <input class="input" id="fDescricao" placeholder="ex: Almoço com cliente ABC" maxlength="200" autocomplete="off">
+        </div>
+        <div class="field full">
+          <label class="field-label">Recibo (opcional)</label>
+          <label class="btn-attach">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V6L9 2z"/><path d="M9 2v4h4"/></svg>
+            Anexar recibo
+            <input type="file" id="fRecibo" accept="image/*,.pdf" onchange="onReciboChange(this)">
+          </label>
+          <div class="upload-status" id="uploadStatus"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeForm()">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitDespesa()">Submeter despesa</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/module-registry.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/auditoria.js"></script>
+<script src="js/offices-service.js"></script>
+<script src="js/config-escritorios.js"></script>
+<script src="js/app-platform.js"></script>
+<script src="js/despesas-service.js"></script>
+<script src="js/despesas.js"></script>
+</body>
+</html>

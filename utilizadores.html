@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão de Utilizadores</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/utilizadores.css">
+<script>if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Page header -->
+  <div class="page-head">
+    <div>
+      <div class="kicker">Administração</div>
+      <h1>Utilizadores</h1>
+      <p class="lede">Gerir contas, perfis e permissões de todos os colaboradores. Apenas administradores têm acesso a esta área.</p>
+    </div>
+    <div class="actions">
+      <span id="meInfo" style="font-size:11px;color:var(--muted);"></span>
+      <button class="btn btn-primary" onclick="abrirModalNovo()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M8 2v12M2 8h12"/></svg>
+        Novo utilizador
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI strip -->
+  <div class="stat-grid-kpi">
+    <div class="stat-tile">
+      <div class="stat-lbl2">
+        <span class="stat-ico">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.5" cy="5" r="2.5"/><path d="M1 13c0-2.5 1.8-4 4.5-4"/><circle cx="11" cy="5.5" r="2"/><path d="M8.5 9c1.5.3 4 1.2 4 3.5"/></svg>
+        </span>
+        Total de contas
+      </div>
+      <div class="stat-val2" id="kpiTotal">—</div>
+      <div class="stat-delta flat" id="kpiTotalSub">a carregar…</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-lbl2">
+        <span class="stat-ico">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M3 13c0-3 2-4.5 5-4.5s5 1.5 5 4.5"/><path d="M11 2l1 1-3 3"/></svg>
+        </span>
+        Administradores
+      </div>
+      <div class="stat-val2" id="kpiAdmins">—</div>
+      <div class="stat-delta flat" id="kpiAdminsSub">—</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-lbl2">
+        <span class="stat-ico">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l3 3 7-7"/></svg>
+        </span>
+        Ativos
+      </div>
+      <div class="stat-val2" id="kpiAtivos">—</div>
+      <div class="stat-delta flat">contas ativas</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-lbl2">
+        <span class="stat-ico">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5"/><circle cx="8" cy="11" r=".6" fill="currentColor"/></svg>
+        </span>
+        Pendentes
+      </div>
+      <div class="stat-val2" id="kpiPendentes">—</div>
+      <div class="stat-delta flat">a aguardar login</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar-card">
+    <div class="segmented" id="roleSegmented">
+      <button class="seg-btn active" onclick="segmentedClick(this,'')">Todos</button>
+      <button class="seg-btn" onclick="segmentedClick(this,'admin')">Admins</button>
+      <button class="seg-btn" onclick="segmentedClick(this,'colaborador')">Colaboradores</button>
+    </div>
+    <div class="search-wrap">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/></svg>
+      <input class="input-v2" id="searchInput" placeholder="Pesquisar nome ou email…" oninput="setSearch(this.value)">
+    </div>
+    <select class="select-v2" id="escritorioFilter" onchange="setEscritorioFilter(this.value)" style="min-width:160px;">
+      <option value="">Todos os escritórios</option>
+    </select>
+  </div>
+
+  <!-- Table card -->
+  <div class="data-card">
+    <div class="data-card-body p0">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:32%;">Utilizador</th>
+              <th>Escritório</th>
+              <th>Perfil</th>
+              <th>Estado</th>
+              <th>Último acesso</th>
+              <th style="text-align:right;padding-right:18px;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="usersTbody">
+            <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">A carregar utilizadores…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="data-card-foot">
+      <span id="countBadge"></span>
+      <span id="syncStatus"></span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Side drawer -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="fecharDrawer()">
+  <aside class="side-drawer" id="sideDrawer" onclick="event.stopPropagation()">
+  </aside>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL NOVO UTILIZADOR -->
+<div class="modal-overlay" id="modalNovoUser" onclick="if(event.target===this)fecharModalNovo()">
+  <div class="modal-v2">
+    <div class="modal-head">
+      <h3>Novo Utilizador</h3>
+      <button class="icon-btn" onclick="fecharModalNovo()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-info-box">A conta fica ativa de imediato. O escritório escolhido fica disponível em todos os módulos da app.</p>
+      <div class="modal-form-grid">
+        <div class="field">
+          <label class="field-label">Nome <span class="req">*</span></label>
+          <input class="input-v2" type="text" id="newNome" placeholder="Nome próprio">
+        </div>
+        <div class="field">
+          <label class="field-label">Apelido</label>
+          <input class="input-v2" type="text" id="newApelido" placeholder="Apelido">
+        </div>
+        <div class="field full">
+          <label class="field-label">Email <span class="req">*</span></label>
+          <input class="input-v2" type="email" id="newEmail" placeholder="nome@empresa.pt">
+        </div>
+        <div class="field">
+          <label class="field-label">Escritório</label>
+          <select class="select-v2" id="newEscritorio">
+            <option value="">Selecionar…</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Perfil</label>
+          <select class="select-v2" id="newRole">
+            <option value="colaborador">Colaborador</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label class="field-label">Password <span class="req">*</span></label>
+          <input class="input-v2" type="password" id="newPassword" placeholder="Mínimo 6 caracteres">
+        </div>
+      </div>
+      <div id="modalNovoErr" class="form-err"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="fecharModalNovo()">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvarNovo" onclick="criarUtilizador()">Criar conta</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/module-registry.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/users-service.js"></script>
+<script src="js/offices-service.js"></script>
+<script src="js/config-escritorios.js"></script>
+<script src="js/app-platform.js"></script>
+<script src="js/perfis-service.js"></script>
+<script src="js/utilizadores.js"></script>
+</body>
+</html>

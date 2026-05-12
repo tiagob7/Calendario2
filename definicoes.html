@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Definições</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/definicoes.css">
+<script>if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+<div class="page">
+
+  <!-- Page header -->
+  <div class="page-head">
+    <div>
+      <div class="kicker">Administração</div>
+      <h1>Definições</h1>
+      <p class="lede">Configurações globais da plataforma Algartempo. As alterações aplicam-se em todos os escritórios.</p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-secondary btn-sm">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:12px;height:12px;"><rect x="1" y="3" width="14" height="10" rx="1.5"/><path d="M5 7h6M5 10h4"/></svg>
+        Documentação
+      </button>
+    </div>
+  </div>
+
+  <!-- Hero status card -->
+  <div class="hero-card" style="background:linear-gradient(135deg,var(--blue-bg) 0%,var(--surface) 100%);">
+    <div style="width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--blue-border);color:var(--accent);flex-shrink:0;">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:22px;height:22px;"><path d="M8 1l1.5 3 3.3.5-2.4 2.3.6 3.2L8 8.5l-3 1.5.6-3.2L3.2 4.5l3.3-.5L8 1z"/></svg>
+    </div>
+    <div class="hero-text">
+      <div class="hero-greeting">Tudo configurado.</div>
+      <div class="hero-sub" id="heroSub">A carregar estatísticas…</div>
+    </div>
+    <div class="hero-actions">
+      <button class="btn btn-primary btn-sm" onclick="togglePainel('Aparencia')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:12px;height:12px;"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="4" r=".8" fill="currentColor" stroke="none"/><circle cx="11.5" cy="10" r=".8" fill="currentColor" stroke="none"/><circle cx="4.5" cy="10" r=".8" fill="currentColor" stroke="none"/></svg>
+        Aparência
+      </button>
+    </div>
+  </div>
+
+  <!-- Section header -->
+  <div class="section-head">
+    <h2>Categorias</h2>
+    <span class="count">7 secções</span>
+  </div>
+
+  <!-- Cards grid -->
+  <div class="def-grid-v2">
+
+    <!-- Utilizadores -->
+    <button class="def-card-v2" id="cardUtilizadores" onclick="togglePainel('Utilizadores')">
+      <div class="def-card-top">
+        <div class="def-card-icon-v2 tone-accent">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="5.5" cy="5" r="2.5"/><path d="M1 13c0-2.5 1.8-4 4.5-4s4.5 1.5 4.5 4"/><circle cx="12" cy="4.5" r="1.8"/><path d="M10.5 8c1.5.3 3 1.3 3 3.5"/></svg>
+        </div>
+        <div class="def-card-title-v2">Utilizadores</div>
+      </div>
+      <div class="def-card-desc-v2">Gerir contas, roles e permissões dos colaboradores.</div>
+      <div class="def-card-cta">
+        Ver utilizadores
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+      </div>
+    </button>
+
+    <!-- Escritórios -->
+    <button class="def-card-v2" id="cardEscritorios" onclick="togglePainel('Escritorios')">
+      <div class="def-card-top">
+        <div class="def-card-icon-v2 tone-green">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="7" width="6" height="8" rx="1"/><rect x="9" y="4" width="6" height="11" rx="1"/><path d="M4 7V4a3 3 0 016 0v7"/></svg>
+        </div>
+        <div class="def-card-title-v2">Escritórios</div>
+      </div>
+      <div class="def-card-desc-v2">Criar, renomear e remover escritórios da organização.</div>
+      <div class="def-card-cta">
+        Gerir escritórios
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+      </div>
+    </button>
+
+    <!-- Calendário -->
+    <a class="def-card-v2" href="gerir-calendarios.html">
+      <div class="def-card-top">
+        <div class="def-card-icon-v2 tone-purple">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12M5 10h2M9 10h2M5 13h2"/></svg>
+        </div>
+        <div class="def-card-title-v2">Calendário</div>
+      </div>
+      <div class="def-card-desc-v2">Publicar feriados, eventos e gerir calendários de cada escritório.</div>
+      <div class="def-card-cta">
+        Gerir calendários
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+      </div>
+    </a>
+
+    <!-- Perfis de Permissão -->
+    <a class="def-card-v2" href="perfis.html">
+      <div class="def-card-top">
+        <div class="def-card-icon-v2 tone-teal">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="5" cy="5.5" r="2.2"/><circle cx="11" cy="5.5" r="2.2"/><path d="M1 13c0-2 1.6-3.5 4-3.5s4 1.5 4 3.5"/><path d="M9 12c.5-1.2 1.6-2.5 4-2.5s4 1.5 4 3.5"/></svg>
+        </div>
+        <div class="def-card-title-v2">Perfis de Permissão</div>
+      </div>
+      <div class="def-card-desc-v2">Criar e gerir perfis reutilizáveis de permissões para os colaboradores.</div>
+      <div class="def-card-cta">
+        Gerir perfis
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+      </div>
+    </a>
+
+    <!-- Auditoria -->
+    <a class="def-card-v2" href="auditoria.html">
+      <div class="def-card-top">
+        <div class="def-card-icon-v2 tone-amber">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2a6 6 0 100 12A6 6 0 008 2z"/><path d="M8 5v3.5l2.5 1.5"/></svg>
+        </div>
+        <div class="def-card-title-v2">Auditoria</div>
+      </div>
+      <div class="def-card-desc-v2">Histórico detalhado de todas as alterações — quem mudou o quê e quando.</div>
+      <div class="def-card-cta">
+        Ver histórico
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+      </div>
+    </a>
+
+    <!-- Aparência -->
+    <button class="def-card-v2" id="cardAparencia" onclick="togglePainel('Aparencia')">
+      <div class="def-card-top">
+        <div class="def-card-icon-v2 tone-purple">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="4" r=".8" fill="currentColor" stroke="none"/><circle cx="11.5" cy="10" r=".8" fill="currentColor" stroke="none"/><circle cx="4.5" cy="10" r=".8" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.6"/></svg>
+        </div>
+        <div class="def-card-title-v2">Aparência</div>
+      </div>
+      <div class="def-card-desc-v2">Escolher o tema de cor e o modo escuro da interface.</div>
+      <div class="def-card-cta">
+        Personalizar
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+      </div>
+    </button>
+
+    <!-- Seed de Dados -->
+    <a class="def-card-v2" href="seed.html">
+      <div class="def-card-top">
+        <div class="def-card-icon-v2 tone-red">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="8" cy="11" rx="5" ry="3"/><path d="M8 11V5"/><path d="M8 5C8 5 5.5 3 3 3c0 2.5 2 4 5 4s5-1.5 5-4c-2.5 0-5 2-5 2z"/></svg>
+        </div>
+        <div class="def-card-title-v2">Seed de Dados</div>
+      </div>
+      <div class="def-card-desc-v2">Carregar dados de teste no Firestore. Apenas para administradores.</div>
+      <div class="def-card-cta">
+        Abrir seed
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- PAINEL APARÊNCIA -->
+  <div class="panel def-panel-v2" id="panelAparencia">
+    <div class="def-panel-head">
+      <div class="def-panel-ic" style="background:var(--purple-bg);color:var(--purple);">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="4" r=".8" fill="currentColor" stroke="none"/><circle cx="11.5" cy="10" r=".8" fill="currentColor" stroke="none"/><circle cx="4.5" cy="10" r=".8" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.6"/></svg>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <h3>Aparência</h3>
+        <div class="def-panel-sub">Tema de cor, fundo e modo escuro</div>
+      </div>
+      <button class="btn btn-sm btn-secondary" onclick="togglePainel('Aparencia')">Fechar</button>
+    </div>
+    <div class="def-panel-body">
+      <div id="aparenciaBody"></div>
+    </div>
+  </div>
+
+  <!-- PAINEL UTILIZADORES -->
+  <div class="panel def-panel-v2" id="panelUtilizadores">
+    <div class="def-panel-head">
+      <div class="def-panel-ic" style="background:var(--blue-bg);color:var(--accent);">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="5.5" cy="5" r="2.5"/><path d="M1 13c0-2.5 1.8-4 4.5-4s4.5 1.5 4.5 4"/><circle cx="12" cy="4.5" r="1.8"/><path d="M10.5 8c1.5.3 3 1.3 3 3.5"/></svg>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <h3>Utilizadores</h3>
+        <div class="def-panel-sub" id="utilizadoresSubtitle">A carregar…</div>
+      </div>
+      <a href="utilizadores.html" class="btn btn-primary btn-sm">Gestão completa →</a>
+      <button class="btn btn-sm btn-secondary" onclick="togglePainel('Utilizadores')">Fechar</button>
+    </div>
+    <div class="def-panel-body" id="utilizadoresBody">
+      <p style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;">A carregar…</p>
+    </div>
+  </div>
+
+  <!-- PAINEL ESCRITÓRIOS -->
+  <div class="panel def-panel-v2" id="panelEscritorios">
+    <div class="def-panel-head">
+      <div class="def-panel-ic" style="background:var(--green-bg);color:var(--green);">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="7" width="6" height="8" rx="1"/><rect x="9" y="4" width="6" height="11" rx="1"/><path d="M4 7V4a3 3 0 016 0v7"/></svg>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <h3>Escritórios</h3>
+        <div class="def-panel-sub">Localizações onde a equipa opera</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="abrirModalNovo()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;"><path d="M8 2v12M2 8h12"/></svg>
+        Novo
+      </button>
+      <button class="btn btn-sm btn-secondary" onclick="togglePainel('Escritorios')">Fechar</button>
+    </div>
+    <div class="def-panel-body">
+      <div id="escritoriosList">
+        <p style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;">A carregar…</p>
+      </div>
+      <div class="def-info-note-v2" style="margin-top:14px;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5"/><circle cx="8" cy="11" r=".5" fill="currentColor"/></svg>
+        <span>Lista guardada em <b>Firestore → config/escritorios</b>. Os restantes módulos passam a ler dinamicamente esta lista — sempre que adicionares ou removeres escritórios aqui, ficam disponíveis em toda a app.</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:32px;text-align:center;font-size:11px;color:var(--muted);">
+    Algartempo Hub · Última sincronização: agora
+  </div>
+
+</div>
+
+<!-- MODAL CRIAR / EDITAR -->
+<div class="modal-overlay" id="modalEscritorio">
+  <div class="modal">
+    <h3 id="modalTitulo">Novo Escritório</h3>
+    <label class="field-label">Nome do escritório</label>
+    <input type="text" class="form-input" id="escNome" placeholder="ex: Faro, Setúbal, Braga…">
+    <label class="field-label">ID interno <span style="color:#bbb;text-transform:none;letter-spacing:0;font-size:9px;">(minúsculas, sem espaços — não pode ser alterado depois)</span></label>
+    <input type="text" class="form-input" id="escId" placeholder="ex: faro, setubal, braga…">
+    <label class="field-label">Cor</label>
+    <div class="color-swatches" id="colorSwatches"></div>
+    <label class="field-label">Ordem na lista</label>
+    <input type="number" class="form-input" id="escOrdem" min="1" step="1" placeholder="10">
+    <label class="field-label" style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;">
+      <input type="checkbox" id="escAtivo" checked>
+      Escritório ativo para os módulos e filtros da app
+    </label>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardar" onclick="guardarEscritorio()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR APAGAR -->
+<div class="modal-overlay" id="modalConfirmar">
+  <div class="modal">
+    <h3>Confirmar eliminação</h3>
+    <p style="font-size:12px;color:var(--muted);line-height:1.8;" id="confirmarTexto"></p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-danger" id="btnConfirmar" onclick="confirmarApagar()">Apagar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/module-registry.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/users-service.js"></script>
+<script src="js/offices-service.js"></script>
+<script src="js/config-escritorios.js"></script>
+<script src="js/app-platform.js"></script>
+<script src="js/definicoes.js"></script>
+</body>
+</html>
