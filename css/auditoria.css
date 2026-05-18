@@ -1,13 +1,6 @@
 /* ── CSS específico de auditoria.html ── */
 .page{max-width:1100px;}
 
-/* FILTROS */
-.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center;}
-
-/* STATS ROW */
-.stat-pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:10px;display:flex;align-items:center;gap:6px;color:var(--muted);}
-.stat-pill strong{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:var(--text);}
-
 /* TIMELINE */
 .timeline{position:relative;padding-left:28px;}
 .timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border);border-radius:2px;}
@@ -31,6 +24,12 @@
 .mod-reclamacoes {background:var(--amber-bg);  color:var(--amber);  border:1px solid var(--amber-border);}
 .mod-utilizadores{background:var(--red-bg);    color:var(--red);    border:1px solid var(--red-border);}
 .mod-calendarios {background:var(--surface2);  color:var(--muted);  border:1px solid var(--border);}
+.mod-perfis      {background:var(--purple-bg); color:var(--purple); border:1px solid var(--purple-border);}
+.mod-escritorios {background:var(--blue-bg);   color:var(--blue);   border:1px solid var(--blue-border);}
+.mod-clientes    {background:var(--green-bg);  color:var(--green);  border:1px solid var(--green-border);}
+.mod-ferias      {background:var(--amber-bg);  color:var(--amber);  border:1px solid var(--amber-border);}
+.mod-despesas    {background:var(--red-bg);    color:var(--red);    border:1px solid var(--red-border);}
+.mod-desconhecido{background:var(--surface2);  color:var(--muted);  border:1px solid var(--border);}
 .tl-acao{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
 .tl-titulo{font-size:12px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tl-hora{font-size:10px;color:var(--muted);white-space:nowrap;margin-left:auto;}
@@ -53,12 +52,9 @@
 /* LOAD MORE */
 .load-more-wrap{text-align:center;padding:20px 0;}
 
-/* ── MEDIA QUERIES — auditoria.html ── */
+/* ── MEDIA QUERIES ── */
 @media(max-width:768px){
   .page{max-width:100%;}
-  .filters{gap:6px;}
-  .filter-select,.filter-input{font-size:10px;padding:5px 9px;}
-  .filter-input{min-width:140px;}
   .timeline{padding-left:18px;}
   .timeline::before{left:4px;}
   .tl-entry::before{left:-16px;width:8px;height:8px;}
@@ -67,13 +63,9 @@
   .tl-titulo{font-size:11px;}
   .tl-hora{display:none;}
   .diff-table{font-size:10px;}
-  .stats-row{gap:6px;}
-  .stat-pill{padding:4px 10px;font-size:9px;}
 }
 @media(max-width:480px){
   .page{padding:12px 10px;}
-  .filters{flex-direction:column;align-items:stretch;}
-  .filter-select,.filter-input{width:100%;}
   .tl-modulo,.tl-acao{font-size:8px;}
   .tl-entry{padding:10px 12px;}
   .diff-table th,.diff-table td{padding:4px 6px;}

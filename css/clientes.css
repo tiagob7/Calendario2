@@ -1,44 +1,17 @@
-/* ── Design tokens (supplement styles.css) ───────────────── */
+/* ── Design tokens (overrides e extensões de styles.css) ───── */
 :root {
-  --r-sm:  6px;
-  --r-md:  10px;
-  --r-lg:  14px;
-  --text-2: #374151;
-  --text-3: #6b7280;
-  --text-4: #9aa3af;
-  --surface-2: var(--surface2);
-  --surface-hover: #f4f6f8;
-  --bg-inset: #eef0f3;
-  --accent-soft: var(--blue-bg);
-  --accent-border: var(--blue-border);
-  --accent-ink: #0c4a6e;
-  --green-soft: var(--green-bg);
-  --red-soft: var(--red-bg);
-  --red-ink: #7f1d1d;
-  --purple-soft: var(--purple-bg);
-  --purple-ink: #4c1d95;
-  --divider: var(--border);
   --shadow-sm: 0 1px 3px rgba(15,23,42,.06);
   --shadow-md: 0 4px 12px rgba(15,23,42,.08);
   --shadow-xl: 0 24px 48px rgba(15,23,42,.18);
   --cli-ease: cubic-bezier(.2,.8,.2,1);
-  --d-fast: 120ms;
-  --d: 200ms;
 }
 
 html.dark {
-  --text-2: #d1d5db;
-  --text-3: #9aa3af;
-  --text-4: #6b7280;
-  --surface-hover: #1e232a;
   --bg-inset: #0d1117;
   --accent-soft: rgba(2,132,199,.12);
   --accent-border: rgba(2,132,199,.3);
-  --accent-ink: #bae6fd;
   --red-soft: rgba(220,38,38,.12);
-  --red-ink: #fecaca;
   --purple-soft: rgba(124,58,237,.12);
-  --purple-ink: #ddd6fe;
 }
 
 /* ── Page ──────────────────────────────────────────────────── */

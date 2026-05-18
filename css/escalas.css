@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap');
-
 :root {
   --bg:#f1f5f9; --surface:#fff; --surface2:#f8fafc; --border:#e2e8f0;
   --text:#0f172a; --muted:#94a3b8; --accent:#0284c7;
@@ -8,7 +6,7 @@
   --red:#dc2626;   --red-bg:#fef2f2;   --red-border:#fecaca;
   --blue-bg:#f0f9ff; --blue-border:#bae6fd;
 }
-html[data-theme="forest"]:not(.dark){--accent:#0f766e;--blue:#0f766e;--blue-bg:#ecfeff;--blue-border:#99f6e4;--bg:#f0fffe;}
+html[data-theme="forest"]:not(.dark){--accent:#0f766e;--blue:#0f766e;--blue-bg:#ecfeff;--blue-border:#99f6e4;--bg:#EDF7F4;}
 html[data-theme="sunset"]:not(.dark){--accent:#c2410c;--blue:#c2410c;--blue-bg:#fff7ed;--blue-border:#fdba74;--bg:#fefaf5;}
 html[data-theme="violet"]:not(.dark){--accent:#7c3aed;--blue:#7c3aed;--blue-bg:#f5f3ff;--blue-border:#c4b5fd;--bg:#faf8ff;}
 /* ── Modo escuro ─────────────────────────────────────── */
@@ -23,11 +21,7 @@ html.dark {
   --purple:#a78bfa;--purple-bg:#180c2e;--purple-border:#341858;
 }
 html.dark body { color-scheme: dark; }
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
-
 .page{max-width:1400px;margin:0 auto;padding:28px 20px 60px;}
-h1{font-family:'Poppins',sans-serif;font-weight:800;font-size:clamp(18px,2vw,26px);letter-spacing:-.03em;margin-bottom:4px;}
 .subtitle{font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:22px;}
 .header-row{margin-bottom:0;}
 .header-top{display:flex;align-items:baseline;gap:16px;margin-bottom:4px;flex-wrap:wrap;}

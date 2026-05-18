@@ -1,8 +1,5 @@
 /* ── utilizadores.css — redesign ── */
 
-/* Page max-width */
-.page { max-width: 1320px; }
-
 /* ── Toolbar row ─────────────────────────────────────────── */
 .u-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 

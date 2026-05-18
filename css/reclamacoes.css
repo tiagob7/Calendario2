@@ -2,66 +2,11 @@
    reclamacoes.css — Design system v2
    ══════════════════════════════════════════════════════════ */
 
-/* ── Tokens adicionais (complementam styles.css) ── */
+/* ── Tokens únicos deste módulo ── */
 :root {
-  --bg-inset:      #eef0f3;
-  --surface-2:     #fafbfc;
-  --surface-hover: #f4f6f8;
-  --border-strong: #d5dae0;
-  --divider:       #eef0f3;
-  --text-2:        #374151;
-  --text-3:        #6b7280;
-  --text-4:        #9aa3af;
-  --accent-soft:   #eff8fd;
-  --accent-border: #bfe2f5;
-  --accent-ink:    #0c4a6e;
-  --on-accent:     #ffffff;
-  --green-soft:    #f0fdf4;
-  --green-border:  #bbf7d0;
-  --green-ink:     #14532d;
-  --amber-soft:    #fffbeb;
-  --amber-border:  #fde68a;
-  --amber-ink:     #78350f;
-  --red-soft:      #fef2f2;
-  --red-border:    #fecaca;
-  --red-ink:       #7f1d1d;
-  --purple-soft:   #f5f3ff;
-  --purple-border: #ddd6fe;
-  --purple-ink:    #4c1d95;
-  --teal-soft:     #f0fdfa;
-  --teal-border:   #99f6e4;
-  --r-xs:  4px;  --r-sm:  6px;  --r-md:  10px;
-  --r-lg:  14px; --r-xl:  18px; --r-2xl: 24px; --r-full: 999px;
-  --shadow-xs: 0 1px 2px rgba(15,23,42,.04);
-  --shadow-sm: 0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
-  --shadow-md: 0 4px 12px -2px rgba(15,23,42,.08),0 2px 4px rgba(15,23,42,.04);
-  --shadow-lg: 0 16px 32px -8px rgba(15,23,42,.12),0 4px 8px rgba(15,23,42,.04);
+  --r-2xl: 24px;
   --shadow-xl: 0 24px 48px -12px rgba(15,23,42,.18);
-  --d-fast: 120ms; --d: 200ms;
-  --ease: cubic-bezier(.2,.8,.2,1);
 }
-html.dark {
-  --bg-inset:      #080a0c;
-  --surface-2:     #181c22;
-  --surface-hover: #1e232a;
-  --border-strong: #333943;
-  --divider:       #1e232a;
-  --text-2:        #d1d5db;
-  --text-3:        #9aa3af;
-  --text-4:        #6b7280;
-  --accent-soft:   #0b2a3a;
-  --accent-border: #164864;
-  --accent-ink:    #bae6fd;
-  --on-accent:     #051722;
-  --green-soft:    #0b2418;  --green-border:  #14532d;  --green-ink:     #bbf7d0;
-  --amber-soft:    #2a1a05;  --amber-border:  #78350f;  --amber-ink:     #fde68a;
-  --red-soft:      #2a0d10;  --red-border:    #7f1d1d;  --red-ink:       #fecaca;
-  --purple-soft:   #1b1236;  --purple-border: #4c1d95;  --purple-ink:    #ddd6fe;
-  --teal-soft:     #062a26;  --teal-border:   #115e59;
-}
-
-/* ── Layout ── */
-.page { max-width: 1320px; }
 
 /* ── Page header ── */
 .page-head {
@@ -257,7 +202,7 @@ html.dark {
 /* Row body */
 .rec-body { min-width: 0; }
 .rec-top { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 8px; margin-bottom: 3px; }
-.rec-num { font-size: 10px; font-weight: 600; color: var(--text-4); font-family: 'DM Mono', 'JetBrains Mono', monospace; white-space: nowrap; }
+.rec-num { font-size: 10px; font-weight: 600; color: var(--text-4); font-family: 'Sora', monospace; white-space: nowrap; }
 .rec-nome { font-size: 13.5px; font-weight: 600; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rec-date { font-size: 11px; color: var(--text-4); white-space: nowrap; }
 .rec-sub { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
@@ -464,8 +409,6 @@ html.dark .sidebar-section { background: #15191f; }
 .notas-input-v2:focus { border-color: var(--accent); }
 
 /* ── Extra button styles ── */
-.btn-ghost { background: transparent; color: var(--text-2); border: 1px solid transparent; }
-.btn-ghost:hover { background: var(--surface-hover); color: var(--text); border-color: var(--border); }
 .btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
 .btn-danger:hover { opacity: .87; }
 

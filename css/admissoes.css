@@ -1,6 +1,6 @@
 /* ── Admissões & Cessações — redesign ── */
 
-/* Design tokens locais (complemento a styles.css) */
+/* Design tokens locais (overrides intencionais de styles.css) */
 :root {
   --r-sm: 8px;
   --r-md: 12px;
@@ -14,15 +14,6 @@
   --surface-hover: #f8fafc;
   --border-strong: #cbd5e1;
   --d-fast: .15s;
-  --green-soft: var(--green-bg);
-  --red-soft: var(--red-bg);
-  --amber-soft: var(--amber-bg);
-  --accent-soft: var(--blue-bg);
-  --accent-border: var(--blue-border);
-  --accent-ink: var(--blue);
-  --on-accent: #fff;
-  --bg-inset: var(--bg);
-  --divider: var(--border);
 }
 html.dark {
   --text-2: #c4c4dc;
@@ -30,15 +21,8 @@ html.dark {
   --text-4: #5a5a80;
   --surface-hover: #1e1e28;
   --border-strong: #3c3c56;
-  --green-soft: var(--green-bg);
-  --red-soft: var(--red-bg);
-  --amber-soft: var(--amber-bg);
   --bg-inset: #12121a;
-  --divider: var(--border);
 }
-
-/* ── Page ──────────────────────────────────────────── */
-.page { max-width: 1320px; }
 
 /* ── Page header ───────────────────────────────────── */
 .page-head {
@@ -82,12 +66,6 @@ html.dark {
   border: 1px solid var(--red-border);
 }
 .btn-danger:hover { background: var(--red); color: #fff; opacity: 1; }
-.btn-ghost {
-  background: transparent;
-  color: var(--text-3);
-  border: 1px solid transparent;
-}
-.btn-ghost:hover { background: var(--surface2); opacity: 1; }
 
 /* ── Flow note (workflow steps banner) ─────────────── */
 .adm-flow-note {

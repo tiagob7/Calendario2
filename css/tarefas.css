@@ -16,12 +16,6 @@ html.dark {
   --bg-inset: #0f0f14;
 }
 
-/* ── Base ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; }
-.page { max-width: 1320px; margin: 0 auto; padding: 32px 20px; }
-h1 { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: clamp(20px,2.5vw,28px); letter-spacing: -.03em; }
-
 /* ── Page header ── */
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
 .kicker { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-ink); margin-bottom: 5px; }
@@ -68,6 +62,10 @@ h1 { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: clamp(20px
 .kanban-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); }
 .kanban-head-left { display: flex; align-items: center; gap: 8px; }
 .col-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.col-dot.tone-aguardar { background: #94a3b8; }
+.col-dot.tone-progresso { background: var(--blue); }
+.col-dot.tone-pendente { background: var(--amber); }
+.col-dot.tone-concluido { background: var(--green); }
 .col-title { font-size: 12px; font-weight: 600; color: var(--text); }
 .col-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; background: var(--border); color: var(--text-3); border-radius: 999px; font-size: 10px; font-weight: 600; }
 .col-add-btn { width: 24px; height: 24px; border-radius: 6px; border: none; background: transparent; color: var(--text-4); font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all var(--d-fast); }
@@ -187,6 +185,7 @@ h1 { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: clamp(20px
 .file-item-del:hover { color: var(--red); }
 .files-empty { font-size: 10px; color: var(--text-4); font-style: italic; }
 .upload-status { font-size: 10px; color: var(--accent-ink); font-style: italic; min-height: 14px; margin-top: 4px; }
+.pending-files-list { margin-top: 6px; }
 
 /* ── Confirm ── */
 .confirm-body { padding: 6px 20px 20px; font-size: 13px; color: var(--text-2); line-height: 1.5; }
@@ -249,6 +248,7 @@ h1 { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: clamp(20px
 .voz-btn-retry, .voz-btn-cancel { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .voz-loading { text-align: center; padding: 14px 0; display: none; }
 .voz-loading.visible { display: block; }
+.voz-loading-copy { font-size: 10px; color: var(--muted); margin-top: 8px; letter-spacing: .05em; }
 .voz-dots { display: inline-flex; gap: 4px; }
 .voz-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-ink); animation: vDot 1.2s ease-in-out infinite; }
 .voz-dots span:nth-child(2) { animation-delay: .2s; }
@@ -259,6 +259,29 @@ h1 { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: clamp(20px
 @keyframes vDot { 0%,80%,100%{transform:scale(0);opacity:.3} 40%{transform:scale(1);opacity:1} }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 @keyframes slideUp { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+/* ── Arquivo ── */
+.col-arquivo-link {
+  display: block; width: 100%; margin-top: 4px; padding: 8px 12px;
+  background: none; border: 1.5px dashed var(--border); border-radius: var(--r-md);
+  font-size: 10px; color: var(--text-4); text-align: center; cursor: pointer;
+  transition: all var(--d-fast); font-family: inherit; letter-spacing: .03em;
+}
+.col-arquivo-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft, color-mix(in srgb, var(--accent) 8%, transparent)); }
+
+.arquivo-search-bar { padding: 14px 20px 10px; border-bottom: 1px solid var(--border); }
+.arquivo-list { overflow-y: auto; max-height: 420px; padding: 8px 0; }
+.arquivo-row { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--border); font-size: 12px; transition: background var(--d-fast); }
+.arquivo-row:last-child { border-bottom: none; }
+.arquivo-row:hover { background: var(--surface-hover); }
+.arquivo-row-num { font-size: 10px; color: var(--text-4); font-weight: 500; flex-shrink: 0; min-width: 28px; }
+.arquivo-row-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: var(--text-3); text-decoration: line-through; }
+.arquivo-row-pills { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; max-width: 160px; }
+.arquivo-row-meta { font-size: 10px; color: var(--text-4); flex-shrink: 0; white-space: nowrap; }
+.arquivo-row-ver { padding: 4px 10px; font-size: 10px; flex-shrink: 0; }
+.arquivo-load-more { padding: 12px 20px; text-align: center; border-top: 1px solid var(--border); }
+.arquivo-count-info { font-size: 10px; color: var(--text-4); margin-right: auto; }
+.arquivo-empty { padding: 40px 20px; text-align: center; font-size: 12px; color: var(--text-4); }
 
 /* ── Responsive ── */
 @media (max-width: 640px) {

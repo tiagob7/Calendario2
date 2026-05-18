@@ -6,7 +6,7 @@
   --text-2: #334155; --text-3: #64748b; --text-4: #94a3b8;
   --surface-hover: #f8fafc; --border-strong: #cbd5e1;
   --d-fast: .15s;
-  --accent-ink: var(--blue); --on-accent: #fff;
+  --accent-ink: var(--blue);
 }
 html.dark {
   --text-2: #cbd5e1; --text-3: #94a3b8; --text-4: #64748b;
