@@ -265,6 +265,7 @@ Ficheiro: `firestore.rules` + índices: `firestore.indexes.json`
 
 - **Inter** — corpo de texto, inputs, botões, labels
 - **Poppins** — títulos, headings de painéis
+- **Sora** — números, valores numéricos, classe `.mono`
 
 ### Tokens de cor base
 

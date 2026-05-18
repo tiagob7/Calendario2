@@ -19,7 +19,11 @@
       <p class="lede">Configurações globais da plataforma Algartempo. As alterações aplicam-se em todos os escritórios.</p>
     </div>
     <div class="actions">
-      <button class="btn btn-secondary btn-sm">
+      <button class="btn btn-secondary btn-sm" onclick="abrirInfoSistema()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:12px;height:12px;"><circle cx="8" cy="8" r="6"/><path d="M8 7v4"/><circle cx="8" cy="5.5" r=".6" fill="currentColor" stroke="none"/></svg>
+        Info do Sistema
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="togglePainel('Documentacao')">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:12px;height:12px;"><rect x="1" y="3" width="14" height="10" rx="1.5"/><path d="M5 7h6M5 10h4"/></svg>
         Documentação
       </button>
@@ -48,6 +52,7 @@
     <h2>Categorias</h2>
     <span class="count">7 secções</span>
   </div>
+
 
   <!-- Cards grid -->
   <div class="def-grid-v2">
@@ -83,7 +88,7 @@
     </button>
 
     <!-- Calendário -->
-    <a class="def-card-v2" href="gerir-calendarios.html">
+    <button class="def-card-v2" id="cardCalendario" onclick="togglePainel('Calendario')">
       <div class="def-card-top">
         <div class="def-card-icon-v2 tone-purple">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12M5 10h2M9 10h2M5 13h2"/></svg>
@@ -95,10 +100,10 @@
         Gerir calendários
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
       </div>
-    </a>
+    </button>
 
     <!-- Perfis de Permissão -->
-    <a class="def-card-v2" href="perfis.html">
+    <button class="def-card-v2" id="cardPerfis" onclick="togglePainel('Perfis')">
       <div class="def-card-top">
         <div class="def-card-icon-v2 tone-teal">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="5" cy="5.5" r="2.2"/><circle cx="11" cy="5.5" r="2.2"/><path d="M1 13c0-2 1.6-3.5 4-3.5s4 1.5 4 3.5"/><path d="M9 12c.5-1.2 1.6-2.5 4-2.5s4 1.5 4 3.5"/></svg>
@@ -110,10 +115,10 @@
         Gerir perfis
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
       </div>
-    </a>
+    </button>
 
     <!-- Auditoria -->
-    <a class="def-card-v2" href="auditoria.html">
+    <button class="def-card-v2" id="cardAuditoria" onclick="togglePainel('Auditoria')">
       <div class="def-card-top">
         <div class="def-card-icon-v2 tone-amber">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2a6 6 0 100 12A6 6 0 008 2z"/><path d="M8 5v3.5l2.5 1.5"/></svg>
@@ -125,7 +130,7 @@
         Ver histórico
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
       </div>
-    </a>
+    </button>
 
     <!-- Aparência -->
     <button class="def-card-v2" id="cardAparencia" onclick="togglePainel('Aparencia')">
@@ -143,7 +148,7 @@
     </button>
 
     <!-- Seed de Dados -->
-    <a class="def-card-v2" href="seed.html">
+    <button class="def-card-v2" id="cardSeed" onclick="togglePainel('Seed')">
       <div class="def-card-top">
         <div class="def-card-icon-v2 tone-red">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="8" cy="11" rx="5" ry="3"/><path d="M8 11V5"/><path d="M8 5C8 5 5.5 3 3 3c0 2.5 2 4 5 4s5-1.5 5-4c-2.5 0-5 2-5 2z"/></svg>
@@ -155,7 +160,7 @@
         Abrir seed
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
       </div>
-    </a>
+    </button>
 
   </div>
 
@@ -221,10 +226,308 @@
     </div>
   </div>
 
+  <!-- PAINEL PERFIS DE PERMISSÃO -->
+  <div class="panel def-panel-v2" id="panelPerfis">
+    <div class="def-panel-head">
+      <div class="def-panel-ic" style="background:var(--teal-bg);color:var(--teal);">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:18px;height:18px;"><circle cx="5" cy="5.5" r="2.2"/><circle cx="11" cy="5.5" r="2.2"/><path d="M1 13c0-2 1.6-3.5 4-3.5s4 1.5 4 3.5"/><path d="M9 12c.5-1.2 1.6-2.5 4-2.5s4 1.5 4 3.5"/></svg>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <h3>Perfis de Permissão</h3>
+        <div class="def-panel-sub" id="perfisSubtitle">A carregar…</div>
+      </div>
+      <a href="perfis.html" class="btn btn-sm btn-secondary">Página completa →</a>
+      <button class="btn btn-primary btn-sm" onclick="defAbrirNovoPerfil()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;"><path d="M8 2v12M2 8h12"/></svg>
+        Novo
+      </button>
+      <button class="btn btn-sm btn-secondary" onclick="togglePainel('Perfis')">Fechar</button>
+    </div>
+    <div class="def-panel-body">
+      <div class="def-perfis-grid" id="defPerfisGrid">
+        <p style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0;">A carregar…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL AUDITORIA -->
+  <div class="panel def-panel-v2" id="panelAuditoria">
+    <div class="def-panel-head">
+      <div class="def-panel-ic" style="background:var(--amber-bg);color:var(--amber);">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:18px;height:18px;"><path d="M8 2a6 6 0 100 12A6 6 0 008 2z"/><path d="M8 5v3.5l2.5 1.5"/></svg>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <h3>Auditoria</h3>
+        <div class="def-panel-sub">Histórico recente de alterações</div>
+      </div>
+      <a href="auditoria.html" class="btn btn-sm btn-secondary">Ver completo →</a>
+      <button class="btn btn-sm btn-secondary" onclick="togglePainel('Auditoria')">Fechar</button>
+    </div>
+    <div class="def-panel-body">
+      <!-- Filtros rápidos -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+        <select class="select-v2" id="defFiltroModulo" onchange="defAplicarFiltros()" style="min-width:140px;">
+          <option value="">Todos os módulos</option>
+          <option value="tarefas">Tarefas</option>
+          <option value="comunicados">Comunicados</option>
+          <option value="admissoes">Admissões</option>
+          <option value="reclamacoes">Reclamações</option>
+          <option value="utilizadores">Utilizadores</option>
+          <option value="calendarios">Calendários</option>
+          <option value="perfis">Perfis</option>
+          <option value="definicoes">Definições</option>
+        </select>
+        <select class="select-v2" id="defFiltroAcao" onchange="defAplicarFiltros()" style="min-width:140px;">
+          <option value="">Todas as ações</option>
+          <option value="criado">Criado</option>
+          <option value="atualizado">Atualizado</option>
+          <option value="eliminado">Eliminado</option>
+          <option value="estado">Estado alterado</option>
+          <option value="permissao">Permissão alterada</option>
+        </select>
+        <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 10px;flex:1;min-width:160px;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px;flex-shrink:0;color:var(--muted);"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/></svg>
+          <input class="input-v2" id="defFiltroTexto" placeholder="Pesquisar…" oninput="defAplicarFiltros()" style="border:none;background:transparent;padding:7px 0;">
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="defLimparFiltros()">Limpar</button>
+      </div>
+      <div id="defStatsAuditoria" style="margin-bottom:10px;"></div>
+      <div id="defTimeline">
+        <p style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0;">A carregar…</p>
+      </div>
+      <div style="text-align:center;padding:12px 0;display:none;" id="defLoadMoreWrap">
+        <button class="btn btn-secondary btn-sm" onclick="defCarregarMaisAuditoria()">Carregar mais registos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL CALENDÁRIO -->
+  <div class="panel def-panel-v2" id="panelCalendario">
+    <div class="def-panel-head">
+      <div class="def-panel-ic" style="background:var(--purple-bg);color:var(--purple);">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:18px;height:18px;"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12M5 10h2M9 10h2M5 13h2"/></svg>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <h3>Gerir Calendários</h3>
+        <div class="def-panel-sub">Feriados, eventos e publicação em múltiplos escritórios</div>
+      </div>
+      <button class="btn btn-sm btn-secondary" onclick="togglePainel('Calendario')">Fechar</button>
+    </div>
+    <div class="def-panel-body">
+      <div id="defCalendarioBody">
+        <p style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;">A carregar…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL SEED DE DADOS -->
+  <div class="panel def-panel-v2" id="panelSeed">
+    <div class="def-panel-head">
+      <div class="def-panel-ic" style="background:var(--red-bg);color:var(--red);">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:18px;height:18px;"><ellipse cx="8" cy="11" rx="5" ry="3"/><path d="M8 11V5"/><path d="M8 5C8 5 5.5 3 3 3c0 2.5 2 4 5 4s5-1.5 5-4c-2.5 0-5 2-5 2z"/></svg>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <h3>Seed de Dados</h3>
+        <div class="def-panel-sub">Apenas para desenvolvimento e testes</div>
+      </div>
+      <button class="btn btn-sm btn-secondary" onclick="togglePainel('Seed')">Fechar</button>
+    </div>
+    <div class="def-panel-body">
+      <div class="def-info-note-v2" style="border-color:var(--red-border);background:var(--red-bg);">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--red);flex-shrink:0;"><path d="M8 2L1 14h14L8 2z"/><path d="M8 7v3"/><circle cx="8" cy="12" r=".5" fill="currentColor"/></svg>
+        <span style="color:var(--red);">Esta ferramenta escreve dados diretamente no Firestore e <b>não pode ser desfeita</b>. Usar apenas em ambiente de testes.</span>
+      </div>
+      <div style="margin-top:16px;text-align:center;">
+        <a href="seed.html" class="btn btn-primary" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:12px;height:12px;"><path d="M10 3h3v3M13 3l-6 6M6 4H3a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1v-3"/></svg>
+          Abrir Seed em nova aba
+        </a>
+        <p style="font-size:11px;color:var(--muted);margin-top:10px;">Acesso restrito a administradores.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL DOCUMENTAÇÃO -->
+  <div class="panel def-panel-v2" id="panelDocumentacao">
+    <div class="def-panel-head">
+      <div class="def-panel-ic" style="background:var(--blue-bg);color:var(--accent);">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:18px;height:18px;"><rect x="1" y="3" width="14" height="10" rx="1.5"/><path d="M5 7h6M5 10h4"/></svg>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <h3>Documentação</h3>
+        <div class="def-panel-sub">Guia rápido de cada secção de Definições</div>
+      </div>
+      <button class="btn btn-sm btn-secondary" onclick="togglePainel('Documentacao')">Fechar</button>
+    </div>
+    <div class="def-panel-body">
+
+      <!-- Grid de secções -->
+      <div class="def-doc-grid">
+
+        <div class="def-doc-section">
+          <div class="def-doc-icon tone-accent">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="5.5" cy="5" r="2.5"/><path d="M1 13c0-2.5 1.8-4 4.5-4s4.5 1.5 4.5 4"/><circle cx="12" cy="4.5" r="1.8"/><path d="M10.5 8c1.5.3 3 1.3 3 3.5"/></svg>
+          </div>
+          <div>
+            <div class="def-doc-title">Utilizadores</div>
+            <div class="def-doc-desc">Criar, editar e desativar contas de colaboradores. Atribuir escritório, role (admin/colaborador) e perfil de permissões. Admins vêem todos os utilizadores; a criação é feita do lado do cliente e fica ativa de imediato.</div>
+            <div class="def-doc-tags">
+              <span class="def-doc-tag">roles: admin · colaborador</span>
+              <span class="def-doc-tag">coleção: utilizadores/{uid}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="def-doc-section">
+          <div class="def-doc-icon tone-green">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="7" width="6" height="8" rx="1"/><rect x="9" y="4" width="6" height="11" rx="1"/><path d="M4 7V4a3 3 0 016 0v7"/></svg>
+          </div>
+          <div>
+            <div class="def-doc-title">Escritórios</div>
+            <div class="def-doc-desc">Gerir as localizações da organização. Cada escritório tem um ID imutável (minúsculas, sem espaços), um nome, cor e ordem de apresentação. Escritórios inativos deixam de aparecer nos módulos. Guardado em <code>config/escritorios</code>.</div>
+            <div class="def-doc-tags">
+              <span class="def-doc-tag">IDs: lowercase, sem espaços</span>
+              <span class="def-doc-tag">coleção: config/escritorios</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="def-doc-section">
+          <div class="def-doc-icon tone-teal">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="5" cy="5.5" r="2.2"/><circle cx="11" cy="5.5" r="2.2"/><path d="M1 13c0-2 1.6-3.5 4-3.5s4 1.5 4 3.5"/><path d="M9 12c.5-1.2 1.6-2.5 4-2.5s4 1.5 4 3.5"/></svg>
+          </div>
+          <div>
+            <div class="def-doc-title">Perfis de Permissão</div>
+            <div class="def-doc-desc">Define conjuntos reutilizáveis de permissões. Cada perfil configura o acesso a cada módulo (Ver / Criar / Gerir). Ao atribuir um perfil a um utilizador, as permissões são propagadas automaticamente para o documento do utilizador no Firestore.</div>
+            <div class="def-doc-tags">
+              <span class="def-doc-tag">permissões: modules.&lt;id&gt;.view / create / gerir</span>
+              <span class="def-doc-tag">coleção: config/perfis</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="def-doc-section">
+          <div class="def-doc-icon tone-amber">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2a6 6 0 100 12A6 6 0 008 2z"/><path d="M8 5v3.5l2.5 1.5"/></svg>
+          </div>
+          <div>
+            <div class="def-doc-title">Auditoria</div>
+            <div class="def-doc-desc">Registo imutável de todas as alterações feitas na plataforma. Cada entrada contém: módulo, ação, utilizador, timestamp e diff antes/depois. As Firestore Rules proíbem update e delete — só append. Útil para rastrear quem alterou o quê.</div>
+            <div class="def-doc-tags">
+              <span class="def-doc-tag">append-only</span>
+              <span class="def-doc-tag">coleção: auditoria/{id}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="def-doc-section">
+          <div class="def-doc-icon tone-purple">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12M5 10h2M9 10h2M5 13h2"/></svg>
+          </div>
+          <div>
+            <div class="def-doc-title">Gerir Calendários</div>
+            <div class="def-doc-desc">Publicar feriados nacionais e eventos personalizados nos calendários de cada escritório. Suporta publicação em múltiplos escritórios em simultâneo, filtros por mês/período e modo de substituição. Os dados são lidos pelo módulo Calendário de todos os colaboradores.</div>
+            <div class="def-doc-tags">
+              <span class="def-doc-tag">coleção: calendarios/{escritorioId}/{YYYY-MM}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="def-doc-section">
+          <div class="def-doc-icon" style="background:var(--purple-bg);color:var(--purple);">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="4" r=".8" fill="currentColor" stroke="none"/><circle cx="11.5" cy="10" r=".8" fill="currentColor" stroke="none"/><circle cx="4.5" cy="10" r=".8" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.6"/></svg>
+          </div>
+          <div>
+            <div class="def-doc-title">Aparência</div>
+            <div class="def-doc-desc">Personalizar o tema de cor global (Azul, Verde, Terracota, Violeta), a cor de destaque e o fundo da página. As preferências são guardadas por utilizador em Firestore e aplicadas via <code>data-theme</code> no elemento HTML.</div>
+            <div class="def-doc-tags">
+              <span class="def-doc-tag">campo: preferencias.dashboard.themePreset</span>
+              <span class="def-doc-tag">temas: default · forest · sunset · violet</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="def-doc-section">
+          <div class="def-doc-icon tone-red">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="8" cy="11" rx="5" ry="3"/><path d="M8 11V5"/><path d="M8 5C8 5 5.5 3 3 3c0 2.5 2 4 5 4s5-1.5 5-4c-2.5 0-5 2-5 2z"/></svg>
+          </div>
+          <div>
+            <div class="def-doc-title">Seed de Dados</div>
+            <div class="def-doc-desc">Ferramenta de desenvolvimento para popular o Firestore com dados de teste. <strong>Não usar em produção.</strong> Escreve diretamente nas coleções e não pode ser desfeito. Acesso restrito a admins.</div>
+            <div class="def-doc-tags">
+              <span class="def-doc-tag def-doc-tag-danger">⚠ apenas em testes</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /def-doc-grid -->
+
+      <!-- Nota técnica -->
+      <div class="def-info-note-v2" style="margin-top:20px;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5"/><circle cx="8" cy="11" r=".5" fill="currentColor"/></svg>
+        <span>Permissões seguem o padrão <code>modules.&lt;modulo&gt;.&lt;acao&gt;</code>. As Firestore Rules validam via <code>map.get()</code> dinâmico — qualquer novo módulo é suportado automaticamente sem alterar as rules.</span>
+      </div>
+
+    </div>
+  </div>
+
   <div style="margin-top:32px;text-align:center;font-size:11px;color:var(--muted);">
     Algartempo Hub · Última sincronização: agora
   </div>
 
+</div>
+
+<!-- MODAL INFO DO SISTEMA -->
+<div class="modal-overlay" id="modalInfoSistema" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-v2" style="width:500px;">
+    <div class="modal-head">
+      <h3>Info do Sistema</h3>
+      <button class="icon-btn" onclick="document.getElementById('modalInfoSistema').classList.remove('open')" title="Fechar">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="infoSistemaBody">
+      <p style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;">A carregar…</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PERFIL (criação/edição inline nas Definições) -->
+<div class="modal-overlay" id="modalPerfilDef" onclick="if(event.target===this)defFecharModalPerfil()">
+  <div class="modal-v2" style="width:620px;">
+    <div class="modal-head">
+      <h3 id="defModalPerfilTitle">Novo Perfil</h3>
+      <button class="icon-btn" onclick="defFecharModalPerfil()" title="Fechar">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="max-height:65vh;overflow-y:auto;">
+      <label class="field-label">Nome do perfil</label>
+      <input class="input-v2" type="text" id="defPerfilNome" placeholder="Ex: Rececionista" style="margin-bottom:16px;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;">Permissões por módulo</div>
+      <div class="matrix" id="defPermMatrix"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="defFecharModalPerfil()">Cancelar</button>
+      <button class="btn btn-primary" id="defBtnGuardarPerfil" onclick="defGuardarPerfil()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM APAGAR PERFIL -->
+<div class="modal-overlay" id="modalConfirmPerfilDef" onclick="if(event.target===this)defFecharConfirmPerfil()">
+  <div class="modal-v2" style="width:400px;">
+    <div class="modal-head">
+      <h3>Apagar perfil?</h3>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--muted);line-height:1.8;" id="defConfirmPerfilTexto"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="defFecharConfirmPerfil()">Cancelar</button>
+      <button class="btn btn-danger" id="defBtnConfirmApagarPerfil" onclick="defExecutarApagarPerfil()">Apagar</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL CRIAR / EDITAR -->
@@ -276,6 +579,9 @@
 <script src="js/offices-service.js"></script>
 <script src="js/config-escritorios.js"></script>
 <script src="js/app-platform.js"></script>
+<script src="js/chat-badge.js"></script>
+<script src="js/auditoria.js"></script>
+<script src="js/perfis-service.js"></script>
 <script src="js/definicoes.js"></script>
 </body>
 </html>

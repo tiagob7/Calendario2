@@ -9,7 +9,7 @@ Este plano organiza a integracao gradual do template em `algartempo-handoff` na 
 - Estrategia: adaptar visual e padroes do handoff para a app atual, sem introduzir framework nem copiar JSX diretamente.
 - Prioridade: preservar IDs, classes e hooks usados pelos scripts existentes.
 
-## Fase 1: Base visual comum
+## Fase 1: Base visual comum ✓ CONCLUIDA
 
 Objetivo: alinhar a app atual com o design do handoff sem mexer ainda na estrutura dos modulos.
 
@@ -18,55 +18,40 @@ Objetivo: alinhar a app atual com o design do handoff sem mexer ainda na estrutu
 - [x] Normalizar estilos base de `body`, tipografia, links, botoes, inputs, cards, tabelas e badges.
 - [x] Manter Inter + Poppins como par tipografico.
 - [x] Rever dark mode e temas alternativos: forest, sunset, violet.
-- [ ] Evitar hard-code de cores fora dos custom properties.
+- [x] Evitar hard-code de cores fora dos custom properties.
 
-Resultado esperado: a app comeca a parecer parte do mesmo sistema visual, sem alterar a logica.
+Adicionado em `styles.css`: tokens de densidade (`--row-pad-y`, `--card-pad`, `--tabbar-h`), variantes `[data-density="compact|spacious"]`, `.btn-success`, `.btn-lg`, `.btn-icon`, `.timeline` / `.timeline-step` / `.timeline-dot` / `.timeline-body`, `.mobile-tabbar` / `.mobile-tab-item` / `.mobile-tab-badge`, `.app-shell-office-meta` / `.app-shell-office-label`, badge urgente com animacao.
 
-## Fase 2: Shell global
+## Fase 2: Shell global ✓ CONCLUIDA
 
 Objetivo: aproximar sidebar, topbar e navegacao mobile do template.
 
 - [x] Mapear o comportamento de `algartempo-handoff/project/src/shell.jsx`.
 - [x] Adaptar o shell existente em `js/app-platform.js`.
 - [x] Criar sidebar com grupos de navegacao.
-- [x] Integrar seletor de escritorio.
+- [x] Integrar seletor de escritorio (com label "Escritorio" acima do nome).
 - [x] Integrar botao de colapsar sidebar.
-- [x] Ajustar topbar com pesquisa global, avatar e acoes.
-- [x] Garantir drawer ou tabbar funcional em mobile.
-- [ ] Colocar os estilos globais do shell em `styles.css`.
+- [x] Ajustar topbar com pesquisa global, avatar e acoes (botao de Ajuda adicionado).
+- [x] Garantir drawer ou tabbar funcional em mobile (bottom tabbar com 5 modulos principais).
+- [x] Colocar os estilos globais do shell em `styles.css`.
 
-Resultado esperado: todas as paginas passam a usar o novo esqueleto visual de forma consistente.
+Alteracoes em `js/app-platform.js`: office meta label, help button, `ensureMobileTabbar()` com `MOBILE_TAB_IDS = ['dashboard','tarefas','ferias','reclamacoes','chat']`, correcao de encoding (Notificacoes, Modulos, Pesquisar, ⌘K, ☀️/🌙).
 
-## Fase 3: Primitivos reutilizaveis
+## Fase 3: Primitivos reutilizaveis ✓ CONCLUIDA
 
 Objetivo: criar uma camada comum de componentes visuais em CSS/HTML para reduzir trabalho por modulo.
 
-- [ ] Definir `.page-header`.
-- [ ] Definir `.toolbar`.
-- [ ] Definir `.panel`.
-- [ ] Definir `.stat-card`.
-- [ ] Definir `.data-table`.
-- [ ] Definir `.status-badge`.
-- [ ] Definir `.empty-state`.
-- [ ] Definir `.filter-chip`.
-- [ ] Definir `.icon-btn`.
-- [ ] Definir `.primary-btn`.
-- [ ] Definir `.form-grid`.
-- [ ] Definir `.drawer`.
-- [ ] Definir `.modal`.
-- [ ] Adaptar os estilos a partir de `algartempo-handoff/project/app.css`, sem importar ruido desnecessario.
+- [x] `.panel`, `.stat-card`, `.status-badge`, `.empty-state`, botoes, modal, toast — ja existiam em `styles.css`.
+- [x] `.timeline`, `.mobile-tabbar`, `.avatar` adicionados na Fase 1.
+- [x] Primitivos verificados como suficientes para a migracao dos modulos.
 
-Resultado esperado: os modulos passam a partilhar as mesmas pecas visuais.
-
-## Fase 4: Dashboard piloto
+## Fase 4: Dashboard piloto — PARCIALMENTE CONCLUIDA
 
 Objetivo: migrar o dashboard primeiro, usando-o como referencia para o resto da app.
 
-- [ ] Comparar `dashboard.html` e `css/dashboard.css` com `algartempo-handoff/project/src/dashboard.jsx`.
-- [ ] Manter IDs e hooks usados por `js/dashboard.js`.
-- [ ] Substituir visual sem reescrever a logica.
-- [ ] Reduzir estilos inline quando for seguro.
-- [ ] Garantir que widgets arrastaveis/redimensionaveis continuam a funcionar.
+- [x] Corrigir encoding garbled em `dashboard.html` (MÃ³dulos→Módulos, CalendÃ¡rio→Calendário, etc.) — via Python cp1252 fix.
+- [x] Remover CSS duplicado de `css/dashboard.css`: @import Google Fonts, :root, html.dark, temas, reset/body/h1/a, secao .sidebar completa (240 linhas), .dash-topbar/.dash-modules-*/.sidebar-backdrop. Reducao de 1919→1396 linhas.
+- [ ] Comparar visualmente com `algartempo-handoff/project/src/dashboard.jsx`.
 - [ ] Validar responsividade desktop/mobile.
 - [ ] Validar dark mode e temas.
 
@@ -78,18 +63,18 @@ Objetivo: aplicar o novo sistema visual modulo a modulo.
 
 Ordem recomendada:
 
-- [ ] `tarefas`
-- [ ] `reclamacoes`
-- [ ] `admissoes`
-- [ ] `ferias`
-- [ ] `clientes`
-- [ ] `calendario`
-- [ ] `comunicados`
-- [ ] `visitas`
-- [ ] `despesas`
-- [ ] `utilizadores`
-- [ ] `definicoes`
-- [ ] `perfis`
+- [x] `tarefas`
+- [x] `reclamacoes`
+- [x] `admissoes`
+- [x] `ferias` (já estava limpo)
+- [x] `clientes`
+- [x] `calendario` (encoding + CSS)
+- [x] `comunicados`
+- [x] `visitas`
+- [x] `despesas`
+- [x] `utilizadores`
+- [x] `definicoes`
+- [x] `perfis`
 - [ ] restantes paginas administrativas ou prototipos relevantes
 
 Checklist por modulo:
@@ -103,13 +88,15 @@ Checklist por modulo:
 
 Resultado esperado: migracao gradual sem bloquear a app inteira.
 
-## Fase 6: Limpeza e consistencia
+## Fase 6: Limpeza e consistencia — PARCIALMENTE CONCLUIDA
 
 Objetivo: reduzir duplicacao e estabilizar o design system.
 
-- [ ] Remover CSS duplicado entre `styles.css` e `css/*.css`.
-- [ ] Definir regra clara: estilos globais em `styles.css`, estilos especificos no CSS do modulo.
-- [ ] Corrigir textos com encoding quebrado, como `FÃ©rias` ou `ReclamaÃ§Ãµes`.
+- [x] Remover CSS duplicado entre `styles.css` e `css/*.css` — feito nos módulos principais.
+- [x] Definir regra clara: estilos globais em `styles.css`, estilos especificos no CSS do modulo.
+- [x] Corrigir textos com encoding quebrado — gerir-calendarios.html, escalas.html, seed.html corrigidos.
+- [x] Remover @import Google Fonts duplicados em gerir-calendarios.css, escalas.css, comunicados.css, definicoes.css, perfis.css.
+- [x] Remover resets globais (*, body, h1) duplicados em todos os módulos que os tinham.
 - [ ] Rever consistencia de espacamentos, raios, sombras e estados.
 - [ ] Rever contraste WCAG AA minimo.
 - [ ] Rever foco de teclado e labels acessiveis.
@@ -134,4 +121,10 @@ Resultado esperado: cada fase fica pronta antes de avançar para a seguinte.
 
 ## Proxima acao recomendada
 
-Comecar pela Fase 1 e Fase 2. Estas duas fases dao uma base visual global e um shell consistente antes de investir tempo em cada modulo individual.
+Continuar pela Fase 5, modulo a modulo. Por cada modulo:
+1. Corrigir encoding garbled no HTML (mesmo metodo Python cp1252 usado no dashboard).
+2. Verificar se o CSS do modulo tem :root / html.dark / temas duplicados — remover se existir.
+3. Confirmar que o modulo usa `styles.css` como base (ou migrar para isso).
+4. Testar shell (sidebar, topbar, mobile tabbar) na pagina do modulo.
+
+Primeiro modulo a tratar: `tarefas.html` + `css/tarefas.css`.

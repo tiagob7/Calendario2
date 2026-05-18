@@ -3,125 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seed — Dados de Teste</title>
+<title>Seed • Dados de Teste</title>
 <link rel="stylesheet" href="styles.css">
-<style>
-:root {
-  --green:  #16a34a; --green-bg:  #dcfce7; --green-border: #bbf7d0;
-  --red:    #dc2626; --red-bg:    #fee2e2; --red-border:   #fecaca;
-  --amber:  #d97706; --amber-bg:  #fef3c7; --amber-border: #fde68a;
-  --blue:   #2563eb; --blue-bg:   #dbeafe; --blue-border:  #bfdbfe;
-  --purple: #7c3aed; --purple-bg: #ede9fe; --purple-border:#c4b5fd;
-}
-* { box-sizing: border-box; }
-body { font-family: 'DM Mono', 'Fira Mono', monospace; background: var(--bg, #f8fafc); color: var(--text, #1e293b); margin: 0; }
-.page { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
-
-h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
-.subtitle { font-size: 11px; color: var(--muted, #94a3b8); margin: 0 0 24px; }
-.warn-banner { background: var(--amber-bg); border: 1px solid var(--amber-border); border-radius: 10px; padding: 10px 14px; font-size: 11px; color: var(--amber); margin-bottom: 22px; display: flex; align-items: flex-start; gap: 8px; }
-.warn-banner svg { flex-shrink: 0; margin-top: 1px; }
-
-/* SECTION */
-.section { background: var(--surface, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
-.section-title { font-size: 11px; font-weight: 600; letter-spacing: .06em; color: var(--muted, #64748b); text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 7px; }
-.section-title svg { width: 13px; height: 13px; }
-
-/* STATUS PILL */
-.status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 500; }
-.pill-ok     { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-border); }
-.pill-err    { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red-border); }
-.pill-warn   { background: var(--amber-bg);  color: var(--amber);  border: 1px solid var(--amber-border); }
-.pill-idle   { background: var(--surface2, #f1f5f9); color: var(--muted, #94a3b8); border: 1px solid var(--border, #e2e8f0); }
-
-/* ESCRITORIOS */
-.esc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-.esc-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; padding: 4px 10px; border-radius: 20px; border: 1.5px solid transparent; cursor: pointer; user-select: none; transition: opacity .12s; }
-.esc-chip .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.esc-chip.off { opacity: .4; }
-
-/* MODULE GRID */
-.mod-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px; }
-.mod-card { background: var(--surface2, #f8fafc); border: 1.5px solid var(--border, #e2e8f0); border-radius: 10px; padding: 12px 14px; cursor: pointer; user-select: none; transition: border-color .12s; }
-.mod-card.on { border-color: var(--blue); background: var(--blue-bg); }
-.mod-card .mc-icon { font-size: 17px; margin-bottom: 5px; }
-.mod-card .mc-name { font-size: 12px; font-weight: 600; color: var(--text, #1e293b); }
-.mod-card .mc-col  { font-size: 10px; color: var(--muted, #94a3b8); font-family: monospace; margin-top: 2px; }
-
-/* COUNT */
-.count-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-.count-row label { font-size: 11px; color: var(--muted, #64748b); white-space: nowrap; }
-.count-row input[type=range] { flex: 1; max-width: 180px; accent-color: var(--blue); }
-.count-val { font-size: 13px; font-weight: 600; min-width: 26px; color: var(--text, #1e293b); }
-
-/* BUTTONS */
-.btn { font-size: 11px; font-weight: 500; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border, #e2e8f0); cursor: pointer; font-family: inherit; background: var(--surface, #fff); color: var(--text, #1e293b); transition: opacity .12s; display: inline-flex; align-items: center; gap: 5px; }
-.btn:hover { opacity: .8; }
-.btn:disabled { opacity: .4; cursor: not-allowed; }
-.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
-.btn-danger  { background: var(--red);  color: #fff; border-color: var(--red); }
-.btn-green   { background: var(--green);color: #fff; border-color: var(--green); }
-.btn-amber   { background: var(--amber);color: #fff; border-color: var(--amber); }
-.btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-
-/* LOG */
-.log-wrap { background: #0f172a; border-radius: 8px; padding: 12px 14px; max-height: 240px; overflow-y: auto; margin-top: 14px; }
-.log-line { font-size: 10px; font-family: 'DM Mono', monospace; line-height: 1.8; white-space: pre-wrap; word-break: break-all; }
-.log-ok   { color: #4ade80; }
-.log-err  { color: #f87171; }
-.log-info { color: #94a3b8; }
-.log-warn { color: #fbbf24; }
-
-/* UTILIZADORES */
-.user-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border, #e2e8f0); font-size: 11px; }
-.user-row:last-child { border-bottom: none; }
-.user-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; flex-shrink: 0; }
-.user-name { font-weight: 500; color: var(--text, #1e293b); }
-.user-email { color: var(--muted, #94a3b8); font-size: 10px; }
-.user-tag { font-size: 9px; padding: 2px 7px; border-radius: 20px; font-weight: 500; }
-.tag-test  { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
-.tag-admin { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
-.tag-col   { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
-.ml-auto { margin-left: auto; }
-.empty-state { text-align: center; padding: 20px; font-size: 11px; color: var(--muted, #94a3b8); }
-
-/* STATS ROW */
-.stats-mini { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-.stat-mini { background: var(--surface2, #f8fafc); border: 1px solid var(--border, #e2e8f0); border-radius: 8px; padding: 6px 12px; font-size: 10px; color: var(--muted, #64748b); }
-.stat-mini b { color: var(--text, #1e293b); font-size: 14px; display: block; }
-
-/* TABS */
-.tabs { display: flex; gap: 2px; background: var(--surface2, #f1f5f9); border-radius: 8px; padding: 3px; margin-bottom: 16px; }
-.tab { flex: 1; text-align: center; font-size: 11px; padding: 5px 8px; border-radius: 6px; cursor: pointer; color: var(--muted, #94a3b8); border: none; background: none; font-family: inherit; }
-.tab.active { background: var(--surface, #fff); color: var(--text, #1e293b); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-
-/* USER FORM */
-.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-.field-label { font-size: 10px; color: var(--muted, #94a3b8); font-weight: 500; letter-spacing: .04em; text-transform: uppercase; display: block; margin-bottom: 4px; }
-.field-input { width: 100%; padding: 7px 10px; font-size: 11px; border: 1px solid var(--border, #e2e8f0); border-radius: 7px; font-family: inherit; background: var(--surface, #fff); color: var(--text, #1e293b); outline: none; }
-.field-input:focus { border-color: var(--blue); }
-.field-select { width: 100%; padding: 7px 10px; font-size: 11px; border: 1px solid var(--border, #e2e8f0); border-radius: 7px; font-family: inherit; background: var(--surface, #fff); color: var(--text, #1e293b); outline: none; }
-
-/* DARK */
-html.dark { --bg: #0f172a; --surface: #1e293b; --surface2: #0f172a; --border: #334155; --text: #f1f5f9; --muted: #64748b; }
-html.dark .log-wrap { background: #020617; }
-
-/* DIVIDER */
-.divider { height: 1px; background: var(--border, #e2e8f0); margin: 14px 0; }
-
-/* TOAST */
-.toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; font-size: 11px; padding: 9px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 999; }
-.toast.show { opacity: 1; }
-</style>
+<link rel="stylesheet" href="css/seed.css">
 </head>
 <body>
 <div class="page">
 
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
-    <h1>🌱 Seed — Dados de Teste</h1>
-    <span id="authStatus" class="status-pill pill-idle">A verificar sessão…</span>
+  <div class="page-head">
+    <div>
+      <div class="kicker">Desenvolvimento</div>
+      <h1>Seed de Dados</h1>
+      <p class="lede">Popula, gere e limpa dados de teste no Firestore. Apenas para administradores.</p>
+    </div>
+    <div class="actions">
+      <span id="authStatus" class="status-pill pill-idle">A verificar sessão…</span>
+    </div>
   </div>
-  <p class="subtitle">Popula, gere e limpa dados de teste no Firestore. Apenas para administradores.</p>
 
   <div class="warn-banner">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path d="M8 2L1 13h14L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
@@ -130,12 +28,12 @@ html.dark .log-wrap { background: #020617; }
 
   <!-- TABS -->
   <div class="tabs">
-    <button class="tab active" onclick="setTab('seed')">🌱 Seed</button>
-    <button class="tab" onclick="setTab('users')">👤 Utilizadores de teste</button>
-    <button class="tab" onclick="setTab('clean')">🗑 Limpar</button>
+    <button class="tab active" onclick="setTab('seed')"> Seed</button>
+    <button class="tab" onclick="setTab('users')"> Utilizadores de teste</button>
+    <button class="tab" onclick="setTab('clean')"> Limpar</button>
   </div>
 
-  <!-- ══════════ TAB SEED ══════════ -->
+  <!--  TAB SEED  -->
   <div id="tabSeed">
     <div class="section">
       <div class="section-title">
@@ -155,22 +53,22 @@ html.dark .log-wrap { background: #020617; }
       </div>
       <div class="mod-grid">
         <div class="mod-card on" data-m="tarefas_todo" onclick="toggleMod(this)">
-          <div class="mc-icon">✅</div>
+          <div class="mc-icon"></div>
           <div class="mc-name">Tarefas</div>
           <div class="mc-col">tarefas_todo</div>
         </div>
         <div class="mod-card on" data-m="admissoes" onclick="toggleMod(this)">
-          <div class="mc-icon">👤</div>
+          <div class="mc-icon"></div>
           <div class="mc-name">Admissões</div>
           <div class="mc-col">admissoes</div>
         </div>
         <div class="mod-card on" data-m="reclamacoes" onclick="toggleMod(this)">
-          <div class="mc-icon">🕐</div>
+          <div class="mc-icon"></div>
           <div class="mc-name">Reclamações</div>
           <div class="mc-col">reclamacoes</div>
         </div>
         <div class="mod-card on" data-m="comunicados" onclick="toggleMod(this)">
-          <div class="mc-icon">📢</div>
+          <div class="mc-icon"></div>
           <div class="mc-name">Comunicados</div>
           <div class="mc-col">comunicados</div>
         </div>
@@ -201,7 +99,7 @@ html.dark .log-wrap { background: #020617; }
     </div>
   </div>
 
-  <!-- ══════════ TAB USERS ══════════ -->
+  <!--  TAB USERS  -->
   <div id="tabUsers" style="display:none;">
     <div class="section">
       <div class="section-title">
@@ -263,12 +161,12 @@ html.dark .log-wrap { background: #020617; }
       </div>
       <div id="usersList"><div class="empty-state">A carregar…</div></div>
       <div class="btn-row">
-        <button class="btn" onclick="carregarUsersTesteUI()">🔄 Actualizar lista</button>
+        <button class="btn" onclick="carregarUsersTesteUI()"> Actualizar lista</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════ TAB CLEAN ══════════ -->
+  <!--  TAB CLEAN  -->
   <div id="tabClean" style="display:none;">
     <div class="section">
       <div class="section-title">
@@ -333,7 +231,7 @@ html.dark .log-wrap { background: #020617; }
         Limpeza total (sem filtro de flag)
       </div>
       <div style="font-size:11px;color:var(--red);margin-bottom:14px;line-height:1.7;">
-        ⚠️ Apaga <b>todos</b> os documentos das colecções seleccionadas, independentemente de terem ou não <code style="font-size:10px;background:#fee2e2;padding:1px 5px;border-radius:4px;">_seed: true</code>. Usa apenas para limpar a BD de desenvolvimento por completo.
+         Apaga <b>todos</b> os documentos das coleções seleccionadas, independentemente de terem ou não <code style="font-size:10px;background:#fee2e2;padding:1px 5px;border-radius:4px;">_seed: true</code>. Usa apenas para limpar a BD de desenvolvimento por completo.
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
@@ -371,7 +269,7 @@ html.dark .log-wrap { background: #020617; }
       <div class="btn-row">
         <button class="btn btn-danger" id="btnNuke" disabled onclick="confirmarNuke()" style="opacity:.4;">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" width="11" height="11"><path d="M2 5h12l-1 9H3L2 5zM1 5h14M6 5V3h4v2"/></svg>
-          Apagar tudo nas colecções seleccionadas
+          Apagar tudo nas coleções seleccionadas
         </button>
       </div>
     </div>
@@ -405,22 +303,22 @@ html.dark .log-wrap { background: #020617; }
 <script src="js/app-platform.js"></script>
 
 <script>
-// ── DATA ──
+//  DATA 
 const NOMES_PROPRIOS = ['Ana','João','Marta','Rui','Sofia','Bruno','Catarina','Pedro','Inês','Miguel','Filipa','Gonçalo','Beatriz','Tiago','Leonor'];
 const APELIDOS       = ['Ferreira','Silva','Costa','Mendes','Lopes','Carvalho','Sousa','Alves','Rodrigues','Santos','Pereira','Oliveira','Martins','Fernandes'];
 const EMPRESAS       = ['TechLabs Lda','Construções ABC SA','LogiFlow Lda','RetailPlus SA','AgriTech Norte Lda','FoodServe SA','IndusPack Lda','AutoServ SA','HealthCare Lda','EventPro SA'];
 const CATEGORIAS     = ['Operador de armazém','Técnico de contabilidade','Comercial','Gestor de projeto','Auxiliar administrativo','Técnico de RH','Motorista','Operador de linha'];
 const MOTIVOS        = ['Rescisão por iniciativa do trabalhador','Caducidade do contrato'];
 const TITULOS_TAR    = ['Relatório mensal','Envio de folhas de ponto','Verificar contrato','Atualizar base de dados','Preparar reunião de equipa','Revisão de processos','Confirmar admissão','Processar cessação','Enviar documentação','Fechar mês'];
-const TITULOS_COM    = ['Reunião de equipa — sexta às 10h','Atualização de processos internos','Aviso: sistema em manutenção','Nova política de férias','Bem-vindos ao novo colega','Encerramento antecipado esta sexta','Formação obrigatória — inscrições abertas'];
-const NOTAS_REC      = ['Trabalhador diz que turno extra não foi registado no ponto','Em análise — aguardar confirmação do cliente','Confirmado pelo chefe de equipa','Enviar para validação salarial',''];
+const TITULOS_COM    = ['Reunião de equipa — sexta às 10h','Atualização de processos internos','Aviso: sistema em manutenção','Nova política de férias','Bem-vindos ao novo colega','Encerramento antecipado esta sexta','Formação obrigatória • inscrições abertas'];
+const NOTAS_REC      = ['Trabalhador diz que turno extra não foi registado no ponto','Em análise • aguardar confirmação do cliente','Confirmado pelo chefe de equipa','Enviar para validação salarial',''];
 
 const db = firebase.firestore();
 let escritoriosSel = [];
 let escritoriosTodos = [];
 let usersTesteList = [];
 
-// ── TABS ──
+//  TABS 
 function setTab(t) {
   ['seed','users','clean'].forEach(x => {
     document.getElementById('tab'+x.charAt(0).toUpperCase()+x.slice(1)).style.display = x===t?'':'none';
@@ -431,7 +329,7 @@ function setTab(t) {
   if (t==='users') carregarUsersTesteUI();
 }
 
-// ── HELPERS ──
+//  HELPERS 
 function rnd(a) { return a[Math.floor(Math.random()*a.length)]; }
 function rndInt(a,b) { return Math.floor(Math.random()*(b-a+1))+a; }
 function rndDate(daysBack, daysAhead) {
@@ -442,7 +340,7 @@ function rndNome() { return rnd(NOMES_PROPRIOS)+' '+rnd(APELIDOS); }
 function rndNif()  { return String(rndInt(100000000,299999999)); }
 function escAtivos() { return escritoriosSel.filter(Boolean); }
 
-// ── LOG ──
+//  LOG 
 function log(msg, cls='log-info', target='logWrap') {
   const wrap = document.getElementById(target);
   const line = document.createElement('div');
@@ -458,14 +356,14 @@ function clearLog() {
   });
 }
 
-// ── TOAST ──
+//  TOAST 
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-// ── ESCRITORIOS ──
+//  ESCRITORIOS 
 async function carregarEscritoriosUI() {
   try {
     const lista = await window.loadEscritorios();
@@ -498,7 +396,7 @@ function toggleEsc(el, id) {
   }
 }
 
-// ── MÓDULOS ──
+//  MÓDULOS 
 function toggleMod(el) {
   el.classList.toggle('on');
 }
@@ -506,23 +404,23 @@ function activeMods() {
   return [...document.querySelectorAll('.mod-card.on')].map(el => el.dataset.m);
 }
 
-// ── BUILDERS ──
+//  BUILDERS 
 // utilizadores reais carregados do Firestore
 let utilizadoresSeed = [];
 async function carregarUtilizadoresSeed() {
   try {
     const snap = await db.collection('utilizadores').where('ativo','==',true).get();
     utilizadoresSeed = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-    log(`  ✓ ${utilizadoresSeed.length} utilizadores carregados para seed`, 'log-info');
+    log(`   ${utilizadoresSeed.length} utilizadores carregados para seed`, 'log-info');
   } catch(e) {
-    log(`  ⚠ Não foi possível carregar utilizadores: ${e.message}`, 'log-warn');
+    log(`   N•o foi possível carregar utilizadores: ${e.message}`, 'log-warn');
   }
 }
 
 function rndUser() {
   if (utilizadoresSeed.length) {
     const u = rnd(utilizadoresSeed);
-    return { uid: u.uid, nome: u.nomeCompleto || u.nome || u.email || '—' };
+    return { uid: u.uid, nome: u.nomeCompleto || u.nome || u.email || '•' };
   }
   return { uid: '', nome: rndNome() };
 }
@@ -624,7 +522,7 @@ function buildComunicado(tag) {
     titulo:     rnd(TITULOS_COM),
     texto:      rnd(['Por favor confirmar presença até quinta.','Consultar o documento em anexo.','O sistema estará offline das 18h às 20h.','Aplicável a partir de janeiro.','Apresentação na próxima segunda.']),
     tipo:       rnd(tipos),
-    autor:      rnd(['Direcção','RH','IT','Operações','Administração']),
+    autor:      rnd(['Direção','RH','IT','Operações','Administração']),
     escritorios:[escs.length ? rnd(escs) : ''],
     estado:     rnd(estados),
     criadoPor:  user.uid,
@@ -640,7 +538,7 @@ const BUILDERS = {
   comunicados:  buildComunicado
 };
 
-// ── SEED ──
+//  SEED 
 async function runSeed() {
   const mods = activeMods();
   if (!mods.length) { toast('Selecciona pelo menos um módulo.'); return; }
@@ -654,18 +552,18 @@ async function runSeed() {
 
   const logW = document.getElementById('logWrap');
   logW.innerHTML = '';
-  log(`▶ Seed iniciada — ${n} registos × ${mods.length} módulo(s)`, 'log-info');
+  log(` Seed iniciada • ${n} registos • ${mods.length} módulo(s)`, 'log-info');
   log(`  Escritórios: ${escAtivos().join(', ')}`, 'log-info');
   log(`  Tag _seed: ${tag}`, 'log-info');
 
   // carregar utilizadores reais para usar nos seeds
-  log('── a carregar utilizadores reais…', 'log-info');
+  log(' a carregar utilizadores reais…', 'log-info');
   await carregarUtilizadoresSeed();
   log('', 'log-info');
 
   let total = 0;
   for (const mod of mods) {
-    log(`── ${mod}`, 'log-warn');
+    log(` ${mod}`, 'log-warn');
     let ok = 0;
     for (let i=0; i<n; i++) {
       try {
@@ -674,21 +572,21 @@ async function runSeed() {
         await db.collection(col).add(doc);
         ok++;
       } catch(e) {
-        log(`  ✗ erro: ${e.message}`, 'log-err');
+        log(`   erro: ${e.message}`, 'log-err');
       }
     }
-    log(`  ✓ ${ok}/${n} documentos criados`, 'log-ok');
+    log(`   ${ok}/${n} documentos criados`, 'log-ok');
     total += ok;
   }
 
   log('', 'log-info');
-  log(`✅ Seed concluída — ${total} documentos no total`, 'log-ok');
-  toast(`✓ ${total} documentos criados`);
+  log(` Seed concluída — ${total} documentos no total`, 'log-ok');
+  toast(` ${total} documentos criados`);
   btn.disabled = false;
   btn.textContent = 'Gerar dados de teste';
 }
 
-// ── UTILIZADORES DE TESTE ──
+//  UTILIZADORES DE TESTE 
 async function criarUserTeste() {
   const nome    = document.getElementById('uNome').value.trim();
   const apelido = document.getElementById('uApelido').value.trim();
@@ -730,8 +628,8 @@ async function criarUserTeste() {
     await db.collection('utilizadores').doc(uid).set(profile);
 
     msgEl.style.color='var(--green)';
-    msgEl.textContent = `✓ Utilizador criado: ${email}`;
-    toast('✓ Utilizador criado com sucesso');
+    msgEl.textContent = ` Utilizador criado: ${email}`;
+    toast(' Utilizador criado com sucesso');
     carregarUsersTesteUI();
   } catch(e) {
     const msgs = { 'auth/email-already-in-use':'Email já registado.','auth/invalid-email':'Email inválido.','auth/weak-password':'Password fraca.' };
@@ -761,7 +659,7 @@ async function carregarUsersTesteUI() {
         <div class="user-avatar" style="background:${cor}">${(u.nomeCompleto||u.email||'?')[0].toUpperCase()}</div>
         <div>
           <div class="user-name">${u.nomeCompleto||u.email}</div>
-          <div class="user-email">${u.email||'—'} · ${u.escritorio||'—'}</div>
+          <div class="user-email">${u.email||'—'} • ${u.escritorio||'—'}</div>
         </div>
         <span class="user-tag ${u.role==='admin'?'tag-admin':'tag-col'}">${u.role||'colaborador'}</span>
         <span class="user-tag tag-test">seed</span>
@@ -777,14 +675,14 @@ async function apagarUserTeste(uid, email) {
   if (!confirm(`Apagar utilizador de teste: ${email}?`)) return;
   try {
     await db.collection('utilizadores').doc(uid).delete();
-    toast('✓ Utilizador apagado do Firestore (conta Auth mantida)');
+    toast(' Utilizador apagado do Firestore (conta Auth mantida)');
     carregarUsersTesteUI();
   } catch(e) {
     toast('Erro: '+e.message);
   }
 }
 
-// ── LIMPAR ──
+//  LIMPAR 
 async function contarSeedDocs() {
   const cols = [
     { id:'cs-tarefas',    col:'tarefas_todo' },
@@ -814,12 +712,12 @@ function confirmarLimpeza() {
     { id:'cleanUsers',      col:'utilizadores',       label:'Utilizadores' },
   ];
   const sel = checkboxes.filter(c => document.getElementById(c.id).checked);
-  if (!sel.length) { toast('Selecciona pelo menos uma colecção.'); return; }
+  if (!sel.length) { toast('Selecciona pelo menos uma coleção.'); return; }
   _cleanPending = sel;
   document.getElementById('modalConfirmText').innerHTML =
-    `Serão apagados todos os documentos com <code style="font-size:10px;background:#fef3c7;color:#d97706;padding:1px 5px;border-radius:4px;">_seed: true</code> das seguintes colecções:<br><br>` +
+    `Serão apagados todos os documentos com <code style="font-size:10px;background:#fef3c7;color:#d97706;padding:1px 5px;border-radius:4px;">_seed: true</code> das seguintes coleções:<br><br>` +
     sel.map(c=>`<b>${c.label}</b>`).join(', ') +
-    `<br><br>Esta acção não pode ser desfeita.`;
+    `<br><br>Esta ação não pode ser desfeita.`;
   document.getElementById('modalConfirm').style.display = 'flex';
 }
 
@@ -838,12 +736,12 @@ async function executarLimpeza() {
 
   const logW = document.getElementById('logWrap2');
   logW.innerHTML = '';
-  log('▶ Limpeza iniciada', 'log-warn', 'logWrap2');
+  log(' Limpeza iniciada', 'log-warn', 'logWrap2');
 
   let total = 0;
   for (const c of pending) {
     try {
-      log(`── ${c.col}`, 'log-info', 'logWrap2');
+      log(` ${c.col}`, 'log-info', 'logWrap2');
       const snap = await db.collection(c.col).where('_seed','==',true).get();
       log(`  ${snap.size} documentos encontrados`, 'log-info', 'logWrap2');
       const BATCH = 450;
@@ -852,21 +750,21 @@ async function executarLimpeza() {
         snap.docs.slice(i,i+BATCH).forEach(d => batch.delete(d.ref));
         await batch.commit();
       }
-      log(`  ✓ ${snap.size} apagados`, 'log-ok', 'logWrap2');
+      log(`   ${snap.size} apagados`, 'log-ok', 'logWrap2');
       total += snap.size;
     } catch(e) {
-      log(`  ✗ erro: ${e.message}`, 'log-err', 'logWrap2');
+      log(`   erro: ${e.message}`, 'log-err', 'logWrap2');
     }
   }
 
   log('', 'log-info', 'logWrap2');
-  log(`✅ Limpeza concluída — ${total} documentos apagados`, 'log-ok', 'logWrap2');
-  toast(`✓ ${total} documentos apagados`);
+  log(` Limpeza concluída — ${total} documentos apagados`, 'log-ok', 'logWrap2');
+  toast(` ${total} documentos apagados`);
   btn.disabled = false; btn.textContent = 'Confirmar apagar';
   await contarSeedDocs();
 }
 
-// ── NUKE (limpeza total) ──
+//  NUKE (limpeza total) 
 function checkNukeInput() {
   const val = document.getElementById('nukeConfirmInput').value;
   const btn = document.getElementById('btnNuke');
@@ -888,13 +786,13 @@ function confirmarNuke() {
     { id:'nukeUtilizadores',  col:'utilizadores',        label:'utilizadores' },
   ];
   const sel = cols.filter(c => document.getElementById(c.id).checked);
-  if (!sel.length) { toast('Selecciona pelo menos uma colecção.'); return; }
+  if (!sel.length) { toast('Selecciona pelo menos uma coleção.'); return; }
   _nukePending = sel;
   document.getElementById('modalConfirmText').innerHTML =
-    `<span style="color:var(--red);font-weight:600;">⚠️ ATENÇÃO — esta acção é irreversível.</span><br><br>` +
-    `Serão apagados <b>TODOS</b> os documentos (sem excepção) das colecções:<br><br>` +
+    `<span style="color:var(--red);font-weight:600;"> ATENÇÃO — esta ação é irreversível.</span><br><br>` +
+    `Serão apagados <b>TODOS</b> os documentos (sem exceção) das coleções:<br><br>` +
     sel.map(c => `<code style="font-size:10px;background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:4px;margin:2px;display:inline-block;">${c.label}</code>`).join(' ') +
-    `<br><br>Não há forma de recuperar os dados apagados.`;
+    `<br><br>N•o há forma de recuperar os dados apagados.`;
   document.getElementById('btnConfirmDel').textContent = 'Apagar tudo';
   document.getElementById('btnConfirmDel').onclick = executarNuke;
   document.getElementById('modalConfirm').style.display = 'flex';
@@ -910,11 +808,11 @@ async function executarNuke() {
 
   const logW = document.getElementById('logWrap2');
   logW.innerHTML = '';
-  log('▶ Limpeza total iniciada', 'log-warn', 'logWrap2');
+  log(' Limpeza total iniciada', 'log-warn', 'logWrap2');
 
   let total = 0;
   for (const c of pending) {
-    log(`── ${c.col}`, 'log-info', 'logWrap2');
+    log(` ${c.col}`, 'log-info', 'logWrap2');
     try {
       let apagados = 0;
       // apagar em rounds de 450 até não haver mais
@@ -925,25 +823,25 @@ async function executarNuke() {
         snap.docs.forEach(d => batch.delete(d.ref));
         await batch.commit();
         apagados += snap.docs.length;
-        log(`  … ${apagados} apagados até agora`, 'log-info', 'logWrap2');
+        log(`  — ${apagados} apagados até agora`, 'log-info', 'logWrap2');
       }
-      log(`  ✓ ${apagados} documentos apagados`, 'log-ok', 'logWrap2');
+      log(`   ${apagados} documentos apagados`, 'log-ok', 'logWrap2');
       total += apagados;
     } catch(e) {
-      log(`  ✗ erro: ${e.message}`, 'log-err', 'logWrap2');
+      log(`   erro: ${e.message}`, 'log-err', 'logWrap2');
     }
   }
 
   log('', 'log-info', 'logWrap2');
-  log(`✅ Limpeza total concluída — ${total} documentos apagados`, 'log-ok', 'logWrap2');
-  toast(`✓ ${total} documentos apagados`);
+  log(` Limpeza total concluída — ${total} documentos apagados`, 'log-ok', 'logWrap2');
+  toast(` ${total} documentos apagados`);
   btn.disabled = false; btn.textContent = 'Confirmar apagar';
   document.getElementById('nukeConfirmInput').value = '';
   checkNukeInput();
   document.getElementById('btnConfirmDel').onclick = executarLimpeza;
 }
 
-// ── AUTH ──
+//  AUTH 
 document.addEventListener('authReady', ({ detail }) => {
   const profile = detail.profile;
   const statusEl = document.getElementById('authStatus');
@@ -951,8 +849,13 @@ document.addEventListener('authReady', ({ detail }) => {
     statusEl.className = 'status-pill pill-err';
     statusEl.textContent = 'Acesso restrito — apenas admins';
     document.querySelector('.page').innerHTML = `
-      <h1>🌱 Seed — Dados de Teste</h1>
-      <div class="warn-banner" style="margin-top:20px;">
+      <div class="page-head">
+        <div>
+          <div class="kicker">Desenvolvimento</div>
+          <h1>Seed de Dados</h1>
+        </div>
+      </div>
+      <div class="warn-banner">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path d="M8 2L1 13h14L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
         Acesso restrito a administradores.
       </div>`;
@@ -960,7 +863,7 @@ document.addEventListener('authReady', ({ detail }) => {
   }
   const nome = profile ? (profile.nomeCompleto||profile.nome||profile.email||'') : '';
   statusEl.className = 'status-pill pill-ok';
-  statusEl.textContent = '✓ Admin: '+nome;
+  statusEl.textContent = ' Admin: '+nome;
 
   window.renderNavbar && window.renderNavbar('definicoes');
   carregarEscritoriosUI();

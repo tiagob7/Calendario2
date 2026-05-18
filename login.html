@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Acesso — Calendário de Trabalho</title>
+<title>Acesso â€” CalendÃ¡rio de Trabalho</title>
+<link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="css/login.css">
 </head>
 <body>
@@ -19,7 +20,7 @@
       </svg>
     </div>
     <div class="login-title">Algartempo</div>
-    <div class="login-subtitle">Gestão interna</div>
+    <div class="login-subtitle">GestÃ£o interna</div>
   </div>
 
   <div class="login-card">
@@ -58,7 +59,7 @@
       <div class="field">
         <label class="field-label">Password</label>
         <div class="pass-wrap">
-          <input class="field-input" type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password"/>
+          <input class="field-input" type="password" id="loginPassword" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="current-password"/>
           <button class="pass-toggle" onclick="togglePass('loginPassword', this)" type="button">
             <svg id="eyeLogin" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/>
@@ -90,15 +91,15 @@
         <input class="field-input" type="email" id="regEmail" placeholder="nome@empresa.pt" autocomplete="email"/>
       </div>
       <div class="field">
-        <label class="field-label">Escritório</label>
+        <label class="field-label">EscritÃ³rio</label>
         <select class="field-select" id="regEscritorio">
-          <option value="">Selecionar…</option>
+          <option value="">Selecionarâ€¦</option>
         </select>
       </div>
       <div class="field">
         <label class="field-label">Password</label>
         <div class="pass-wrap">
-          <input class="field-input" type="password" id="regPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password"/>
+          <input class="field-input" type="password" id="regPassword" placeholder="MÃ­nimo 6 caracteres" autocomplete="new-password"/>
           <button class="pass-toggle" onclick="togglePass('regPassword', this)" type="button">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/>
@@ -110,7 +111,7 @@
       <!-- role note -->
       <div class="role-preview show" id="rolePreview">
         <div class="role-dot" style="background:var(--blue)"></div>
-        <span>Conta criada como <strong>Colaborador</strong> — um Admin pode alterar o perfil posteriormente</span>
+        <span>Conta criada como <strong>Colaborador</strong> â€” um Admin pode alterar o perfil posteriormente</span>
       </div>
 
       <button class="btn-primary" id="btnRegister" onclick="doRegister()" style="margin-top:16px;">
@@ -122,7 +123,7 @@
   </div>
 
   <div class="login-footer">
-    © Algartempo - Uso interno
+    Â© Algartempo - Uso interno
   </div>
 
 </div>
@@ -134,3 +135,4 @@
 <script src="js/login.js"></script>
 </body>
 </html>
+

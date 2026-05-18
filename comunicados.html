@@ -20,17 +20,12 @@
       <p class="lede">Anúncios, actualizações e notícias partilhadas com as equipas.</p>
     </div>
     <div class="hd-actions">
-      <span id="syncStatus"></span>
-      <select id="filterEscritorioCom" style="display:none;" class="filter-escritorio-select" onchange="setFiltroEscritorioCom(this.value)"></select>
       <button class="btn btn-primary btn-sm" id="btnNovoCom" style="display:none;" onclick="openNovoModal()">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 2v12M2 8h12"/></svg>
         Novo comunicado
       </button>
     </div>
   </div>
-
-  <!-- ── Stats ── -->
-  <div class="stat-grid" id="statsBar"></div>
 
   <!-- ── Toolbar ── -->
   <div class="toolbar-card">
@@ -48,6 +43,7 @@
       </svg>
       <input type="search" id="comSearch" placeholder="Pesquisar…" oninput="onSearchInput(this.value)" autocomplete="off">
     </div>
+    <select id="filterEscritorioCom" style="display:none;" class="filter-select-sm" onchange="setFiltroEscritorioCom(this.value)"></select>
     <div class="tb-right">
       <label class="arq-toggle">
         <input type="checkbox" id="showArq" onchange="toggleShowArquivados(this.checked)">
@@ -60,12 +56,19 @@
   <!-- ── Urgente banners ── -->
   <div id="urgenteBanner"></div>
 
+  <!-- ── Afixados ── -->
+  <div id="afixadosSection" style="display:none;">
+    <div class="section-label">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 1.5l1.545 3.13 3.455.502-2.5 2.437.59 3.44L8 9.25l-3.09 1.759.59-3.44L3 5.132l3.455-.503z"/></svg>
+      Afixados
+    </div>
+    <div class="com-grid" id="afixadosGrid"></div>
+  </div>
+
   <!-- ── Urgente / featured grid ── -->
   <div id="pinnedSection" style="display:none;">
     <div class="section-label">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
-        <path d="M8 2L1.5 13h13L8 2z"/><path d="M8 7v3M8 11.5v.5"/>
-      </svg>
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2L1.5 13h13L8 2z"/><path d="M8 7v3M8 11.5v.5"/></svg>
       Urgentes
     </div>
     <div class="com-grid" id="comGrid"></div>
@@ -74,7 +77,7 @@
   <!-- ── Remaining as rows ── -->
   <div id="listSection">
     <div class="section-label-row">
-      <div class="section-label">Recentes</div>
+      <div class="section-label">Mais recentes</div>
     </div>
     <div class="com-list" id="comunicadosList"></div>
   </div>
@@ -181,6 +184,7 @@
 <script src="js/offices-service.js"></script>
 <script src="js/config-escritorios.js"></script>
 <script src="js/app-platform.js"></script>
+<script src="js/chat-badge.js"></script>
 <script src="js/users-service.js"></script>
 <script src="js/comunicados-service.js"></script>
 <script src="js/comunicados.js"></script>

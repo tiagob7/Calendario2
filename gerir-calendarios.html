@@ -4,13 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gerir Calendários</title>
+<link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="css/gerir-calendarios.css">
 <script>if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark');</script>
 </head>
 <body>
 <div class="page">
-  <h1>Gerir Calendários</h1>
-  <p class="subtitle">Administração · Calendários de trabalho</p>
+
+  <!-- Page header -->
+  <div class="page-head">
+    <div>
+      <div class="kicker">Administração</div>
+      <h1>Gerir Calendários</h1>
+      <p class="lede">Publicar feriados, criar eventos e gerir os calendários de trabalho de cada escritório.</p>
+    </div>
+  </div>
 
   <!-- TABS -->
   <div class="tabs-nav">
@@ -32,9 +40,9 @@
     </button>
   </div>
 
-  <!-- ══════════════════════════════════════════
+  <!-- •
        TAB 1 — FERIADOS
-  ══════════════════════════════════════════ -->
+  • -->
   <div class="tab-content active" id="tab-feriados">
     <div class="card">
       <div class="card-title">Feriados Nacionais</div>
@@ -80,9 +88,9 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
+  <!-- •
        TAB 2 — PUBLICAR EVENTOS PERSONALIZADOS
-  ══════════════════════════════════════════ -->
+  • -->
   <div class="tab-content" id="tab-eventos">
     <div class="card">
       <div class="card-title">Publicar Evento em Múltiplos Calendários</div>
@@ -166,9 +174,9 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
+  <!-- •
        TAB 3 — APAGAR EVENTOS
-  ══════════════════════════════════════════ -->
+  • -->
   <div class="tab-content" id="tab-apagar">
     <div class="card">
       <div class="card-title">Apagar Eventos</div>
@@ -238,9 +246,9 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
+  <!-- •
        TAB 4 — VER / PESQUISAR
-  ══════════════════════════════════════════ -->
+  • -->
   <div class="tab-content" id="tab-ver">
     <div class="card">
       <div class="card-title">Ver e Pesquisar Eventos</div>
@@ -291,8 +299,10 @@
 <script src="js/offices-service.js"></script>
 <script src="js/config-escritorios.js"></script>
 <script src="js/app-platform.js"></script>
+<script src="js/chat-badge.js"></script>
 <script src="js/gerir-calendarios.js"></script>
 </body>
 </html>
+
 
 

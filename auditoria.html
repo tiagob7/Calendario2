@@ -21,17 +21,31 @@
 <script src="js/offices-service.js"></script>
 <script src="js/config-escritorios.js"></script>
 <script src="js/app-platform.js"></script>
+<script src="js/chat-badge.js"></script>
 <!-- auditoria.js não é necessário aqui (só leitura) -->
 
 <div class="page">
-  <h1>Auditoria</h1>
-  <div class="subtitle">Histórico de alterações · acesso restrito a admins</div>
+
+  <!-- Page header -->
+  <div class="page-head">
+    <div>
+      <div class="kicker">Administração</div>
+      <h1>Auditoria</h1>
+      <p class="lede">Histórico completo de todas as alterações feitas na plataforma — quem mudou o quê e quando.</p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-secondary btn-sm" onclick="exportarCSV()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="width:12px;height:12px;">
+          <path d="M8 3v8M5 8l3 3 3-3M3 13h10"/>
+        </svg>
+        Exportar CSV
+      </button>
+    </div>
+  </div>
 
   <!-- FILTROS -->
-  <div class="filters">
-    <span class="filter-label">Filtrar</span>
-
-    <select class="filter-select" id="filtroModulo" onchange="aplicarFiltros()">
+  <div class="toolbar-card" style="flex-wrap:wrap;">
+    <select class="select-v2" id="filtroModulo" onchange="aplicarFiltros()" style="min-width:150px;">
       <option value="">Todos os módulos</option>
       <option value="tarefas">Tarefas</option>
       <option value="comunicados">Comunicados</option>
@@ -41,7 +55,7 @@
       <option value="calendarios">Calendários</option>
     </select>
 
-    <select class="filter-select" id="filtroAcao" onchange="aplicarFiltros()">
+    <select class="select-v2" id="filtroAcao" onchange="aplicarFiltros()" style="min-width:150px;">
       <option value="">Todas as ações</option>
       <option value="criado">Criado</option>
       <option value="atualizado">Atualizado</option>
@@ -50,31 +64,25 @@
       <option value="permissao">Permissão alterada</option>
     </select>
 
-    <select class="filter-select" id="filtroEscritorio" onchange="aplicarFiltros()">
+    <select class="select-v2" id="filtroEscritorio" onchange="aplicarFiltros()" style="min-width:150px;">
       <option value="">Todos os escritórios</option>
     </select>
 
-    <input type="text" class="filter-input" id="filtroTexto"
-           placeholder="Pesquisar por título ou utilizador…"
-           oninput="aplicarFiltros()">
+    <div class="search-wrap" style="flex:1;min-width:180px;">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/></svg>
+      <input class="input-v2" id="filtroTexto" placeholder="Pesquisar por título ou utilizador…" oninput="aplicarFiltros()">
+    </div>
 
     <button class="btn btn-secondary btn-sm" onclick="limparFiltros()">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="width:11px;height:11px;">
         <path d="M12 4L4 12M4 4l8 8"/>
       </svg>
       Limpar
     </button>
-
-    <button class="btn btn-secondary btn-sm" onclick="exportarCSV()" style="margin-left:auto;">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
-        <path d="M8 3v8M5 8l3 3 3-3M3 13h10"/>
-      </svg>
-      Exportar CSV
-    </button>
   </div>
 
   <!-- STATS -->
-  <div class="stats-row" id="statsRow"></div>
+  <div class="stat-grid-kpi" id="statsRow"></div>
 
   <!-- LOADING -->
   <div id="loadingBar" class="loading-bar"><div class="loading-bar-inner"></div></div>

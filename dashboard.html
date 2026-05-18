@@ -4,17 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — Painel Geral</title>
+<link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="css/dashboard.css">
 <script>if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark');</script>
 </head>
 <body>
 
-<!-- ═══════════════════════ TOOLTIPS ════════════════════════════ -->
+<!-- • TOOLTIPS • -->
 <div id="admTooltip"></div>
 <div id="taskTooltip"></div>
 <div id="recTooltip"></div>
 
-<!-- ═══════════════════════ PAGE ═════════════════════════════════ -->
+<!-- • PAGE • -->
 <main class="page">
 
   <!-- Welcome bar — greeting + controls -->
@@ -25,7 +26,7 @@
     </div>
     <div class="dash-welcome-right">
       <!-- Admin: filtro de escritório -->
-      <div id="adminEscritorioPills" style="display:none;gap:6px;flex-wrap:wrap;align-items:center;"></div>
+      <div id="adminEscritorioPills"></div>
       <span id="escritorioBadge"></span>
       <span class="last-update" id="lastUpdate"></span>
       <button class="layout-reset-btn" id="layoutResetBtn" onclick="resetLayout()" title="Repor layout original">
@@ -36,7 +37,7 @@
   </div>
 
   <!-- subtitle row kept as hidden anchor for JS updateSubtitle() compat -->
-  <div id="subtitleRow" style="display:none"></div>
+  <div id="subtitleRow" class="is-hidden"></div>
 
   <!-- NAV LINKS (preenchidos pelo module-registry) -->
   <div class="dash-section-label">Módulos</div>
@@ -61,37 +62,17 @@
       <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v4"/><circle cx="8" cy="11.5" r=".6" fill="currentColor"/></svg>
       Reclamações
     </a>
-    <!-- PESQUISA GLOBAL -->
-    <div style="margin-left:auto;position:relative;" id="globalSearchWrap">
-      <button onclick="toggleGlobalSearch()" id="globalSearchBtn" class="global-search-btn">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg>
-        Pesquisar
-      </button>
-      <div id="globalSearchPanel" style="display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:400;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);width:340px;padding:14px;">
-        <input type="text" id="globalSearchInput" placeholder="Pesquisar em tarefas, comunicados, reclamações…"
-          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif;font-size:12px;padding:8px 12px;border-radius:8px;outline:none;margin-bottom:10px;"
-          oninput="doGlobalSearch(this.value)" autocomplete="off">
-        <div id="globalSearchResults" style="max-height:280px;overflow-y:auto;"></div>
-        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <span style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);">Ir para:</span>
-          <a href="tarefas.html" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">Tarefas</a>
-          <a href="comunicados.html" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">Comunicados</a>
-          <a href="reclamacoes.html" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">Reclamações</a>
-          <a href="admissoes.html" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">Admissões</a>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- URGENTE BANNER (preenchido pelo JS) -->
-  <div id="urgenteBanner" style="display:none;"></div>
+  <div id="urgenteBanner" class="is-hidden"></div>
 
   <!-- KPI ROW (preenchida pelo JS) -->
   <div class="dash-section-label">Indicadores</div>
   <div class="kpi-row" id="kpiRow">
-    <div class="kpi-card"><div class="skeleton skeleton-line" style="width:40px;height:32px;margin-bottom:6px;border-radius:6px;"></div><div class="skeleton skeleton-line" style="height:8px;width:60%;"></div></div>
-    <div class="kpi-card"><div class="skeleton skeleton-line" style="width:40px;height:32px;margin-bottom:6px;border-radius:6px;"></div><div class="skeleton skeleton-line" style="height:8px;width:50%;"></div></div>
-    <div class="kpi-card"><div class="skeleton skeleton-line" style="width:40px;height:32px;margin-bottom:6px;border-radius:6px;"></div><div class="skeleton skeleton-line" style="height:8px;width:60%;"></div></div>
+    <div class="kpi-card"><div class="skeleton skeleton-kpi-value"></div><div class="skeleton skeleton-kpi-label"></div></div>
+    <div class="kpi-card"><div class="skeleton skeleton-kpi-value"></div><div class="skeleton skeleton-kpi-label w-50"></div></div>
+    <div class="kpi-card"><div class="skeleton skeleton-kpi-value"></div><div class="skeleton skeleton-kpi-label"></div></div>
   </div>
 
   <!-- MAIN GRID — painéis arrastáveis e redimensionáveis -->
@@ -106,10 +87,10 @@
         <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
       </div>
       <div id="comList" class="com-grid">
-        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
-          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        <div class="loading-skeleton">
+          <div class="skeleton skeleton-line w-75"></div>
+          <div class="skeleton skeleton-line w-55"></div>
+          <div class="skeleton skeleton-line w-85"></div>
         </div>
       </div>
     </div>
@@ -123,13 +104,13 @@
         <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
       </div>
       <div id="tasksList">
-        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
-          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        <div class="loading-skeleton">
+          <div class="skeleton skeleton-line w-75"></div>
+          <div class="skeleton skeleton-line w-55"></div>
+          <div class="skeleton skeleton-line w-85"></div>
         </div>
       </div>
-      <div class="progress-wrap" id="progressWrap" style="display:none;">
+      <div class="progress-wrap" id="progressWrap">
         <div class="progress-row">
           <span>Progresso geral</span>
           <span id="progressPct">0%</span>
@@ -147,10 +128,10 @@
         <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
       </div>
       <div id="admList">
-        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
-          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        <div class="loading-skeleton">
+          <div class="skeleton skeleton-line w-75"></div>
+          <div class="skeleton skeleton-line w-55"></div>
+          <div class="skeleton skeleton-line w-85"></div>
         </div>
       </div>
     </div>
@@ -160,22 +141,22 @@
       <div class="panel-header">
         <span class="drag-handle" title="Arrastar">⠿</span>
         <span class="panel-title"><svg class="panel-title-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg>Reclamações em aberto</span>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div id="recKpis" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div class="panel-header-actions">
+          <div id="recKpis"></div>
           <a class="panel-link" href="reclamacoes.html">Ver todas →</a>
         </div>
         <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
       </div>
       <div id="recList">
-        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
-          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        <div class="loading-skeleton">
+          <div class="skeleton skeleton-line w-75"></div>
+          <div class="skeleton skeleton-line w-55"></div>
+          <div class="skeleton skeleton-line w-85"></div>
         </div>
       </div>
     </div>
 
-    <!-- CALENDÁRIO MINI -->
+    <!-- CALEND•RIO MINI -->
     <div class="panel full" data-panel-id="calendario">
       <div class="panel-header">
         <span class="drag-handle" title="Arrastar">⠿</span>
@@ -184,10 +165,10 @@
         <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
       </div>
       <div id="calMini">
-        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
-          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        <div class="loading-skeleton">
+          <div class="skeleton skeleton-line w-75"></div>
+          <div class="skeleton skeleton-line w-55"></div>
+          <div class="skeleton skeleton-line w-85"></div>
         </div>
       </div>
     </div>
@@ -201,10 +182,10 @@
         <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
       </div>
       <div id="evList">
-        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
-          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        <div class="loading-skeleton">
+          <div class="skeleton skeleton-line w-75"></div>
+          <div class="skeleton skeleton-line w-55"></div>
+          <div class="skeleton skeleton-line w-85"></div>
         </div>
       </div>
     </div>
@@ -217,10 +198,10 @@
         <button class="panel-width-btn" onclick="toggleWidth(this)" title="Alternar largura" aria-label="Alternar largura do painel">⇔</button>
       </div>
       <div id="activityList">
-        <div class="loading-skeleton" style="display:flex;flex-direction:column;gap:10px;padding:4px 0;">
-          <div class="skeleton skeleton-line" style="height:10px;width:75%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:55%;"></div>
-          <div class="skeleton skeleton-line" style="height:10px;width:85%;"></div>
+        <div class="loading-skeleton">
+          <div class="skeleton skeleton-line w-75"></div>
+          <div class="skeleton skeleton-line w-55"></div>
+          <div class="skeleton skeleton-line w-85"></div>
         </div>
       </div>
     </div>
@@ -280,7 +261,7 @@
   </div>
 </aside>
 
-<!-- ═══════════════════════ SCRIPTS ══════════════════════════════ -->
+<!-- • SCRIPTS • -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -293,6 +274,7 @@
 <script src="js/offices-service.js"></script>
 <script src="js/config-escritorios.js"></script>
 <script src="js/app-platform.js"></script>
+<script src="js/chat-badge.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/dashboard-customizer.js"></script>
 
@@ -335,3 +317,5 @@ window.addEventListener('resize', () => {
 
 </body>
 </html>
+
+

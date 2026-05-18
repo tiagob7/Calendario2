@@ -13,28 +13,20 @@
 <div class="page">
 
   <!-- ── Page header ── -->
-  <div class="page-head">
+  <div class="page-head page-header">
     <div>
       <div class="kicker">Produtividade</div>
       <h1>Tarefas</h1>
       <p class="lede">Acompanha o trabalho das equipas com kanban arrastável.</p>
     </div>
-    <div class="hd-actions">
+    <div class="hd-actions page-header-actions">
       <span id="syncStatus"></span>
-      <select id="filterEscritorio" class="filter-escritorio-sel" onchange="setFilterEscritorio(this.value)" style="display:none;"></select>
-      <button class="btn btn-secondary btn-sm mic-trigger-btn" id="btnVoz" onclick="vozAbrir('tarefa')" style="display:none;">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="1" width="6" height="9" rx="3"/><path d="M2 8c0 3.3 2.7 6 6 6s6-2.7 6-6"/><path d="M8 14v2"/></svg>
-        Voz AI
-      </button>
       <button class="btn btn-primary btn-sm" id="btnNovaTarefa" onclick="openTaskForm()">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 2v12M2 8h12"/></svg>
         Nova tarefa
       </button>
     </div>
   </div>
-
-  <!-- ── Stats ── -->
-  <div class="stat-grid" id="statsBar"></div>
 
   <!-- ── Toolbar ── -->
   <div class="toolbar-card">
@@ -47,6 +39,7 @@
     <select class="filter-select-sm" id="filterPessoa" onchange="setFilterPessoa(this.value)">
       <option value="">Todos os criadores</option>
     </select>
+    <select id="filterEscritorio" class="filter-select-sm is-hidden" onchange="setFilterEscritorio(this.value)"></select>
     <div class="tb-right">
       <span class="count-badge" id="countBadge"></span>
     </div>
@@ -61,7 +54,7 @@
          ondrop="onDrop('aguardar')">
       <div class="kanban-head">
         <div class="kanban-head-left">
-          <span class="col-dot" style="background:#94a3b8"></span>
+          <span class="col-dot tone-aguardar"></span>
           <span class="col-title">A aguardar</span>
           <span class="col-count" id="count-aguardar">0</span>
         </div>
@@ -76,7 +69,7 @@
          ondrop="onDrop('progresso')">
       <div class="kanban-head">
         <div class="kanban-head-left">
-          <span class="col-dot" style="background:var(--blue)"></span>
+          <span class="col-dot tone-progresso"></span>
           <span class="col-title">Em progresso</span>
           <span class="col-count" id="count-progresso">0</span>
         </div>
@@ -91,7 +84,7 @@
          ondrop="onDrop('pendente')">
       <div class="kanban-head">
         <div class="kanban-head-left">
-          <span class="col-dot" style="background:var(--amber)"></span>
+          <span class="col-dot tone-pendente"></span>
           <span class="col-title">Pendente</span>
           <span class="col-count" id="count-pendente">0</span>
         </div>
@@ -106,7 +99,7 @@
          ondrop="onDrop('concluido')">
       <div class="kanban-head">
         <div class="kanban-head-left">
-          <span class="col-dot" style="background:var(--green)"></span>
+          <span class="col-dot tone-concluido"></span>
           <span class="col-title">Concluído</span>
           <span class="col-count" id="count-concluido">0</span>
         </div>
@@ -177,7 +170,7 @@
             📎 Adicionar ficheiros
             <input type="file" id="fFicheiros" multiple onchange="onPendingFilesChange(this)">
           </label>
-          <div id="pendingFilesList" style="margin-top:6px;"></div>
+          <div id="pendingFilesList" class="pending-files-list"></div>
           <div class="upload-status" id="formUploadStatus"></div>
         </div>
       </div>
@@ -205,6 +198,32 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- ══ Arquivo Modal ══ -->
+<div class="modal-overlay" id="arquivoModal" onclick="if(event.target===this)closeArquivoModal()">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <span class="modal-title">Arquivo de tarefas</span>
+      <button class="modal-close" onclick="closeArquivoModal()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div class="arquivo-search-bar">
+        <input class="input" id="arquivoSearch" placeholder="Pesquisar por título…"
+               oninput="onArquivoSearch(this.value)" autocomplete="off">
+      </div>
+      <div id="arquivoList" class="arquivo-list"></div>
+      <div id="arquivoLoadMore" class="arquivo-load-more" style="display:none">
+        <button class="btn btn-secondary" onclick="loadMaisArquivo()">Carregar mais</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="arquivo-count-info" id="arquivoCountInfo"></span>
+      <button class="btn btn-secondary" onclick="closeArquivoModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -217,42 +236,10 @@
 <script src="js/offices-service.js"></script>
 <script src="js/config-escritorios.js"></script>
 <script src="js/app-platform.js"></script>
+<script src="js/chat-badge.js"></script>
 <script src="js/tasks-service.js"></script>
 <script src="js/tarefas.js"></script>
 
-<!-- Voz AI Modal -->
-<div class="voz-modal-overlay" id="vozModal">
-  <div class="voz-modal">
-    <div class="voz-modal-header">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="1" width="6" height="9" rx="3"/><path d="M2 8c0 3.3 2.7 6 6 6s6-2.7 6-6"/><path d="M8 14v2"/></svg>
-      <h3 id="vozModalTitulo">Preencher com voz</h3>
-      <button class="voz-modal-close" onclick="vozFechar()">×</button>
-    </div>
-    <div class="voz-modal-body">
-      <div class="voz-mic-wrap">
-        <button class="voz-mic-btn" id="vozMicBtn" onclick="vozToggle()">
-          <svg id="vozMicIcon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="1" width="6" height="9" rx="3"/><path d="M2 8c0 3.3 2.7 6 6 6s6-2.7 6-6"/><path d="M8 14v2"/></svg>
-        </button>
-        <div class="voz-waves">
-          <div class="voz-wave"></div><div class="voz-wave"></div><div class="voz-wave"></div>
-          <div class="voz-wave"></div><div class="voz-wave"></div><div class="voz-wave"></div><div class="voz-wave"></div>
-        </div>
-        <div class="voz-status" id="vozStatus">Clica para falar</div>
-      </div>
-      <div class="voz-transcript" id="vozTranscript">
-        <span id="vozTranscriptFinal"></span><span class="voz-transcript-interim" id="vozTranscriptInterim"></span>
-      </div>
-      <div class="voz-loading" id="vozLoading">
-        <div class="voz-dots"><span></span><span></span><span></span></div>
-        <p style="font-size:10px;color:var(--muted);margin-top:8px;letter-spacing:.05em;">A Claude está a interpretar…</p>
-      </div>
-      <div class="voz-fields" id="vozFields"></div>
-      <div class="voz-actions" id="vozActions">
-        <button class="voz-btn voz-btn-cancel" onclick="vozFechar()">Cancelar</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>

@@ -11,13 +11,20 @@
 <body>
 
 <div class="page">
-  <div class="header-top">
-    <h1>Perfis de Permissão</h1>
-  </div>
-  <p class="subtitle">Define perfis reutilizáveis e atribui-os a utilizadores</p>
 
-  <div class="toolbar">
-    <span class="badge-me" id="meInfo"></span>
+  <div class="page-head">
+    <div>
+      <div class="kicker">Administração</div>
+      <h1>Perfis de Permissão</h1>
+      <p class="lede">Define perfis reutilizáveis de permissões e atribui-os aos colaboradores da organização.</p>
+    </div>
+    <div class="actions">
+      <span id="meInfo" style="font-size:11px;color:var(--muted);"></span>
+      <button class="btn btn-primary" onclick="window.abrirPerfilModal && window.abrirPerfilModal(null)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M8 2v12M2 8h12"/></svg>
+        Novo Perfil
+      </button>
+    </div>
   </div>
 
   <div class="perfis-grid" id="perfisGrid">
@@ -31,30 +38,38 @@
 
 <!-- ── Modal edição/criação de perfil ── -->
 <div class="modal-overlay" id="modalPerfil">
-  <div class="modal">
-    <h3 id="modalTitle">Novo Perfil</h3>
-    <div class="modal-scrollable">
+  <div class="modal-v2" style="width:600px;">
+    <div class="modal-head">
+      <h3 id="modalTitle">Novo Perfil</h3>
+      <button class="icon-btn" onclick="document.getElementById('modalPerfil').classList.remove('open')" title="Fechar">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <div class="modal-body modal-scrollable">
       <label class="field-label">Nome do perfil</label>
-      <input class="field-input" type="text" id="perfilNome" placeholder="Ex: Rececionista">
-
+      <input class="input-v2" type="text" id="perfilNome" placeholder="Ex: Rececionista" style="margin-bottom:16px;">
       <div class="matrix-label">Permissões por módulo</div>
       <div class="matrix" id="permMatrix"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" id="btnCancelarModal">Cancelar</button>
-      <button class="btn-save" id="btnGuardarPerfil">Guardar</button>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" id="btnCancelarModal">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarPerfil">Guardar</button>
     </div>
   </div>
 </div>
 
 <!-- ── Confirm delete ── -->
-<div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-box">
-    <div class="confirm-title">Apagar perfil?</div>
-    <div class="confirm-text" id="confirmText"></div>
-    <div class="confirm-footer">
-      <button class="btn-confirm-cancel" id="btnConfirmCancel">Cancelar</button>
-      <button class="btn-confirm-ok" id="btnConfirmOk">Apagar</button>
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal-v2" style="width:400px;">
+    <div class="modal-head">
+      <h3>Apagar perfil?</h3>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--muted);line-height:1.8;" id="confirmText"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" id="btnConfirmCancel">Cancelar</button>
+      <button class="btn btn-danger" id="btnConfirmOk">Apagar</button>
     </div>
   </div>
 </div>
@@ -70,6 +85,7 @@
 <script src="js/offices-service.js"></script>
 <script src="js/config-escritorios.js"></script>
 <script src="js/app-platform.js"></script>
+<script src="js/chat-badge.js"></script>
 <script src="js/perfis-service.js"></script>
 <script src="js/perfis.js"></script>
 </body>
