@@ -130,6 +130,17 @@
       }, err => console.warn('[chat] listenUnreadCounts error', err));
   }
 
+  /* ── Carregar mensagens anteriores (paginação scroll-up) ── */
+  async function loadMensagensAnteriores(conversaId, beforeTs, limit) {
+    const snap = await db.collection('conversas').doc(conversaId)
+      .collection('mensagens')
+      .orderBy('ts', 'asc')
+      .endBefore(beforeTs)
+      .limitToLast(limit || 40)
+      .get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+
   /* ── Carregar utilizadores para o picker ── */
   async function loadUtilizadores() {
     const snap = await db.collection('utilizadores').where('ativo', '==', true).get();
@@ -142,6 +153,7 @@
     createGroup,
     listenConversas,
     listenMensagens,
+    loadMensagensAnteriores,
     sendMensagem,
     markRead,
     listenUnreadCounts,

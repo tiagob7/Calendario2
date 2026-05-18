@@ -147,6 +147,16 @@ async function submitComunicado() {
 }
 
 // ── Archive / Delete ──────────────────────────────────────────────────────
+async function togglePin(id, current) {
+  try {
+    await col.doc(id).update({ pinned: !current });
+    _invalidateComCache();
+    comunicados = comunicados.map(c => c.id === id ? {...c, pinned: !current} : c);
+    render();
+    toast(current ? 'Comunicado desafixado.' : 'Comunicado afixado.');
+  } catch(e) { toast('Erro ao afixar.'); }
+}
+
 async function toggleArquivado(id, current) {
   try {
     await col.doc(id).update({ arquivado: !current });
@@ -204,32 +214,7 @@ function setFiltroEscritorioCom(val) {
 }
 
 // ── Render ────────────────────────────────────────────────────────────────
-function render() { renderStats(); renderUrgenteBanner(); renderList(); }
-
-function renderStats() {
-  const base    = filtroEscritorio ? comunicados.filter(c => matchComunicadoEscritorio(c, filtroEscritorio)) : comunicados;
-  const total   = base.filter(c => !c.arquivado).length;
-  const gerais  = base.filter(c => c.tipo === 'geral' && !c.arquivado).length;
-  const urg     = base.filter(c => c.tipo === 'urgente' && !c.arquivado).length;
-  const infos   = base.filter(c => (c.tipo === 'info' || c.tipo === 'aviso') && !c.arquivado).length;
-  document.getElementById('statsBar').innerHTML = `
-    <div class="stat-tile s-total">
-      <div class="stat-tile-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 9a5 5 0 01-5 5H3l-2 2V4a2 2 0 012-2h6a5 5 0 015 5z"/></svg></div>
-      <div><div class="stat-tile-num">${total}</div><div class="stat-tile-lbl">Activos</div></div>
-    </div>
-    <div class="stat-tile s-geral">
-      <div class="stat-tile-icon">${TIPO_ICON.geral}</div>
-      <div><div class="stat-tile-num">${gerais}</div><div class="stat-tile-lbl">Gerais</div></div>
-    </div>
-    <div class="stat-tile s-urgente">
-      <div class="stat-tile-icon">${TIPO_ICON.urgente}</div>
-      <div><div class="stat-tile-num">${urg}</div><div class="stat-tile-lbl">Urgentes</div></div>
-    </div>
-    <div class="stat-tile s-info">
-      <div class="stat-tile-icon">${TIPO_ICON.info}</div>
-      <div><div class="stat-tile-num">${infos}</div><div class="stat-tile-lbl">Info/Aviso</div></div>
-    </div>`;
-}
+function render() { renderUrgenteBanner(); renderList(); }
 
 function renderUrgenteBanner() {
   const banner = document.getElementById('urgenteBanner');
@@ -248,12 +233,23 @@ function renderList() {
   const cb = document.getElementById('countBadge');
   if (cb) cb.textContent = filtered.length + ' comunicado' + (filtered.length !== 1 ? 's' : '');
 
-  const urgentes = filtered.filter(c => c.tipo === 'urgente');
-  const rest     = filtered.filter(c => c.tipo !== 'urgente');
+  const isPinnedActive = c => c.pinned && !c.arquivado;
+  const pinned   = filtered.filter(c => isPinnedActive(c));
+  const urgentes = filtered.filter(c => c.tipo === 'urgente' && !isPinnedActive(c));
+  const rest     = filtered.filter(c => c.tipo !== 'urgente' && !isPinnedActive(c));
 
-  const pinnedSection = document.getElementById('pinnedSection');
-  const comGrid       = document.getElementById('comGrid');
-  const comList       = document.getElementById('comunicadosList');
+  const afixadosSection = document.getElementById('afixadosSection');
+  const afixadosGrid    = document.getElementById('afixadosGrid');
+  const pinnedSection   = document.getElementById('pinnedSection');
+  const comGrid         = document.getElementById('comGrid');
+  const comList         = document.getElementById('comunicadosList');
+
+  if (pinned.length) {
+    afixadosSection.style.display = '';
+    afixadosGrid.innerHTML = pinned.map(c => renderComCard(c)).join('');
+  } else {
+    afixadosSection.style.display = 'none';
+  }
 
   if (urgentes.length) {
     pinnedSection.style.display = '';
@@ -270,19 +266,25 @@ function renderList() {
 }
 
 function renderComCard(c) {
-  const isArq   = c.arquivado;
+  const isArq    = c.arquivado;
   const iniciais = (c.autor || '?').split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase();
-  const icon    = TIPO_ICON[c.tipo] || TIPO_ICON.geral;
-  return `<article class="com-card tipo-${c.tipo}${isArq?' arquivado':''}" onclick="openDetail('${c.id}')">
+  const canGerir = window.temPermissao && window.temPermissao('modules.comunicados.manage');
+  const starSvg  = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2l1.545 3.13L13 5.633l-2.5 2.437.59 3.44L8 9.75l-3.09 1.76.59-3.44L3 5.633l3.455-.503z"/></svg>';
+  const starBtn  = canGerir ? `<button class="btn-star${c.pinned?' active':''}" onclick="event.stopPropagation();togglePin('${c.id}',${!!c.pinned})" title="${c.pinned?'Desafixar':'Afixar'}">${starSvg}</button>` : '';
+  const deptLabel = escHtml(c.dept || TIPO_LABEL[c.tipo] || c.tipo);
+  const icon      = TIPO_ICON[c.tipo] || TIPO_ICON.geral;
+  return `<article class="com-card tipo-${c.tipo}${isArq?' arquivado':''}${c.pinned?' pinned':''}" onclick="openDetail('${c.id}')">
     <div class="com-card-head">
-      <div class="com-icon">${icon}</div>
+      <span class="com-card-tipo-icon">${icon}</span>
       <div style="flex:1;min-width:0;">
         <div class="com-card-meta">
-          <span class="pill ${c.tipo}">${TIPO_LABEL[c.tipo]||c.tipo}</span>
+          <span class="pill neutral">${deptLabel}</span>
+          <span class="tipo-dot ${c.tipo}"></span>
           ${isArq?'<span class="pill neutral">Arquivado</span>':''}
         </div>
         <div class="com-card-title">${escHtml(c.titulo)}</div>
       </div>
+      ${starBtn}
     </div>
     <p class="com-card-resumo">${escHtml(c.texto||'')}</p>
     <div class="com-card-foot">
@@ -295,14 +297,18 @@ function renderComCard(c) {
 }
 
 function renderComRow(c) {
-  const isArq   = c.arquivado;
+  const isArq    = c.arquivado;
   const iniciais = (c.autor || '?').split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase();
-  const icon    = TIPO_ICON[c.tipo] || TIPO_ICON.geral;
+  const canGerir = window.temPermissao && window.temPermissao('modules.comunicados.manage');
+  const starSvg  = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2l1.545 3.13L13 5.633l-2.5 2.437.59 3.44L8 9.75l-3.09 1.76.59-3.44L3 5.633l3.455-.503z"/></svg>';
+  const starBtn  = canGerir ? `<button class="btn-star${c.pinned?' active':''}" onclick="event.stopPropagation();togglePin('${c.id}',${!!c.pinned})" title="${c.pinned?'Desafixar':'Afixar'}">${starSvg}</button>` : '';
+  const deptLabel = escHtml(c.dept || TIPO_LABEL[c.tipo] || c.tipo);
   return `<div class="com-row${isArq?' arquivado':''}" onclick="openDetail('${c.id}')">
-    <div class="com-icon sm">${icon}</div>
+    ${starBtn}
     <div class="com-row-body">
       <div class="com-row-top">
-        <span class="pill ${c.tipo}">${TIPO_LABEL[c.tipo]||c.tipo}</span>
+        <span class="pill neutral">${deptLabel}</span>
+        <span class="tipo-dot ${c.tipo}"></span>
         ${isArq?'<span class="pill neutral">Arquivado</span>':''}
         <span class="com-row-date">${fmtShort(c.criadoEm)}</span>
       </div>
@@ -346,6 +352,7 @@ function openDetail(id) {
     <div class="detail-text">${escHtml(c.texto||'')}</div>
     ${dests ? `<div class="detail-dest-box"><strong>Destinatários:</strong> ${escHtml(dests)}</div>` : ''}
     ${canGerir ? `<div class="com-admin-row">
+      <button class="btn-archive${c.pinned?' active':''}" onclick="togglePin('${c.id}',${!!c.pinned});closeDetail()">★ ${c.pinned?'Desafixar':'Afixar'}</button>
       <button class="btn-archive${isArq?' active':''}" onclick="toggleArquivado('${c.id}',${isArq})">${isArq?'↩ Restaurar':'Arquivar'}</button>
       <button class="btn-del" onclick="deleteComunicado('${c.id}')">Eliminar</button>
     </div>` : ''}`;

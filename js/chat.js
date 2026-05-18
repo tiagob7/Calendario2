@@ -13,6 +13,10 @@ let _unsubLidos = null;
 let _allUsers = [];
 let _groupSelected = [];
 let _showInfo = false;
+let _allMsgs = [];
+let _oldestTs = null;
+let _loadingOlder = false;
+let _hasMoreOlder = true;
 
 /* ══════════════════════════════════════════════════════
    UTILITÁRIOS
@@ -69,6 +73,10 @@ function formatMsgDay(ts) {
   const DIAS  = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
   const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   return `${DIAS[d.getDay()]}, ${d.getDate()} ${MESES[d.getMonth()]}`;
+}
+
+function isOnline(u) {
+  return u && u.ultimoAcesso && (Date.now() - u.ultimoAcesso < 180000);
 }
 
 function scrollToBottom(force) {
@@ -160,7 +168,8 @@ function buildConversaItem(c) {
     wrap.className = 'chat-ava-wrap';
     wrap.appendChild(buildAvatar(nome, uid, 36));
     const dot = document.createElement('span');
-    dot.className = 'status-dot offline';
+    const otherUser = _allUsers.find(u => u.uid === uid);
+    dot.className = 'status-dot ' + (isOnline(otherUser) ? 'online' : 'offline');
     wrap.appendChild(dot);
     item.appendChild(wrap);
   }
@@ -204,11 +213,27 @@ function openConversa(conversaId) {
 
   if (_unsubMensagens) { _unsubMensagens(); _unsubMensagens = null; }
   document.getElementById('chatMessages').innerHTML = '';
+  _allMsgs = [];
+  _oldestTs = null;
+  _loadingOlder = false;
+  _hasMoreOlder = true;
 
   _unsubMensagens = ChatService.listenMensagens(conversaId, 40, msgs => {
-    renderMensagens(msgs, conversa || { tipo: 'dm' });
-    if (msgs.length) {
-      const lastTs = msgs[msgs.length - 1].ts;
+    // Merge live snapshot: only add messages not already in _allMsgs
+    if (_allMsgs.length === 0) {
+      _allMsgs = msgs;
+    } else {
+      const known = new Set(_allMsgs.map(m => m.id));
+      const newOnes = msgs.filter(m => !known.has(m.id));
+      if (newOnes.length) _allMsgs = [..._allMsgs, ...newOnes];
+    }
+    if (_allMsgs.length > 0 && _oldestTs === null) {
+      _oldestTs = _allMsgs[0].ts;
+      if (msgs.length < 40) _hasMoreOlder = false;
+    }
+    renderMensagens(_allMsgs, conversa || { tipo: 'dm' });
+    if (_allMsgs.length) {
+      const lastTs = _allMsgs[_allMsgs.length - 1].ts;
       ChatService.markRead(_uid, conversaId, lastTs).catch(() => {});
       _lidos[conversaId] = lastTs;
       renderConversaList(document.getElementById('chatSearch').value);
@@ -327,7 +352,7 @@ function renderInfoPanel(conversa) {
         <div class="msg-ava" style="width:56px;height:56px;background:${uidColor(uid)};font-size:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Poppins',sans-serif;font-weight:700;">${initials(oNome)}</div>
         <div class="chat-info-avatar-name">${esc(oNome)}</div>
         <div class="chat-info-status">
-          <span class="status-dot-inline offline"></span>Offline
+          <span class="status-dot-inline ${isOnline(other) ? 'online' : 'offline'}"></span>${isOnline(other) ? 'Online' : 'Offline'}
         </div>
       </div>
       <div class="chat-info-section">
@@ -357,7 +382,7 @@ function closeThread() {
 /* ══════════════════════════════════════════════════════
    RENDER — MENSAGENS
    ══════════════════════════════════════════════════════ */
-function renderMensagens(msgs, conversa) {
+function renderMensagens(msgs, conversa, skipScroll) {
   const el = document.getElementById('chatMessages');
   const isGroup = conversa && conversa.tipo === 'grupo';
   el.innerHTML = '';
@@ -416,7 +441,46 @@ function renderMensagens(msgs, conversa) {
     el.appendChild(wrap);
   });
 
-  scrollToBottom(true);
+  if (!skipScroll) scrollToBottom(true);
+}
+
+/* ══════════════════════════════════════════════════════
+   PAGINAÇÃO — CARREGAR MENSAGENS ANTERIORES
+   ══════════════════════════════════════════════════════ */
+async function loadOlderMessages() {
+  if (_loadingOlder || !_hasMoreOlder || !_currentConversaId || _oldestTs === null) return;
+  _loadingOlder = true;
+
+  const msgsEl = document.getElementById('chatMessages');
+  const spinner = document.createElement('div');
+  spinner.id = 'chatLoadSpinner';
+  spinner.className = 'chat-load-spinner';
+  msgsEl.prepend(spinner);
+
+  try {
+    const older = await ChatService.loadMensagensAnteriores(_currentConversaId, _oldestTs, 40);
+    const sp = document.getElementById('chatLoadSpinner');
+    if (sp) sp.remove();
+
+    if (!older.length) { _hasMoreOlder = false; return; }
+
+    const prevScrollHeight = msgsEl.scrollHeight;
+    const existingIds = new Set(_allMsgs.map(m => m.id));
+    const fresh = older.filter(m => !existingIds.has(m.id));
+    _allMsgs = [...fresh, ..._allMsgs];
+    _oldestTs = _allMsgs[0].ts;
+    if (fresh.length < 40) _hasMoreOlder = false;
+
+    const conversa = _conversas.find(c => c.id === _currentConversaId);
+    renderMensagens(_allMsgs, conversa || { tipo: 'dm' }, true);
+    msgsEl.scrollTop = msgsEl.scrollHeight - prevScrollHeight;
+  } catch (e) {
+    console.warn('[chat] loadOlderMessages error', e);
+    const sp = document.getElementById('chatLoadSpinner');
+    if (sp) sp.remove();
+  } finally {
+    _loadingOlder = false;
+  }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -581,9 +645,16 @@ window.bootProtectedPage({ activePage:'chat', moduleId:'chat' }, ({ profile }) =
     chatList.innerHTML = '<div class="chat-list-empty">A carregar conversas...</div>';
   }
 
-  ChatService.loadUtilizadores()
-    .then(users => { _allUsers = users; })
-    .catch(err => console.warn('[chat] loadUtilizadores error', err));
+  function refreshUsers() {
+    ChatService.loadUtilizadores()
+      .then(users => {
+        _allUsers = users;
+        renderConversaList(document.getElementById('chatSearch').value);
+      })
+      .catch(err => console.warn('[chat] loadUtilizadores error', err));
+  }
+  refreshUsers();
+  setInterval(refreshUsers, 120000);
 
   _unsubLidos = ChatService.listenUnreadCounts(_uid, lidos => {
     _lidos = lidos;
@@ -652,6 +723,11 @@ window.bootProtectedPage({ activePage:'chat', moduleId:'chat' }, ({ profile }) =
     updateSendBtn();
   });
   document.getElementById('btnSend').addEventListener('click', sendMessage);
+
+  // Scroll-up para carregar mensagens anteriores
+  document.getElementById('chatMessages').addEventListener('scroll', function () {
+    if (this.scrollTop < 60) loadOlderMessages();
+  });
 
   // Mobile back
   window.addEventListener('popstate', () => {

@@ -314,6 +314,9 @@
   }
   window.escHtml = escHtml;
 
+  // Expor para uso externo (ex: botão Novo Perfil na page-head e painel de definições)
+  window.abrirPerfilModal = abrirModal;
+
   // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
   window.bootProtectedPage({

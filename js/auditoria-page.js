@@ -1,3 +1,31 @@
+// ── Labels ──────────────────────────────────────────────
+window._auditoriaLabels = {
+  MODULO_LABELS: {
+    tarefas:      'Tarefas',
+    comunicados:  'Comunicados',
+    admissoes:    'Admissões',
+    reclamacoes:  'Reclamações',
+    utilizadores: 'Utilizadores',
+    calendarios:  'Calendários',
+    perfis:       'Perfis',
+    escritorios:  'Escritórios',
+    definicoes:   'Definições',
+    clientes:     'Clientes',
+    ferias:       'Férias',
+    visitas:      'Visitas',
+    despesas:     'Despesas',
+    escalas:      'Escalas',
+    chat:         'Chat',
+  },
+  ACAO_LABELS: {
+    criado:     'Criado',
+    atualizado: 'Atualizado',
+    eliminado:  'Eliminado',
+    estado:     'Estado alterado',
+    permissao:  'Permissão alterada',
+  },
+};
+
 // ── Estado ──────────────────────────────────────────────
 const db        = firebase.firestore();
 const PAGE_SIZE = 50;
@@ -109,22 +137,41 @@ function limparFiltros() {
 
 // ── Render Stats ─────────────────────────────────────────
 function renderStats() {
-  const contagens = {};
-  filtrados.forEach(r => {
-    contagens[r.modulo] = (contagens[r.modulo] || 0) + 1;
-  });
+  const total       = filtrados.length;
+  const criados     = filtrados.filter(r => r.acao === 'criado').length;
+  const atualizados = filtrados.filter(r => r.acao === 'atualizado').length;
+  const eliminados  = filtrados.filter(r => r.acao === 'eliminado').length;
 
-  const { MODULO_LABELS } = window._auditoriaLabels || {};
-  const labels = MODULO_LABELS || {};
-
-  const html = [
-    `<div class="stat-pill"><strong>${filtrados.length}</strong> registo(s)</div>`,
-    ...Object.entries(contagens).map(([m, n]) =>
-      `<div class="stat-pill"><strong>${n}</strong> ${labels[m] || m}</div>`
-    )
-  ].join('');
-
-  document.getElementById('statsRow').innerHTML = html;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-tile">
+      <div class="stat-lbl2">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:12px;height:12px;opacity:.6"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M6 6h4M6 9h3"/></svg>
+        Total
+      </div>
+      <div class="stat-val2">${total}</div>
+      <div class="stat-delta">${total === 1 ? '1 registo' : total + ' registos'}</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-lbl2">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:12px;height:12px;color:var(--green);opacity:.8"><circle cx="8" cy="8" r="6"/><path d="M5.5 8h5M8 5.5v5"/></svg>
+        Criados
+      </div>
+      <div class="stat-val2" style="color:var(--green)">${criados}</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-lbl2">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:12px;height:12px;color:var(--amber);opacity:.8"><path d="M2 12l2-2 6-6 2 2-6 6-2 2-2-2z"/><path d="M11 3l2 2"/></svg>
+        Atualizados
+      </div>
+      <div class="stat-val2" style="color:var(--amber)">${atualizados}</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-lbl2">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:12px;height:12px;color:var(--red);opacity:.8"><path d="M3 5h10l-1 8H4L3 5z"/><path d="M1 5h14M6 5V3h4v2"/></svg>
+        Eliminados
+      </div>
+      <div class="stat-val2" style="color:var(--red)">${eliminados}</div>
+    </div>`;
 }
 
 // ── Render Timeline ──────────────────────────────────────

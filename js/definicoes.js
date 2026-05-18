@@ -34,7 +34,11 @@ const FUNDOS_RAPIDOS = [
   { hex: '#f4f4f5', label: 'Cinza neutro' },
 ];
 
-let paineis = { Aparencia: false, Utilizadores: false, Escritorios: false };
+let paineis = {
+  Aparencia: false, Utilizadores: false, Escritorios: false,
+  Perfis: false, Auditoria: false, Calendario: false, Seed: false,
+  Documentacao: false,
+};
 
 const THEME_PRESETS = [
   { id: 'default', label: 'Azul clean',       accent: '#0284c7', bg: '#f1f5f9' },
@@ -88,14 +92,14 @@ window.bootProtectedPage({
   });
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') fecharModal();
+    if (e.key === 'Escape') fecharTodosModais();
     if (e.key === 'Enter' && document.getElementById('modalEscritorio').classList.contains('open')) {
       guardarEscritorio();
     }
   });
 
   document.querySelectorAll('.modal-overlay').forEach(o =>
-    o.addEventListener('click', e => { if (e.target === o) fecharModal(); })
+    o.addEventListener('click', e => { if (e.target === o) fecharTodosModais(); })
   );
 });
 
@@ -119,6 +123,11 @@ function togglePainel(nome) {
     if (nome === 'Aparencia')    carregarAparencia();
     if (nome === 'Utilizadores') carregarUtilizadores();
     if (nome === 'Escritorios')  carregarEscritorios();
+    if (nome === 'Perfis')       defCarregarPerfis();
+    if (nome === 'Auditoria')    defCarregarAuditoria();
+    if (nome === 'Calendario')   defCarregarCalendario();
+    if (nome === 'Seed')         defCarregarSeed();
+    // Documentação não precisa de carregar dados
   }
 }
 
@@ -590,6 +599,571 @@ function selecionarCor(c) {
 }
 
 function fecharModal() {
+  // Fechar modais de escritórios
+  ['modalEscritorio','modalConfirmar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+  });
+  escEditandoId = null;
+}
+
+function fecharTodosModais() {
   document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
   escEditandoId = null;
+  defFecharModalPerfil();
+  defFecharConfirmPerfil();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PAINEL PERFIS DE PERMISSÃO
+// ══════════════════════════════════════════════════════════════════
+
+const DEF_ALL_ACTIONS = [
+  { key: 'view',   label: 'Ver' },
+  { key: 'create', label: 'Criar' },
+  { key: 'gerir',  label: 'Gerir' },
+];
+const DEF_GERIR_KEYS = ['resolve', 'edit', 'manage'];
+
+let _defEditingPerfilId = null;
+let _defDraft = {};
+let _defPendingDeletePerfilId = null;
+let _defPerfisCache = [];
+
+function _defGetModuleActions() {
+  return window.PerfisService ? window.PerfisService.getModuleActions() : [];
+}
+
+function _defGerirKeyFor(mod) {
+  return mod.actions.find(a => DEF_GERIR_KEYS.includes(a.key));
+}
+
+function _defDraftGet(draft, moduleId, actionKey) {
+  return !!(draft[moduleId] && draft[moduleId][actionKey]);
+}
+
+function _defModTagsHtml(perfil) {
+  const mods = (perfil.permissoes && perfil.permissoes.modules) || {};
+  return _defGetModuleActions()
+    .filter(m => { const mp = mods[m.id] || {}; return mp.view !== false; })
+    .map(m => {
+      const mp = mods[m.id] || {};
+      const hasManage = m.actions.filter(a => a.key !== 'view').some(a => !!mp[a.key]);
+      return `<span class="def-mod-tag${hasManage ? ' has-manage' : ''}">${escHtml(m.label)}</span>`;
+    }).join('');
+}
+
+async function defCarregarPerfis() {
+  const grid = document.getElementById('defPerfisGrid');
+  const subtitle = document.getElementById('perfisSubtitle');
+  if (!grid) return;
+
+  grid.innerHTML = '<p style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0;">A carregar…</p>';
+  try {
+    if (!window.PerfisService) throw new Error('PerfisService não disponível');
+    _defPerfisCache = await window.PerfisService.loadPerfis();
+    defRenderPerfisGrid(_defPerfisCache);
+    if (subtitle) subtitle.textContent = `${_defPerfisCache.length} perfil${_defPerfisCache.length !== 1 ? 'is' : ''} configurado${_defPerfisCache.length !== 1 ? 's' : ''}`;
+  } catch (e) {
+    grid.innerHTML = `<p style="font-size:11px;color:var(--red);text-align:center;padding:16px 0;">Erro ao carregar perfis: ${escHtml(e.message)}</p>`;
+  }
+}
+
+function defRenderPerfisGrid(perfis) {
+  const grid = document.getElementById('defPerfisGrid');
+  if (!grid) return;
+
+  if (!perfis.length) {
+    grid.innerHTML = `
+      <div class="def-perfil-card card-novo-def" onclick="defAbrirNovoPerfil()" style="border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:96px;cursor:pointer;color:var(--muted);font-size:11px;gap:6px;border:1px dashed var(--border);border-radius:12px;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M8 2v12M2 8h12"/></svg>
+        Criar primeiro perfil
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = `
+    <div class="def-perfis-grid-inner">
+      ${perfis.map(p => `
+        <div class="def-perfil-card">
+          <div class="def-perfil-card-head">
+            <span class="def-perfil-nome">${escHtml(p.nome)}</span>
+          </div>
+          <div class="def-perfil-modulos">${_defModTagsHtml(p)}</div>
+          <div class="def-perfil-actions">
+            <button class="btn btn-secondary btn-sm" onclick="defAbrirModalPerfil('${escHtml(p.id)}')">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px;"><path d="M11 2.5l2 2L5 13H3v-2L11 2.5z"/></svg>
+              Editar
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="defConfirmarApagarPerfil('${escHtml(p.id)}','${escHtml(p.nome)}')">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px;"><path d="M3 5h10l-1 9H4L3 5z"/><path d="M1 5h14M6 5V3h4v2"/></svg>
+            </button>
+          </div>
+        </div>`).join('')}
+      <div class="def-perfil-card card-novo-def" onclick="defAbrirNovoPerfil()" style="border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:96px;cursor:pointer;color:var(--muted);font-size:11px;gap:6px;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M8 2v12M2 8h12"/></svg>
+        Novo perfil
+      </div>
+    </div>`;
+}
+
+function defAbrirNovoPerfil() {
+  defAbrirModalPerfil(null);
+}
+
+function defAbrirModalPerfil(perfilId) {
+  _defEditingPerfilId = perfilId;
+  _defDraft = {};
+  const titleEl = document.getElementById('defModalPerfilTitle');
+  const nomeEl  = document.getElementById('defPerfilNome');
+  if (titleEl) titleEl.textContent = perfilId ? 'Editar Perfil' : 'Novo Perfil';
+
+  if (perfilId) {
+    const perfil = _defPerfisCache.find(p => p.id === perfilId);
+    if (perfil && nomeEl) nomeEl.value = perfil.nome;
+    const mods = (perfil && perfil.permissoes && perfil.permissoes.modules) || {};
+    _defGetModuleActions().forEach(m => {
+      _defDraft[m.id] = {};
+      m.actions.forEach(a => { _defDraft[m.id][a.key] = !!(mods[m.id] && mods[m.id][a.key]); });
+    });
+  } else {
+    if (nomeEl) nomeEl.value = '';
+    _defGetModuleActions().forEach(m => {
+      _defDraft[m.id] = { view: true };
+      m.actions.forEach(a => { if (a.key !== 'view') _defDraft[m.id][a.key] = false; });
+    });
+  }
+
+  defRenderPerfilMatrix();
+  const modal = document.getElementById('modalPerfilDef');
+  if (modal) { modal.classList.add('open'); setTimeout(() => nomeEl && nomeEl.focus(), 80); }
+}
+
+function defFecharModalPerfil() {
+  const modal = document.getElementById('modalPerfilDef');
+  if (modal) modal.classList.remove('open');
+  _defEditingPerfilId = null;
+  _defDraft = {};
+}
+
+function defRenderPerfilMatrix() {
+  const container = document.getElementById('defPermMatrix');
+  if (!container) return;
+  const mods = _defGetModuleActions();
+
+  let html = `
+    <div class="matrix-row header">
+      <div class="matrix-cell header-cell">Módulo</div>
+      ${DEF_ALL_ACTIONS.map(a => `<div class="matrix-cell header-cell">${a.label}</div>`).join('')}
+    </div>`;
+
+  mods.forEach(mod => {
+    const viewOn = _defDraftGet(_defDraft, mod.id, 'view');
+    const gerirAction = _defGerirKeyFor(mod);
+
+    html += `<div class="matrix-row${viewOn ? '' : ' disabled-row'}" id="defmatrow_${mod.id}">`;
+    html += `<div class="matrix-cell mod-name">${escHtml(mod.label)}</div>`;
+
+    const hasView = mod.actions.some(a => a.key === 'view');
+    html += `<div class="matrix-cell matrix-check">${hasView
+      ? `<input type="checkbox" data-mod="${mod.id}" data-action="view" ${viewOn ? 'checked' : ''}>`
+      : `<span class="empty">—</span>`}</div>`;
+
+    const hasCreate = mod.actions.some(a => a.key === 'create');
+    html += `<div class="matrix-cell matrix-check">${hasCreate
+      ? `<input type="checkbox" data-mod="${mod.id}" data-action="create" ${_defDraftGet(_defDraft, mod.id, 'create') ? 'checked' : ''} ${!viewOn ? 'disabled' : ''}>`
+      : `<span class="empty">—</span>`}</div>`;
+
+    html += `<div class="matrix-cell matrix-check">${gerirAction
+      ? `<input type="checkbox" data-mod="${mod.id}" data-action="${gerirAction.key}" ${_defDraftGet(_defDraft, mod.id, gerirAction.key) ? 'checked' : ''} ${!viewOn ? 'disabled' : ''}>`
+      : `<span class="empty">—</span>`}</div>`;
+    html += `</div>`;
+  });
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const mod = cb.getAttribute('data-mod');
+      const action = cb.getAttribute('data-action');
+      _defDraft[mod] = _defDraft[mod] || {};
+      _defDraft[mod][action] = cb.checked;
+      if (action === 'view') {
+        const row = document.getElementById('defmatrow_' + mod);
+        if (row) row.classList.toggle('disabled-row', !cb.checked);
+        container.querySelectorAll(`input[data-mod="${mod}"]:not([data-action="view"])`).forEach(other => {
+          other.disabled = !cb.checked;
+          if (!cb.checked) { other.checked = false; _defDraft[mod][other.getAttribute('data-action')] = false; }
+        });
+      }
+    });
+  });
+}
+
+async function defGuardarPerfil() {
+  const nome = (document.getElementById('defPerfilNome').value || '').trim();
+  if (!nome) { toast('Nome do perfil é obrigatório.'); return; }
+
+  const btn = document.getElementById('defBtnGuardarPerfil');
+  if (btn) { btn.disabled = true; btn.textContent = 'A guardar…'; }
+
+  const modules = {};
+  _defGetModuleActions().forEach(mod => {
+    modules[mod.id] = {};
+    mod.actions.forEach(a => { modules[mod.id][a.key] = !!(_defDraft[mod.id] && _defDraft[mod.id][a.key]); });
+  });
+
+  const id = _defEditingPerfilId || nome.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+  try {
+    await window.PerfisService.upsertPerfil({ id, nome, permissoes: { modules } });
+    defFecharModalPerfil();
+    window.PerfisService.invalidateCache();
+    _defPerfisCache = await window.PerfisService.loadPerfis();
+    defRenderPerfisGrid(_defPerfisCache);
+    const subtitle = document.getElementById('perfisSubtitle');
+    if (subtitle) subtitle.textContent = `${_defPerfisCache.length} perfil${_defPerfisCache.length !== 1 ? 'is' : ''} configurado${_defPerfisCache.length !== 1 ? 's' : ''}`;
+    toast('Perfil guardado.');
+  } catch (err) {
+    toast('Erro ao guardar perfil: ' + (err.message || err));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Guardar'; }
+  }
+}
+
+function defConfirmarApagarPerfil(perfilId, perfilNome) {
+  _defPendingDeletePerfilId = perfilId;
+  const texto = document.getElementById('defConfirmPerfilTexto');
+  if (texto) texto.innerHTML = `Vais apagar o perfil <b>"${escHtml(perfilNome)}"</b>. Os utilizadores com este perfil atribuído perderão as permissões associadas. Esta ação não pode ser desfeita.`;
+  const modal = document.getElementById('modalConfirmPerfilDef');
+  if (modal) modal.classList.add('open');
+}
+
+function defFecharConfirmPerfil() {
+  const modal = document.getElementById('modalConfirmPerfilDef');
+  if (modal) modal.classList.remove('open');
+  _defPendingDeletePerfilId = null;
+}
+
+async function defExecutarApagarPerfil() {
+  if (!_defPendingDeletePerfilId) return;
+  const btn = document.getElementById('defBtnConfirmApagarPerfil');
+  if (btn) btn.disabled = true;
+  try {
+    await window.PerfisService.deletePerfil(_defPendingDeletePerfilId);
+    defFecharConfirmPerfil();
+    window.PerfisService.invalidateCache();
+    _defPerfisCache = await window.PerfisService.loadPerfis();
+    defRenderPerfisGrid(_defPerfisCache);
+    const subtitle = document.getElementById('perfisSubtitle');
+    if (subtitle) subtitle.textContent = `${_defPerfisCache.length} perfil${_defPerfisCache.length !== 1 ? 'is' : ''} configurado${_defPerfisCache.length !== 1 ? 's' : ''}`;
+    toast('Perfil apagado.');
+  } catch (err) {
+    toast('Erro ao apagar perfil: ' + (err.message || err));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PAINEL AUDITORIA
+// ══════════════════════════════════════════════════════════════════
+
+const DEF_AUD_PAGE_SIZE = 30;
+let _defAudAll = [];
+let _defAudFiltered = [];
+let _defAudLastDoc = null;
+let _defAudLoading = false;
+
+async function defCarregarAuditoria(mais = false) {
+  if (_defAudLoading) return;
+  _defAudLoading = true;
+
+  const timeline = document.getElementById('defTimeline');
+  const loadMore = document.getElementById('defLoadMoreWrap');
+  if (!mais && timeline) timeline.innerHTML = '<p style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0;">A carregar…</p>';
+
+  try {
+    const db = firebase.firestore();
+    let q = db.collection('auditoria').orderBy('ts', 'desc').limit(DEF_AUD_PAGE_SIZE);
+    if (mais && _defAudLastDoc) q = q.startAfter(_defAudLastDoc);
+
+    const snap = await q.get();
+    if (!snap.empty) {
+      _defAudLastDoc = snap.docs[snap.docs.length - 1];
+      const novos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      _defAudAll = mais ? [..._defAudAll, ...novos] : novos;
+    }
+
+    if (loadMore) loadMore.style.display = snap.size === DEF_AUD_PAGE_SIZE ? 'block' : 'none';
+  } catch (e) {
+    if (timeline && !mais) timeline.innerHTML = `<p style="font-size:11px;color:var(--red);text-align:center;padding:16px 0;">Erro: ${escHtml(e.message)}</p>`;
+  } finally {
+    _defAudLoading = false;
+  }
+
+  defAplicarFiltros();
+}
+
+function defAplicarFiltros() {
+  const modulo  = (document.getElementById('defFiltroModulo')?.value  || '').toLowerCase();
+  const acao    = (document.getElementById('defFiltroAcao')?.value    || '').toLowerCase();
+  const texto   = (document.getElementById('defFiltroTexto')?.value   || '').toLowerCase();
+
+  _defAudFiltered = _defAudAll.filter(r => {
+    if (modulo && (r.modulo || '').toLowerCase() !== modulo) return false;
+    if (acao   && (r.acao   || '').toLowerCase() !== acao)   return false;
+    if (texto  && !(
+      (r.titulo || '').toLowerCase().includes(texto) ||
+      (r.utilizador || r.autor || '').toLowerCase().includes(texto)
+    )) return false;
+    return true;
+  });
+
+  defRenderStats();
+  defRenderTimeline();
+}
+
+function defLimparFiltros() {
+  ['defFiltroModulo','defFiltroAcao','defFiltroTexto'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  defAplicarFiltros();
+}
+
+function defRenderStats() {
+  const el = document.getElementById('defStatsAuditoria');
+  if (!el) return;
+  const total = _defAudFiltered.length;
+  const criados   = _defAudFiltered.filter(r => (r.acao||'').toLowerCase() === 'criado').length;
+  const atualizados = _defAudFiltered.filter(r => (r.acao||'').toLowerCase() === 'atualizado').length;
+  el.innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+      <span class="def-stat-pill"><strong>${total}</strong> registos</span>
+      ${criados    ? `<span class="def-stat-pill" style="color:var(--green);"><strong>${criados}</strong> criados</span>` : ''}
+      ${atualizados? `<span class="def-stat-pill" style="color:var(--amber);"><strong>${atualizados}</strong> atualizados</span>` : ''}
+    </div>`;
+}
+
+function defRenderTimeline() {
+  const container = document.getElementById('defTimeline');
+  if (!container) return;
+
+  if (!_defAudFiltered.length) {
+    container.innerHTML = '<p style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0;">Sem registos para os filtros aplicados.</p>';
+    return;
+  }
+
+  // Agrupar por data
+  const grupos = {};
+  _defAudFiltered.forEach(r => {
+    const ts = r.ts?.toDate ? r.ts.toDate() : (r.ts ? new Date(r.ts) : new Date());
+    const dateKey = ts.toLocaleDateString('pt-PT', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    if (!grupos[dateKey]) grupos[dateKey] = [];
+    grupos[dateKey].push({ ...r, _date: ts });
+  });
+
+  const acaoCores = { criado:'var(--green)', eliminado:'var(--red)', estado:'var(--blue)', permissao:'var(--purple)', atualizado:'var(--amber)' };
+
+  container.innerHTML = Object.entries(grupos).map(([date, entries]) => `
+    <div class="def-tl-group">
+      <div class="def-tl-date">${date}</div>
+      ${entries.map(r => {
+        const ts = r._date;
+        const hora = ts.toLocaleTimeString('pt-PT', { hour:'2-digit', minute:'2-digit' });
+        const acao = (r.acao || 'atualizado').toLowerCase();
+        const cor  = acaoCores[acao] || 'var(--muted)';
+        const modulo = r.modulo || '';
+        const titulo = r.titulo || r.descricao || '—';
+        const autor  = r.utilizador || r.autor || '';
+        return `
+          <div class="def-tl-entry" onclick="this.classList.toggle('expanded')">
+            <div class="def-tl-dot" style="background:${cor};"></div>
+            <div class="def-tl-content">
+              <div class="def-tl-top">
+                ${modulo ? `<span class="def-tl-mod">${escHtml(modulo)}</span>` : ''}
+                <span class="def-tl-acao" style="color:${cor};">${escHtml(acao)}</span>
+                <span class="def-tl-titulo">${escHtml(titulo)}</span>
+                <span class="def-tl-hora">${hora}</span>
+              </div>
+              ${autor ? `<div class="def-tl-user">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px;"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2-5 6-5s6 2 6 5"/></svg>
+                ${escHtml(autor)}
+              </div>` : ''}
+              ${r.dados && Object.keys(r.dados).length ? `
+                <div class="def-tl-diff">
+                  <table class="def-diff-table">
+                    <thead><tr><th>Campo</th><th>Antes</th><th>Depois</th></tr></thead>
+                    <tbody>
+                      ${Object.entries(r.dados).map(([k,v]) => `
+                        <tr>
+                          <td class="diff-campo">${escHtml(k)}</td>
+                          <td class="diff-antes">${v && v.antes !== undefined ? escHtml(String(v.antes)) : '<span class="diff-empty">—</span>'}</td>
+                          <td class="diff-depois">${v && v.depois !== undefined ? escHtml(String(v.depois)) : '<span class="diff-empty">—</span>'}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                  </table>
+                </div>` : ''}
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function defCarregarMaisAuditoria() {
+  defCarregarAuditoria(true);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PAINEL CALENDÁRIO
+// ══════════════════════════════════════════════════════════════════
+
+async function defCarregarCalendario() {
+  const body = document.getElementById('defCalendarioBody');
+  if (!body) return;
+
+  body.innerHTML = '<p style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;">A carregar…</p>';
+
+  let stats = '';
+  try {
+    const db = firebase.firestore();
+    const snap = await db.collection('calendarios').get();
+    const count = snap.size;
+    const escritorios = [...new Set(snap.docs.map(d => d.data().escritorio).filter(Boolean))];
+    stats = `<span class="def-stat-pill"><strong>${count}</strong> calendário${count !== 1 ? 's' : ''} publicado${count !== 1 ? 's' : ''}</span>`;
+    if (escritorios.length) stats += `<span class="def-stat-pill"><strong>${escritorios.length}</strong> escritório${escritorios.length !== 1 ? 's' : ''} com dados</span>`;
+  } catch (_) {}
+
+  body.innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+      ${stats}
+    </div>
+    <div class="def-info-note-v2" style="margin-bottom:18px;">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;flex-shrink:0;"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5"/><circle cx="8" cy="11" r=".5" fill="currentColor"/></svg>
+      <span>A gestão de calendários envolve publicação de feriados, eventos personalizados e remoção por múltiplos escritórios. Toda a configuração avançada está disponível na página dedicada.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+      <a href="gerir-calendarios.html" class="def-cal-action-card">
+        <div style="width:34px;height:34px;border-radius:9px;background:var(--purple-bg);display:grid;place-items:center;color:var(--purple);flex-shrink:0;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12"/><circle cx="8" cy="11" r="1.5" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;">Publicar Feriados</div>
+          <div style="font-size:10px;color:var(--muted);">Feriados nacionais por período</div>
+        </div>
+      </a>
+      <a href="gerir-calendarios.html#tab-eventos" class="def-cal-action-card">
+        <div style="width:34px;height:34px;border-radius:9px;background:var(--blue-bg);display:grid;place-items:center;color:var(--accent);flex-shrink:0;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;"><path d="M3 4h10M3 8h7M3 12h5"/><path d="M13 10l-2 2 1 3 2-1 1-3-2-1z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;">Publicar Eventos</div>
+          <div style="font-size:10px;color:var(--muted);">Eventos em múltiplos escritórios</div>
+        </div>
+      </a>
+      <a href="gerir-calendarios.html#tab-apagar" class="def-cal-action-card">
+        <div style="width:34px;height:34px;border-radius:9px;background:var(--red-bg);display:grid;place-items:center;color:var(--red);flex-shrink:0;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;"><path d="M3 5h10l-1 9H4L3 5z"/><path d="M1 5h14M6 5V3h4v2"/></svg>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;">Apagar Eventos</div>
+          <div style="font-size:10px;color:var(--muted);">Remover eventos por período</div>
+        </div>
+      </a>
+      <a href="gerir-calendarios.html#tab-ver" class="def-cal-action-card">
+        <div style="width:34px;height:34px;border-radius:9px;background:var(--green-bg);display:grid;place-items:center;color:var(--green);flex-shrink:0;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;"><circle cx="7" cy="7" r="4"/><path d="M11 11l3 3"/></svg>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;">Ver / Pesquisar</div>
+          <div style="font-size:10px;color:var(--muted);">Consultar eventos existentes</div>
+        </div>
+      </a>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PAINEL SEED
+// ══════════════════════════════════════════════════════════════════
+
+function defCarregarSeed() {
+  // O painel já tem conteúdo estático no HTML, nada a fazer
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INFO DO SISTEMA
+// ══════════════════════════════════════════════════════════════════
+
+async function abrirInfoSistema() {
+  const modal = document.getElementById('modalInfoSistema');
+  const body  = document.getElementById('infoSistemaBody');
+  if (!modal || !body) return;
+
+  modal.classList.add('open');
+  body.innerHTML = '<p style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;">A carregar…</p>';
+
+  // Recolher dados
+  let totalUsers = utilizadoresAll.length;
+  let totalEscs  = escritoriosData.length;
+  let totalPerfis = _defPerfisCache.length;
+  let totalAuditoria = '—';
+  let buildTs = '—';
+
+  try {
+    // Se ainda não carregámos users/escritorios, fazer fetch agora
+    if (!totalUsers) {
+      const u = await window.UsersService.listAll();
+      totalUsers = u.length;
+    }
+    if (!totalEscs) {
+      const e = await window.OfficesService.load({ includeInactive: true });
+      totalEscs = e.length;
+    }
+    if (!totalPerfis && window.PerfisService) {
+      const p = await window.PerfisService.loadPerfis();
+      totalPerfis = p.length;
+    }
+    // Contar registos de auditoria (estimativa via query limitada)
+    const db = firebase.firestore();
+    const audSnap = await db.collection('auditoria').limit(1).get();
+    totalAuditoria = audSnap.empty ? '0' : '≥ 1';
+  } catch (_) {}
+
+  // Data/hora atual como proxy de "última sincronização"
+  const agora = new Date().toLocaleString('pt-PT', { dateStyle:'short', timeStyle:'short' });
+
+  const item = (label, value, mono = false) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--divider);">
+      <span style="font-size:11.5px;color:var(--muted);">${label}</span>
+      <span style="font-size:12px;font-weight:600;${mono ? 'font-family:monospace;font-size:11px;' : ''}">${value}</span>
+    </div>`;
+
+  body.innerHTML = `
+    <!-- Projeto Firebase -->
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;">Infraestrutura</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0 14px;margin-bottom:18px;">
+      ${item('Projeto Firebase', 'hub-algartempo', true)}
+      ${item('Base de dados', 'Cloud Firestore (Europa)', false)}
+      ${item('Autenticação', 'Firebase Auth — Email/Password', false)}
+      ${item('Storage', 'Firebase Storage', false)}
+    </div>
+
+    <!-- Estatísticas globais -->
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;">Estatísticas globais</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0 14px;margin-bottom:18px;">
+      ${item('Total de utilizadores', totalUsers)}
+      ${item('Escritórios configurados', totalEscs)}
+      ${item('Perfis de permissão', totalPerfis)}
+      ${item('Registos de auditoria', totalAuditoria)}
+    </div>
+
+    <!-- Plataforma -->
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;">Plataforma</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0 14px;margin-bottom:6px;">
+      ${item('Aplicação', 'Algartempo Hub')}
+      ${item('Stack', 'HTML · CSS · JS Vanilla + Firebase 9')}
+      ${item('Sincronizado em', agora)}
+    </div>`;
 }

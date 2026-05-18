@@ -438,7 +438,7 @@ function checkAllLoaded() {
   if (lastUpdateEl) {
     lastUpdateEl.innerHTML =
       'Actualizado às ' + now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) +
-      ' &nbsp;<button onclick="dashRefresh()" title="Forçar atualização" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);padding:0 2px;vertical-align:middle;" onmouseover="this.style.color=\'var(--accent)\'" onmouseout="this.style.color=\'var(--muted)\'">↺</button>';
+      ' <button class="dash-refresh-btn" onclick="dashRefresh()" title="Forçar atualização">↺</button>';
   }
 }
 
@@ -706,7 +706,7 @@ function bindTaskTooltips() {
     row.addEventListener('mouseenter', e => {
       const desc = row.dataset.desc;
       tip.innerHTML = `
-        <div class="tt-row"><span class="tt-lbl">Tarefa</span><span class="tt-val" style="font-weight:600">${row.dataset.titulo}</span></div>
+        <div class="tt-row"><span class="tt-lbl">Tarefa</span><span class="tt-val tt-strong">${row.dataset.titulo}</span></div>
         ${desc ? `<hr class="tt-divider"><div class="tt-val tt-desc">${desc}</div>` : ''}
         <hr class="tt-divider">
         <div class="tt-row"><span class="tt-lbl">Criado por</span><span class="tt-val">${row.dataset.pessoa}</span></div>
@@ -739,7 +739,7 @@ function bindRecTooltips() {
       const notas    = row.dataset.notas;
       const dataFmt  = row.dataset.data ? fmtShort(Number(row.dataset.data)) : '—';
       tip.innerHTML = `
-        <div class="tt-row"><span class="tt-lbl">Nome</span><span class="tt-val" style="font-weight:600">${row.dataset.nome}</span></div>
+        <div class="tt-row"><span class="tt-lbl">Nome</span><span class="tt-val tt-strong">${row.dataset.nome}</span></div>
         <div class="tt-row"><span class="tt-lbl">NIF</span><span class="tt-val">${row.dataset.nif}</span></div>
         <div class="tt-row"><span class="tt-lbl">Nº Func.</span><span class="tt-val">${row.dataset.numfunc}</span></div>
         <div class="tt-row"><span class="tt-lbl">Categoria</span><span class="tt-val">${row.dataset.categoria}</span></div>
@@ -807,7 +807,7 @@ function renderComunicados() {
         <div class="com-titulo-row">${escHtml(c.titulo)}</div>
         <div class="com-meta-row">
           ${escHtml(c.autor || '—')} · ${fmtShort(c.criadoEm)}
-          ${mostrarEscritorio && c.escritorio ? ` · <span style="text-transform:capitalize">${escHtml(c.escritorio)}</span>` : ''}
+          ${mostrarEscritorio && c.escritorio ? ` · <span class="txt-cap">${escHtml(c.escritorio)}</span>` : ''}
         </div>
       </div>
       <span class="tipo-tag-sm ${c.tipo}">${TIPO_LABEL[c.tipo] || c.tipo}</span>
@@ -926,7 +926,7 @@ function renderActivity() {
           <div class="activity-text">${escHtml(item.label)}</div>
           <div class="activity-sub">
             ${sub}
-            ${mostrarEscritorio && item.escritorio ? ` · <span style="text-transform:capitalize">${escHtml(item.escritorio)}</span>` : ''}
+            ${mostrarEscritorio && item.escritorio ? ` · <span class="txt-cap">${escHtml(item.escritorio)}</span>` : ''}
           </div>
         </div>
         <div class="activity-time">${fmtShort(item.ts)}</div>
@@ -1007,15 +1007,15 @@ function renderReclamacoes() {
       data-criado="${escHtml(r.criadoPor||'—')}"
       data-data="${r.criadoEm||''}">
       <div class="rec-dash-dot ${dotCls}"></div>
-      <div class="rec-dash-name">${escHtml(r.nome || '—')} <span style="color:var(--muted);font-size:10px;">· ${escHtml(r.empresa || '—')}${r.categoria ? ' · ' + escHtml(r.categoria) : ''}</span></div>
+      <div class="rec-dash-name">${escHtml(r.nome || '—')} <span class="rec-dash-meta-inline">· ${escHtml(r.empresa || '—')}${r.categoria ? ' · ' + escHtml(r.categoria) : ''}</span></div>
       <div class="rec-dash-meta">${escHtml(r.resumoPeriodo || '—')}</div>
       <span class="rec-kpi-chip ${r.estado === 'aguarda-proc' ? 'aguarda-proc' : estadoCls}">${REC_ESTADO_LABEL[r.estado] || r.estado}</span>
     </div>`;
   }).join('');
 
   if (filtradas.length > 10) {
-    container.innerHTML += `<div style="padding:8px 0;font-size:10px;color:var(--muted);text-align:center;">
-      + ${filtradas.length - 10} mais · <a href="reclamacoes.html" style="color:var(--accent);text-decoration:none;">Ver todas</a>
+    container.innerHTML += `<div class="rec-more-note">
+      + ${filtradas.length - 10} mais · <a href="reclamacoes.html">Ver todas</a>
     </div>`;
   }
 
@@ -1026,25 +1026,14 @@ function renderReclamacoes() {
 let _gsearchTimeout = null;
 
 function toggleGlobalSearch() {
-  const panel = document.getElementById('globalSearchPanel');
-  const input = document.getElementById('globalSearchInput');
+  const panel = document.getElementById('appShellSearchPanel');
   if (!panel) return;
-  const open = panel.style.display !== 'none';
-  panel.style.display = open ? 'none' : 'block';
-  if (!open) {
-    input.focus();
-    input.select();
+  if (panel.classList.contains('open')) {
+    window.closeShellSearch && window.closeShellSearch();
+  } else {
+    window.openShellSearch && window.openShellSearch();
   }
 }
-
-// Fechar ao clicar fora
-document.addEventListener('click', e => {
-  const wrap = document.getElementById('globalSearchWrap');
-  if (wrap && !wrap.contains(e.target)) {
-    const panel = document.getElementById('globalSearchPanel');
-    if (panel) panel.style.display = 'none';
-  }
-});
 
 function doGlobalSearch(q) {
   clearTimeout(_gsearchTimeout);
@@ -1052,11 +1041,11 @@ function doGlobalSearch(q) {
 }
 
 function _execGlobalSearch(q) {
-  const results = document.getElementById('globalSearchResults');
+  const results = document.getElementById('appShellSearchResults') || document.getElementById('globalSearchResults');
   if (!results) return;
   q = (q || '').toLowerCase().trim();
   if (!q || q.length < 2) {
-    results.innerHTML = '<div style="font-size:10px;color:var(--muted);padding:8px 9px;">Escreve pelo menos 2 letras…</div>';
+    results.innerHTML = '<div class="gsearch-empty">Escreve pelo menos 2 letras…</div>';
     return;
   }
 
@@ -1083,7 +1072,7 @@ function _execGlobalSearch(q) {
   });
 
   if (!hits.length) {
-    results.innerHTML = '<div style="font-size:10px;color:var(--muted);padding:8px 9px;">Sem resultados.</div>';
+    results.innerHTML = '<div class="gsearch-empty">Sem resultados.</div>';
     return;
   }
 
@@ -1097,8 +1086,10 @@ function _execGlobalSearch(q) {
     }
     html += `<a class="gsearch-item" href="${h.href}">
       <div class="gsearch-item-icon ${h.type}">${h.icon}</div>
-      <div class="gsearch-item-label">${escHtml(h.label)}</div>
-      <div class="gsearch-item-sub">${escHtml(h.sub)}</div>
+      <div class="gsearch-item-body">
+        <div class="gsearch-item-label">${escHtml(h.label)}</div>
+        ${h.sub ? `<div class="gsearch-item-sub">${escHtml(h.sub)}</div>` : ''}
+      </div>
     </a>`;
     return html;
   }).join('');

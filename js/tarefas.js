@@ -10,6 +10,15 @@ let _dragging = null;
 let _activeDetailId = null;
 let _confirmResolve = null;
 
+// Arquivo state
+let _arquivoLastDocConc = null;
+let _arquivoLastDocCanc = null;
+let _arquivoItems       = [];
+let _arquivoSearch      = '';
+let _arquivoLoading     = false;
+const ARQUIVO_PAGE       = 30;
+const KANBAN_CONC_LIMIT  = 20;
+
 const PRIO_ORDER  = { urgente:0, normal:1, baixa:2 };
 const ESTADO_LABEL = { aguardar:'A aguardar', progresso:'Em progresso', concluido:'Concluído', cancelado:'Cancelado', pendente:'Pendente' };
 const PRIO_LABEL   = { urgente:'Urgente', normal:'Normal', baixa:'Baixa' };
@@ -30,9 +39,6 @@ window.bootProtectedPage({
   const canCreate = window.temPermissao('modules.tarefas.create');
   const btnNova = document.getElementById('btnNovaTarefa');
   if (btnNova && !canCreate) btnNova.style.display = 'none';
-
-  const btnVoz = document.getElementById('btnVoz');
-  if (btnVoz && isAdmin) btnVoz.style.display = '';
 
   if (profile) {
     const nome = profile.nomeCompleto || profile.nome || profile.email || '?';
@@ -226,31 +232,7 @@ function setFilterEscritorio(val) {
 }
 
 // ── Render ────────────────────────────────────────────────────────────────
-function render() { renderStats(); updatePessoaSelect(); renderKanban(); }
-
-function renderStats() {
-  const total = tasks.length;
-  const prog  = tasks.filter(t => t.estado === 'progresso').length;
-  const urg   = tasks.filter(t => t.prioridade === 'urgente' && t.estado !== 'concluido' && t.estado !== 'cancelado').length;
-  const conc  = tasks.filter(t => t.estado === 'concluido').length;
-  document.getElementById('statsBar').innerHTML = `
-    <div class="stat-tile s-total">
-      <div class="stat-tile-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12"/></svg></div>
-      <div><div class="stat-tile-num">${total}</div><div class="stat-tile-lbl">Total</div></div>
-    </div>
-    <div class="stat-tile s-progresso">
-      <div class="stat-tile-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg></div>
-      <div><div class="stat-tile-num">${prog}</div><div class="stat-tile-lbl">Em progresso</div></div>
-    </div>
-    <div class="stat-tile s-urgente">
-      <div class="stat-tile-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L1.5 13h13L8 2z"/><path d="M8 7v3M8 11.5v.5"/></svg></div>
-      <div><div class="stat-tile-num">${urg}</div><div class="stat-tile-lbl">Urgentes</div></div>
-    </div>
-    <div class="stat-tile s-ok">
-      <div class="stat-tile-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l3.5 3.5L13 4"/></svg></div>
-      <div><div class="stat-tile-num">${conc}</div><div class="stat-tile-lbl">Concluídas</div></div>
-    </div>`;
-}
+function render() { updatePessoaSelect(); renderKanban(); }
 
 function updatePessoaSelect() {
   const names = [...new Set(tasks.map(t => t.solicitante).filter(Boolean))].sort();
@@ -283,7 +265,19 @@ function renderKanban() {
       return;
     }
 
-    bodyEl.innerHTML = colTasks.map(t => renderKCard(t)).join('');
+    if (col.id === 'concluido') {
+      colTasks.sort((a, b) => (b.criadaEm || 0) - (a.criadaEm || 0));
+      const shown   = colTasks.slice(0, KANBAN_CONC_LIMIT);
+      const surplus = colTasks.length - shown.length;
+      bodyEl.innerHTML = shown.map(t => renderKCard(t)).join('');
+      const arquivoBtn = document.createElement('button');
+      arquivoBtn.className = 'col-arquivo-link';
+      arquivoBtn.textContent = surplus > 0 ? `Arquivo · ver ${surplus} mais` : 'Arquivo';
+      arquivoBtn.addEventListener('click', openArquivoModal);
+      bodyEl.appendChild(arquivoBtn);
+    } else {
+      bodyEl.innerHTML = colTasks.map(t => renderKCard(t)).join('');
+    }
 
     bodyEl.querySelectorAll('.kcard').forEach(el => {
       const id = el.dataset.id;
@@ -312,7 +306,7 @@ function renderKCard(t) {
 
   return `<div class="kcard prio-${t.prioridade} estado-${t.estado}" data-id="${t.id}" title="${escHtml(t.titulo)}">
     <div class="kcard-top">
-      <span class="kcard-num">#${t.ordemChegada||''}</span>
+      <span class="kcard-num">T-${t.ordemChegada||''}</span>
       <span class="pill ${pilltone}">${PRIO_LABEL[t.prioridade]||t.prioridade}</span>
     </div>
     <div class="kcard-title${isDone?' done':''}">${escHtml(t.titulo)}</div>
@@ -356,7 +350,7 @@ function openTaskDetail(id) {
   const task = tasks.find(t => t.id === id);
   if (!task) return;
   _activeDetailId = id;
-  document.getElementById('taskDetailTitle').textContent = '#' + (task.ordemChegada || task.id.slice(0,6));
+  document.getElementById('taskDetailTitle').textContent = 'T-' + (task.ordemChegada || task.id.slice(0,6));
   renderDetailBody(task);
 
   const canResolve = window.temPermissao && window.temPermissao('modules.tarefas.resolve');
@@ -506,6 +500,114 @@ function fmtBytes(b) {
   return (b / 1048576).toFixed(1) + ' MB';
 }
 
+// ── Arquivo modal ─────────────────────────────────────────────────────────
+function openArquivoModal() {
+  _arquivoItems = []; _arquivoLastDocConc = null; _arquivoLastDocCanc = null; _arquivoSearch = '';
+  const listEl = document.getElementById('arquivoList');
+  const infoEl = document.getElementById('arquivoCountInfo');
+  const moreEl = document.getElementById('arquivoLoadMore');
+  const searchEl = document.getElementById('arquivoSearch');
+  if (listEl)   listEl.innerHTML = '';
+  if (infoEl)   infoEl.textContent = '';
+  if (moreEl)   moreEl.style.display = 'none';
+  if (searchEl) searchEl.value = '';
+  document.getElementById('arquivoModal').classList.add('open');
+  _arquivoFetch();
+}
+
+function closeArquivoModal() {
+  const modal = document.getElementById('arquivoModal');
+  if (modal) modal.classList.remove('open');
+  _arquivoItems = []; _arquivoLastDocConc = null; _arquivoLastDocCanc = null;
+}
+
+async function _arquivoFetch() {
+  if (_arquivoLoading) return;
+  _arquivoLoading = true;
+
+  const listEl = document.getElementById('arquivoList');
+  if (_arquivoItems.length === 0 && listEl)
+    listEl.innerHTML = '<div class="arquivo-empty">A carregar…</div>';
+
+  try {
+    const base = firebase.firestore().collection('tarefas_todo');
+
+    let qConc = base.where('estado', '==', 'concluido').orderBy('criadaEm', 'desc').limit(ARQUIVO_PAGE);
+    let qCanc = base.where('estado', '==', 'cancelado').orderBy('criadaEm', 'desc').limit(ARQUIVO_PAGE);
+    if (_arquivoLastDocConc) qConc = qConc.startAfter(_arquivoLastDocConc);
+    if (_arquivoLastDocCanc) qCanc = qCanc.startAfter(_arquivoLastDocCanc);
+
+    const [snapConc, snapCanc] = await Promise.all([qConc.get(), qCanc.get()]);
+
+    if (snapConc.docs.length) _arquivoLastDocConc = snapConc.docs[snapConc.docs.length - 1];
+    if (snapCanc.docs.length) _arquivoLastDocCanc = snapCanc.docs[snapCanc.docs.length - 1];
+
+    const merged = [...snapConc.docs, ...snapCanc.docs]
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.criadaEm || 0) - (a.criadaEm || 0))
+      .slice(0, ARQUIVO_PAGE);
+
+    const hasMore = snapConc.docs.length === ARQUIVO_PAGE || snapCanc.docs.length === ARQUIVO_PAGE;
+
+    _arquivoItems = [..._arquivoItems, ...merged];
+
+    const moreEl = document.getElementById('arquivoLoadMore');
+    if (moreEl) moreEl.style.display = hasMore ? '' : 'none';
+
+    renderArquivoList();
+
+    const infoEl = document.getElementById('arquivoCountInfo');
+    if (infoEl) infoEl.textContent = _arquivoItems.length + ' tarefa' + (_arquivoItems.length !== 1 ? 's' : '') + ' carregada' + (_arquivoItems.length !== 1 ? 's' : '');
+  } catch(e) {
+    console.error('arquivo:', e);
+    const listEl = document.getElementById('arquivoList');
+    if (listEl) listEl.innerHTML = '<div class="arquivo-empty">Erro ao carregar o arquivo.</div>';
+  } finally {
+    _arquivoLoading = false;
+  }
+}
+
+function renderArquivoList() {
+  const listEl = document.getElementById('arquivoList');
+  if (!listEl) return;
+
+  const term = _arquivoSearch;
+  const visible = term
+    ? _arquivoItems.filter(t => (t.titulo || '').toLowerCase().includes(term))
+    : _arquivoItems;
+
+  if (!visible.length) {
+    listEl.innerHTML = '<div class="arquivo-empty">' + (term ? 'Nenhuma tarefa encontrada.' : 'Sem tarefas no arquivo.') + '</div>';
+    return;
+  }
+
+  listEl.innerHTML = visible.map(t => {
+    const estadoTone = t.estado === 'concluido' ? 'green' : 'neutral';
+    const estadoLbl  = t.estado === 'concluido' ? 'Concluído' : 'Cancelado';
+    const prioTone   = t.prioridade === 'urgente' ? 'urgente' : t.prioridade === 'baixa' ? 'baixa' : 'normal';
+    const data       = fmtDateFull ? fmtDateFull(t.criadaEm) : (t.criadaEm ? new Date(t.criadaEm).toLocaleDateString('pt-PT') : '—');
+    const escLabel   = t.escritorio ? `<span class="pill neutral">${escHtml(t.escritorio)}</span>` : '';
+    return `<div class="arquivo-row">
+      <span class="arquivo-row-num">T-${t.ordemChegada || ''}</span>
+      <span class="arquivo-row-title" title="${escHtml(t.titulo || '')}">${escHtml(t.titulo || '—')}</span>
+      <div class="arquivo-row-pills">
+        <span class="pill ${estadoTone}">${estadoLbl}</span>
+        <span class="pill ${prioTone}">${PRIO_LABEL[t.prioridade] || t.prioridade || ''}</span>
+        ${escLabel}
+      </div>
+      <span class="arquivo-row-meta">${escHtml(t.solicitante || '—')} · ${data}</span>
+      <button class="btn btn-secondary arquivo-row-ver" onclick="openTaskDetail('${escHtml(t.id)}');closeArquivoModal()">Ver</button>
+    </div>`;
+  }).join('');
+}
+
+function onArquivoSearch(value) {
+  _arquivoSearch = value.trim().toLowerCase();
+  renderArquivoList();
+}
+
+function loadMaisArquivo() { _arquivoFetch(); }
+
 // ── Confirm modal ─────────────────────────────────────────────────────────
 function confirmar({ titulo, btnOk, perigo, body }) {
   return new Promise(resolve => {
@@ -527,188 +629,6 @@ function selPrio(p) {
   document.querySelectorAll('.prio-pill').forEach(b => b.classList.toggle('sel', b.dataset.p === p));
 }
 
-// ── VOZ AI (preserved intact) ─────────────────────────────────────────────
-const VOZ_CLAUDE_API_KEY = '';
+// ── Keyboard shortcuts ────────────────────────────────────────────────────
 
-function _vozNormalizarEsc(valor) {
-  if (!valor) return '';
-  const lista = window.getEscritoriosSync ? window.getEscritoriosSync() : [];
-  const limpar = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,' ').trim();
-  const v = limpar(valor);
-  return (lista.find(e => v.includes(limpar(e.id)) || limpar(e.id).includes(v) || v.includes(limpar(e.nome)) || limpar(e.nome).includes(v)) || {}).id || '';
-}
-
-const VOZ_PROMPTS = {
-  tarefa: `Analisa este texto em português e extrai os dados para uma tarefa interna.\nResponde APENAS com um objecto JSON válido, sem texto adicional, sem marcadores de código.\nUsa exactamente estas chaves (deixa em branco "" se não mencionado):\n{"titulo":"título curto da tarefa (máx 80 chars)","descricao":"descrição detalhada ou vazio","prioridade":"urgente ou normal ou baixa","escritorio":"quarteira ou albufeira ou lisboa ou porto","departamento":"nome do departamento ou vazio"}`,
-  admissao: `Analisa este texto em português e extrai os dados para uma admissão ou cessação.\nResponde APENAS com um objecto JSON válido, sem texto adicional, sem marcadores de código.\nUsa exactamente estas chaves (deixa em branco "" se não mencionado):\n{"tipo":"admissao ou cessacao","nome":"nome completo","numero":"número de colaborador (só dígitos)","nif":"NIF (9 dígitos)","empresa":"nome da empresa utilizadora","categoria":"categoria ou função profissional","escritorio":"quarteira ou albufeira ou lisboa ou porto","dataEntrada":"YYYY-MM-DD ou vazio","valorBase":"valor numérico sem símbolo ex: 1200.00","tipoPagamento":"mes ou hora"}`
-};
-
-const VOZ_LABELS = {
-  tarefa:   {titulo:'Título',descricao:'Descrição',prioridade:'Prioridade',escritorio:'Escritório',departamento:'Departamento'},
-  admissao: {tipo:'Tipo',nome:'Nome',numero:'Nº Colaborador',nif:'NIF',empresa:'Empresa',categoria:'Categoria',escritorio:'Escritório',dataEntrada:'Data entrada',valorBase:'Valor base (€)',tipoPagamento:'Tipo pagamento'}
-};
-
-let _vozTipo = 'tarefa', _vozRec = null, _vozGravando = false, _vozTranscricao = '', _vozDados = null;
-
-function vozAbrir(tipo) {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) { toast('A Web Speech API só funciona no Chrome ou Edge.'); return; }
-  _vozTipo = tipo; _vozDados = null; _vozTranscricao = '';
-  const overlay = document.getElementById('vozModal');
-  overlay.classList.add('open');
-  document.getElementById('vozModalTitulo').textContent = tipo === 'tarefa' ? 'Nova tarefa por voz' : 'Novo processo por voz';
-  document.getElementById('vozTranscript').classList.remove('visible');
-  document.getElementById('vozFields').classList.remove('visible');
-  document.getElementById('vozFields').innerHTML = '';
-  document.getElementById('vozLoading').classList.remove('visible');
-  document.getElementById('vozTranscriptFinal').textContent = '';
-  document.getElementById('vozTranscriptInterim').textContent = '';
-  document.getElementById('vozStatus').textContent = 'Clica para falar';
-  document.getElementById('vozStatus').className = 'voz-status';
-  document.getElementById('vozMicBtn').classList.remove('recording');
-  document.getElementById('vozActions').innerHTML = '<button class="voz-btn voz-btn-cancel" onclick="vozFechar()">Cancelar</button>';
-  overlay.classList.remove('recording');
-}
-function vozFechar() { if (_vozGravando) vozParar(); document.getElementById('vozModal').classList.remove('open'); }
-function vozToggle() { if (_vozGravando) vozParar(); else vozIniciar(); }
-
-function vozIniciar() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  _vozRec = new SR();
-  _vozRec.lang = 'pt-PT'; _vozRec.continuous = true; _vozRec.interimResults = true; _vozTranscricao = '';
-  document.getElementById('vozTranscript').classList.add('visible');
-  document.getElementById('vozTranscriptFinal').textContent = '';
-  document.getElementById('vozTranscriptInterim').textContent = '';
-  _vozRec.onstart = () => {
-    _vozGravando = true;
-    document.getElementById('vozMicBtn').classList.add('recording');
-    document.getElementById('vozModal').classList.add('recording');
-    document.getElementById('vozStatus').textContent = 'A ouvir… (clica para parar)';
-    document.getElementById('vozStatus').className = 'voz-status rec';
-    document.getElementById('vozMicIcon').innerHTML = '<rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor" stroke="none"/>';
-  };
-  _vozRec.onresult = (e) => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) _vozTranscricao += t + ' ';
-      else interim = t;
-    }
-    document.getElementById('vozTranscriptFinal').textContent = _vozTranscricao;
-    document.getElementById('vozTranscriptInterim').textContent = interim;
-  };
-  _vozRec.onerror = () => vozParar();
-  _vozRec.onend = () => { if (_vozGravando) _vozRec.start(); };
-  _vozRec.start();
-}
-
-function vozParar() {
-  _vozGravando = false;
-  if (_vozRec) { _vozRec.onend = null; _vozRec.stop(); }
-  document.getElementById('vozMicBtn').classList.remove('recording');
-  document.getElementById('vozModal').classList.remove('recording');
-  document.getElementById('vozStatus').textContent = 'Clica para falar';
-  document.getElementById('vozStatus').className = 'voz-status';
-  document.getElementById('vozMicIcon').innerHTML = '<rect x="5" y="1" width="6" height="9" rx="3"/><path d="M2 8c0 3.3 2.7 6 6 6s6-2.7 6-6"/><path d="M8 14v2"/>';
-  const texto = _vozTranscricao.trim();
-  if (texto) vozProcessar(texto);
-}
-
-async function vozProcessar(texto) {
-  document.getElementById('vozLoading').classList.add('visible');
-  document.getElementById('vozFields').classList.remove('visible');
-  document.getElementById('vozActions').innerHTML = '';
-  try {
-    let dados;
-    if (!VOZ_CLAUDE_API_KEY) {
-      await new Promise(r => setTimeout(r, 1400));
-      dados = vozSimular(texto, _vozTipo);
-    } else {
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':VOZ_CLAUDE_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:800, messages:[{role:'user',content:VOZ_PROMPTS[_vozTipo]+'\n\nTexto: "'+texto+'"'}] })
-      });
-      const data = await resp.json();
-      const raw = data.content?.[0]?.text || '{}';
-      dados = JSON.parse(raw.replace(/```json|```/g,'').trim());
-    }
-    _vozDados = dados;
-    vozMostrarCampos(dados);
-  } catch(e) {
-    document.getElementById('vozLoading').classList.remove('visible');
-    document.getElementById('vozStatus').textContent = 'Erro: ' + e.message;
-    document.getElementById('vozActions').innerHTML = '<button class="voz-btn voz-btn-retry" onclick="vozProcessar(_vozTranscricao.trim())">Tentar novamente</button><button class="voz-btn voz-btn-cancel" onclick="vozFechar()">Cancelar</button>';
-  }
-}
-
-function vozMostrarCampos(dados) {
-  document.getElementById('vozLoading').classList.remove('visible');
-  const labels = VOZ_LABELS[_vozTipo];
-  const fields = document.getElementById('vozFields');
-  const fullFields = _vozTipo === 'tarefa' ? ['descricao'] : ['empresa'];
-  fields.innerHTML = Object.entries(dados).map(([k,v]) => {
-    if (!(k in labels)) return '';
-    const empty = !v || v === '' || v === 'vazio';
-    const full = fullFields.includes(k);
-    return '<div class="voz-field'+(full?' full':'')+'"><div class="voz-field-key">'+labels[k]+'</div><div class="voz-field-val'+(empty?' empty':'')+'">'+( empty?'—':String(v))+'</div></div>';
-  }).join('');
-  fields.classList.add('visible');
-  document.getElementById('vozActions').innerHTML = `
-    <button class="voz-btn voz-btn-confirm" onclick="vozConfirmar()">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3.5 3.5L13 4"/></svg>
-      Preencher formulário
-    </button>
-    <button class="voz-btn voz-btn-retry" onclick="vozToggle()">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8A6 6 0 1114 8"/><path d="M2 8V4H6"/></svg>
-      Regravar
-    </button>`;
-}
-
-function vozConfirmar() {
-  if (!_vozDados) return;
-  if (_vozTipo === 'tarefa') vozPreencherTarefa(_vozDados);
-  else vozPreencherAdmissao(_vozDados);
-  vozFechar();
-  openTaskForm();
-}
-
-function vozPreencherTarefa(d) {
-  if (d.titulo)    { const el = document.getElementById('fTitulo');    if (el) el.value = d.titulo.trim(); }
-  if (d.descricao) { const el = document.getElementById('fDescricao'); if (el) el.value = d.descricao.trim(); }
-  const escId = _vozNormalizarEsc(d.escritorio);
-  if (escId) { const sel = document.getElementById('fEscritorio'); if (sel) [...sel.options].forEach(o => { if (o.value === escId) sel.value = o.value; }); }
-  if (d.prioridade && typeof selPrio === 'function') { const p = String(d.prioridade).toLowerCase().trim(); selPrio(['urgente','normal','baixa'].includes(p) ? p : 'normal'); }
-  toast('Formulário preenchido por voz ✓');
-}
-
-function vozPreencherAdmissao(d) {
-  if (d.tipo && typeof selTipo === 'function') selTipo(d.tipo === 'cessacao' ? 'cessacao' : 'admissao');
-  ['nome','numero','nif'].forEach(k => { if (d[k]) { const el = document.getElementById('f'+k.charAt(0).toUpperCase()+k.slice(1)); if (el) el.value = String(d[k]).trim(); } });
-  if (d.empresa)  { const el = document.getElementById('fEmpresa');   if (el) el.value = d.empresa.trim(); }
-  if (d.categoria){ const el = document.getElementById('fCategoria'); if (el) el.value = d.categoria.trim(); }
-  if (d.valorBase){ const el = document.getElementById('fValorBase'); if (el) el.value = String(d.valorBase).replace(/[^0-9.]/g,''); }
-  if (d.dataEntrada){ const el = document.getElementById('fDataEntrada'); if (el) { el.value = d.dataEntrada; if (typeof updatePrioPreview === 'function') updatePrioPreview(); } }
-  const escId = _vozNormalizarEsc(d.escritorio);
-  if (escId) { const sel = document.getElementById('fEscritorioAdm'); if (sel) [...sel.options].forEach(o => { if (o.value === escId) sel.value = o.value; }); }
-  if (d.tipoPagamento && typeof selPagamento === 'function') selPagamento(String(d.tipoPagamento).toLowerCase() === 'hora' ? 'hora' : 'mes');
-  toast('Formulário preenchido por voz ✓');
-}
-
-function vozSimular(texto, tipo) {
-  const t = texto.toLowerCase();
-  const nome = (texto.match(/\b([A-ZÁÉÍÓÚÀÂÊÔÃÕÇ][a-záéíóúàâêôãõç]+(?:\s+[A-ZÁÉÍÓÚÀÂÊÔÃÕÇ][a-záéíóúàâêôãõç]+)+)\b/) || [])[1] || '';
-  const esc  = _vozNormalizarEsc((window.getEscritoriosSync ? window.getEscritoriosSync() : []).map(e => e.id).find(e => t.includes(e)) || '');
-  const data = (texto.match(/\b(\d{4}-\d{2}-\d{2}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\b/) || [])[1] || '';
-  const numero = (texto.match(/(?:n[uúº°]mero|n[oº]\.?)\s*(\d+)/i) || [])[1] || '';
-  const empM = texto.match(/(?:empresa|para\s+(?:a\s+)?empresa)\s+([A-Za-zÀ-ÿ0-9 &,\.]+?)(?:\s+(?:base|categoria|nif|n[uú]mero|escritório|€|\d))/i);
-  const catM = texto.match(/categoria\s+([A-Za-zÀ-ÿ ]+?)(?:\s+(?:base|empresa|nif|escritório|€|\d|$))/i);
-  const valM = texto.match(/(?:base\s+|salário\s+)?(\d[\d\s]*(?:[.,]\d{1,2})?)\s*€/i) || texto.match(/base\s+(\d[\d\s]*(?:[.,]\d{1,2})?)/i);
-  const nif  = (texto.match(/\b(\d{9})\b/) || [])[1] || '';
-  if (tipo === 'tarefa') {
-    return { titulo:texto.split(' ').slice(0,7).join(' ').replace(/^\w/,c=>c.toUpperCase()), descricao:texto.length>50?texto:'', prioridade:t.includes('urgente')?'urgente':t.includes('baixa')?'baixa':'normal', escritorio:esc, departamento:t.includes('contabil')?'Contabilidade':t.includes('payroll')||t.includes('rh')?'Payroll':'' };
-  }
-  return { tipo:t.includes('cessa')||t.includes('saída')||t.includes('saida')?'cessacao':'admissao', nome, numero, nif, empresa:empM?empM[1].trim():'', categoria:catM?catM[1].trim():'', escritorio:esc, dataEntrada:data, valorBase:valM?valM[1].replace(/\s/g,'').replace(',','.'):'' , tipoPagamento:t.includes(' hora')||t.includes('horário')?'hora':'mes' };
-}
-
-document.getElementById('vozModal').addEventListener('click', function(e) { if (e.target === this) vozFechar(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { vozFechar(); closeTaskDetail(); closeTaskForm(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeTaskDetail(); closeTaskForm(); closeArquivoModal(); } });

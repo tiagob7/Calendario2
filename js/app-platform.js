@@ -1,4 +1,4 @@
-(function() {
+﻿(function() {
   const PAGE_TITLES = {
     dashboard: 'Dashboard',
     calendario: 'Calend&aacute;rio',
@@ -27,806 +27,12 @@
   }
 
   function ensureShellStyles() {
-    if (document.getElementById('appShellStyle')) return;
-
-    const style = document.createElement('style');
-    style.id = 'appShellStyle';
-    style.textContent = `
-      body.app-shell-active {
-        min-height: 100vh;
-        background: var(--bg);
-      }
-
-      /* ── Sidebar ── */
-      .app-shell-sidebar {
-        position: fixed;
-        top: 0; left: 0; bottom: 0;
-        z-index: 300;
-        width: 248px;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        background: var(--surface, #fff);
-        border-right: 1px solid var(--border, #e2e2e8);
-        transition: width var(--d, .2s) var(--ease, ease);
-      }
-
-      .app-shell-sidebar.collapsed { width: 64px; }
-
-      /* Logo */
-      .app-shell-logo {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-height: 62px;
-        padding: 18px 14px;
-        border-bottom: 1px solid var(--border, #e2e2e8);
-        overflow: hidden;
-      }
-
-      .app-shell-logo-icon {
-        width: 30px;
-        height: 30px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--accent);
-        color: var(--on-accent, #fff);
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 0;
-        font-family: 'Poppins', 'Inter', sans-serif;
-        flex-shrink: 0;
-        box-shadow: var(--shadow-sm);
-      }
-
-      .app-shell-logo-name {
-        font-family: 'Poppins', sans-serif;
-        font-size: 14px;
-        font-weight: 800;
-        color: var(--text, #1a1a22);
-        line-height: 1.1;
-        white-space: nowrap;
-      }
-
-      .app-shell-logo-sub {
-        font-size: 10px;
-        color: var(--muted, #8888a0);
-        text-transform: uppercase;
-        letter-spacing: .08em;
-        white-space: nowrap;
-      }
-
-      /* Office switcher */
-      .app-shell-office-wrap {
-        position: relative;
-        padding: 10px 10px 8px;
-        border-bottom: 1px solid var(--border, #e2e2e8);
-        overflow: visible;
-      }
-
-      .app-shell-office-btn {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        width: 100%;
-        padding: 7px 10px;
-        border-radius: 8px;
-        border: 1px solid var(--border, #e2e2e8);
-        background: var(--surface2, #f7f7f9);
-        color: var(--text-2, #4a4a68);
-        font-size: 12px;
-        font-weight: 500;
-        font-family: 'Inter', sans-serif;
-        cursor: pointer;
-        text-align: left;
-        transition: all .18s ease;
-        white-space: nowrap;
-        overflow: hidden;
-      }
-
-      .app-shell-office-btn:hover,
-      .app-shell-office-btn.open {
-        border-color: var(--accent, #2563eb);
-        color: var(--accent, #2563eb);
-        background: var(--accent-soft, var(--surface2));
-      }
-
-      .app-shell-office-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--accent);
-        flex-shrink: 0;
-      }
-
-      .app-shell-office-name {
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .app-shell-office-chevron {
-        width: 12px;
-        height: 12px;
-        flex-shrink: 0;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 2;
-      }
-
-      .app-shell-office-menu {
-        position: absolute;
-        top: calc(100% - 2px);
-        left: 10px;
-        right: 10px;
-        z-index: 380;
-        display: none;
-        padding: 6px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: var(--surface);
-        box-shadow: var(--shadow-lg);
-      }
-
-      .app-shell-office-wrap.open .app-shell-office-menu {
-        display: grid;
-        gap: 2px;
-      }
-
-      .app-shell-office-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        width: 100%;
-        padding: 8px;
-        border-radius: 7px;
-        color: var(--text-2);
-        font-size: 12px;
-        text-align: left;
-      }
-
-      .app-shell-office-item:hover {
-        background: var(--surface-hover);
-        color: var(--text);
-      }
-
-      .app-shell-office-item.active {
-        background: var(--accent-soft);
-        color: var(--accent);
-        font-weight: 700;
-      }
-
-      /* Collapsed hides */
-      .app-shell-sidebar.collapsed .app-shell-logo-copy,
-      .app-shell-sidebar.collapsed .app-shell-group-label,
-      .app-shell-sidebar.collapsed .app-shell-link-label,
-      .app-shell-sidebar.collapsed .app-shell-user-copy,
-      .app-shell-sidebar.collapsed .app-shell-link-badge,
-      .app-shell-sidebar.collapsed .app-shell-office-name,
-      .app-shell-sidebar.collapsed .app-shell-office-chevron,
-      .app-shell-sidebar.collapsed .app-shell-office-menu {
-        opacity: 0;
-        width: 0;
-        overflow: hidden;
-      }
-
-      .app-shell-sidebar.collapsed .app-shell-office-btn {
-        justify-content: center;
-        padding: 7px;
-      }
-
-      .app-shell-sidebar.collapsed .app-shell-office-wrap {
-        padding: 8px 10px;
-      }
-
-      /* Nav */
-      .app-shell-nav {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 8px 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .app-shell-nav::-webkit-scrollbar { width: 4px; }
-      .app-shell-nav::-webkit-scrollbar-thumb {
-        background: var(--border, #e2e2e8);
-        border-radius: 99px;
-      }
-
-      .app-shell-group-label {
-        padding: 10px 8px 4px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .1em;
-        color: var(--muted, #8888a0);
-        white-space: nowrap;
-      }
-
-      .app-shell-link {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px;
-        border-radius: 8px;
-        color: var(--text-2, #4a4a68);
-        text-decoration: none;
-        transition: all .18s ease;
-        white-space: nowrap;
-      }
-
-      .app-shell-link:hover {
-        background: var(--surface2, #f7f7f9);
-        color: var(--text, #1a1a22);
-      }
-
-      :root {
-        --sidebar-active-bg: var(--accent-soft);
-        --sidebar-active-color: var(--accent);
-        --sidebar-active-icon-bg: color-mix(in srgb, var(--accent) 12%, transparent);
-      }
-      html[data-theme="forest"] {
-        --sidebar-active-bg: rgba(20,184,166,.10);
-        --sidebar-active-color: #0d9488;
-        --sidebar-active-icon-bg: rgba(20,184,166,.12);
-      }
-      html[data-theme="sunset"] {
-        --sidebar-active-bg: rgba(249,115,22,.10);
-        --sidebar-active-color: #ea580c;
-        --sidebar-active-icon-bg: rgba(249,115,22,.12);
-      }
-      html[data-theme="violet"] {
-        --sidebar-active-bg: rgba(124,58,237,.10);
-        --sidebar-active-color: #7c3aed;
-        --sidebar-active-icon-bg: rgba(124,58,237,.12);
-      }
-
-      .app-shell-link.active {
-        background: var(--sidebar-active-bg);
-        color: var(--sidebar-active-color);
-        font-weight: 600;
-      }
-
-      .app-shell-link-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 7px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-
-      .app-shell-link.active .app-shell-link-icon {
-        background: var(--sidebar-active-icon-bg);
-      }
-
-      .app-shell-link-icon svg {
-        width: 16px;
-        height: 16px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.9;
-      }
-
-      .app-shell-link-label {
-        flex: 1;
-        font-size: 13px;
-        font-weight: 500;
-      }
-
-      .app-shell-link-badge {
-        min-width: 18px;
-        padding: 1px 6px;
-        border-radius: 99px;
-        background: var(--red);
-        color: var(--on-accent, #fff);
-        font-size: 10px;
-        font-weight: 700;
-        line-height: 16px;
-        text-align: center;
-      }
-
-      .app-shell-sidebar.collapsed .app-shell-link { justify-content: center; }
-
-      .app-shell-sep {
-        margin: 6px 0;
-        border: 0;
-        border-top: 1px solid var(--border, #e2e2e8);
-      }
-
-      /* Footer */
-      .app-shell-footer {
-        padding: 8px;
-        border-top: 1px solid var(--border, #e2e2e8);
-      }
-
-      .app-shell-user {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px;
-        border-radius: 8px;
-        overflow: hidden;
-        transition: all .18s ease;
-        cursor: default;
-      }
-
-      .app-shell-user:hover { background: var(--surface2, #f7f7f9); }
-
-      .app-shell-avatar {
-        width: 30px;
-        height: 30px;
-        border-radius: 999px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--accent);
-        color: var(--on-accent, #fff);
-        font-size: 11px;
-        font-weight: 700;
-        flex-shrink: 0;
-      }
-
-      .app-shell-user-copy { flex: 1; min-width: 0; }
-
-      .app-shell-user-name {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text, #1a1a22);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .app-shell-user-role {
-        font-size: 10px;
-        color: var(--muted, #8888a0);
-        white-space: nowrap;
-      }
-
-      .app-shell-logout-icon {
-        width: 28px;
-        height: 28px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        border: 1px solid var(--border, #e2e2e8);
-        background: transparent;
-        color: var(--muted, #8888a0);
-        cursor: pointer;
-        flex-shrink: 0;
-        transition: all .18s ease;
-      }
-
-      .app-shell-logout-icon:hover {
-        border-color: var(--red);
-        color: var(--red);
-        background: var(--red-bg);
-      }
-
-      .app-shell-logout-icon svg {
-        width: 13px;
-        height: 13px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.8;
-      }
-
-      /* Toggle button */
-      .app-shell-toggle {
-        position: fixed;
-        top: 18px;
-        left: 235px;
-        z-index: 350;
-        width: 26px;
-        height: 26px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--border, #e2e2e8);
-        border-radius: 999px;
-        background: var(--surface, #fff);
-        color: var(--muted, #8888a0);
-        box-shadow: var(--shadow-md);
-        cursor: pointer;
-        transition: left .28s ease, transform .18s ease, border-color .18s ease, color .18s ease, background .18s ease;
-      }
-
-      .app-shell-toggle:hover {
-        border-color: var(--accent, #2563eb);
-        color: var(--accent, #2563eb);
-      }
-
-      .app-shell-toggle svg {
-        width: 12px;
-        height: 12px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 2.4;
-        transition: transform .28s ease;
-      }
-
-      .app-shell-sidebar.collapsed + .app-shell-toggle { left: 51px; }
-      .app-shell-sidebar.collapsed + .app-shell-toggle svg { transform: rotate(180deg); }
-
-      /* Main content */
-      .app-shell-main {
-        min-width: 0;
-        margin-left: 248px;
-        transition: margin-left var(--d, .2s) var(--ease, ease);
-      }
-
-      .app-shell-sidebar.collapsed + .app-shell-toggle + .app-shell-main { margin-left: 64px; }
-      .app-shell-main > .page { min-width: 0; }
-
-      /* ── Topbar ── */
-      .app-shell-topbar {
-        position: sticky;
-        top: 0;
-        z-index: 200;
-        min-height: 56px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 24px;
-        background: var(--surface, #fff);
-        border-bottom: 1px solid var(--border, #e2e2e8);
-        box-shadow: var(--shadow-xs);
-      }
-
-      .app-shell-topbar-title {
-        margin: 0;
-        font-family: 'Poppins', sans-serif;
-        font-size: 15px;
-        font-weight: 700;
-        letter-spacing: 0;
-        color: var(--text, #1a1a22);
-        white-space: nowrap;
-      }
-
-      /* Global search */
-      .app-shell-search-wrap {
-        flex: 1;
-        max-width: 360px;
-        margin: 0 auto;
-      }
-
-      .app-shell-search {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        height: 34px;
-        padding: 0 10px;
-        border-radius: 8px;
-        border: 1px solid var(--border, #e2e2e8);
-        background: var(--surface2, #f7f7f9);
-        width: 100%;
-        transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
-        cursor: text;
-      }
-
-      .app-shell-search:focus-within {
-        border-color: var(--accent, #2563eb);
-        box-shadow: 0 0 0 3px var(--accent-soft);
-        background: var(--surface, #fff);
-      }
-
-      .app-shell-search svg {
-        width: 13px;
-        height: 13px;
-        fill: none;
-        stroke: var(--muted, #8888a0);
-        stroke-width: 1.8;
-        flex-shrink: 0;
-      }
-
-      .app-shell-search input {
-        flex: 1;
-        border: none;
-        background: transparent;
-        outline: none;
-        font-size: 12.5px;
-        font-family: 'Inter', sans-serif;
-        color: var(--text, #1a1a22);
-        min-width: 0;
-      }
-
-      .app-shell-search input::placeholder { color: var(--muted, #8888a0); }
-
-      .app-shell-search-kbd {
-        font-size: 10px;
-        padding: 1px 5px;
-        border-radius: 4px;
-        border: 1px solid var(--border, #e2e2e8);
-        background: var(--surface, #fff);
-        color: var(--muted, #8888a0);
-        white-space: nowrap;
-        flex-shrink: 0;
-        font-family: 'Inter', sans-serif;
-      }
-
-      .app-shell-spacer { flex: 1; }
-
-      /* Topbar actions */
-      .app-shell-topbar-actions {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-shrink: 0;
-      }
-
-      .app-shell-icon-btn {
-        position: relative;
-        width: 34px;
-        height: 34px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        border: 1px solid var(--border, #e2e2e8);
-        background: var(--surface2, #f7f7f9);
-        color: var(--muted, #8888a0);
-        cursor: pointer;
-        transition: all .18s ease;
-        flex-shrink: 0;
-      }
-
-      .app-shell-icon-btn:hover {
-        border-color: var(--accent, #2563eb);
-        color: var(--accent, #2563eb);
-      }
-
-      .app-shell-icon-btn svg {
-        width: 15px;
-        height: 15px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.8;
-      }
-
-      .app-shell-icon-btn .dark-toggle-icon {
-        font-size: 14px;
-        line-height: 1;
-      }
-
-      /* Notification badge */
-      .app-shell-notif-badge {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: var(--red);
-        border: 1.5px solid var(--surface, #fff);
-        display: none;
-      }
-
-      .app-shell-notif-badge.show { display: block; }
-
-      /* Topbar user avatar */
-      .app-shell-topbar-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--accent);
-        color: var(--on-accent, #fff);
-        font-size: 11px;
-        font-weight: 700;
-        flex-shrink: 0;
-        border: 2px solid var(--border, #e2e2e8);
-        cursor: pointer;
-        transition: border-color .18s ease, box-shadow .18s ease;
-        font-family: 'Inter', sans-serif;
-      }
-
-      .app-shell-topbar-avatar:hover {
-        border-color: var(--accent, #2563eb);
-        box-shadow: 0 0 0 3px var(--accent-soft);
-      }
-
-      /* Legacy topbar elements (hidden — functionality moved to sidebar/new buttons) */
-      .app-shell-dark,
-      .app-shell-logout,
-      .app-shell-topbar-user { display: none !important; }
-
-      /* Mobile modules button */
-      .app-shell-modules-btn {
-        display: none;
-        align-items: center;
-        gap: 6px;
-        padding: 7px 11px;
-        border-radius: 999px;
-        border: 1px solid var(--border, #e2e2e8);
-        background: var(--surface2, #f7f7f9);
-        color: var(--muted, #8888a0);
-        font-family: 'Inter', sans-serif;
-        font-size: 10px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: .07em;
-        cursor: pointer;
-        transition: all .18s ease;
-      }
-
-      .app-shell-modules-btn:hover {
-        border-color: var(--accent, #2563eb);
-        color: var(--accent, #2563eb);
-      }
-
-      .app-shell-modules-btn svg {
-        width: 12px;
-        height: 12px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.9;
-      }
-
-      .app-shell-modules-wrap {
-        position: relative;
-        display: none;
-      }
-
-      .app-shell-modules-menu {
-        position: absolute;
-        top: calc(100% + 10px);
-        left: 0;
-        width: min(320px, calc(100vw - 28px));
-        max-height: min(70vh, 520px);
-        overflow-y: auto;
-        padding: 10px;
-        border: 1px solid var(--border, #e2e2e8);
-        border-radius: 18px;
-        background: var(--surface, #fff);
-        box-shadow: 0 18px 40px rgba(15,23,42,.16);
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(-6px);
-        transition: opacity .18s ease, transform .18s ease;
-      }
-
-      .app-shell-modules-wrap.open .app-shell-modules-menu {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateY(0);
-      }
-
-      .app-shell-modules-group {
-        padding: 8px 10px 4px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .08em;
-        color: var(--muted, #8888a0);
-      }
-
-      .app-shell-modules-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-        border-radius: 12px;
-        color: var(--text, #1a1a22);
-        text-decoration: none;
-        transition: all .18s ease;
-      }
-
-      .app-shell-modules-item:hover { background: var(--surface2, #f7f7f9); }
-      .app-shell-modules-item.active {
-        background: var(--blue-bg, #eff6ff);
-        color: var(--blue, #2563eb);
-      }
-
-      .app-shell-modules-icon {
-        width: 34px;
-        height: 34px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        background: var(--surface2, #f7f7f9);
-        color: inherit;
-        flex-shrink: 0;
-      }
-
-      .app-shell-modules-icon svg {
-        width: 16px;
-        height: 16px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.9;
-      }
-
-      .app-shell-modules-copy { min-width: 0; flex: 1; }
-      .app-shell-modules-label { display: block; font-size: 13px; font-weight: 700; }
-      .app-shell-modules-sub { display: block; margin-top: 2px; font-size: 11px; color: var(--muted, #8888a0); }
-
-      /* Backdrop */
-      .app-shell-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(15,23,42,.4);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity .22s ease;
-        z-index: 280;
-      }
-
-      .app-shell-backdrop.open {
-        opacity: 1;
-        pointer-events: auto;
-      }
-
-      /* Responsive */
-      @media (max-width: 900px) {
-        .app-shell-sidebar { width: 64px; }
-
-        .app-shell-sidebar .app-shell-logo-copy,
-        .app-shell-sidebar .app-shell-group-label,
-        .app-shell-sidebar .app-shell-link-label,
-        .app-shell-sidebar .app-shell-user-copy,
-        .app-shell-sidebar .app-shell-link-badge,
-        .app-shell-sidebar .app-shell-office-name,
-        .app-shell-sidebar .app-shell-office-chevron {
-          opacity: 0;
-          width: 0;
-          overflow: hidden;
-        }
-
-        .app-shell-sidebar .app-shell-office-btn {
-          justify-content: center;
-          padding: 7px;
-        }
-
-        .app-shell-sidebar .app-shell-link { justify-content: center; }
-        .app-shell-toggle { left: 51px; }
-        .app-shell-main { margin-left: 64px; }
-
-        .app-shell-topbar {
-          padding-left: 18px;
-          padding-right: 18px;
-        }
-
-        .app-shell-search-wrap { max-width: 260px; }
-        .app-shell-search-kbd { display: none; }
-      }
-
-      @media (max-width: 640px) {
-        .app-shell-topbar {
-          gap: 8px;
-          padding-left: 14px;
-          padding-right: 14px;
-        }
-
-        .app-shell-modules-wrap { display: inline-block; }
-        .app-shell-modules-btn { display: inline-flex; }
-
-        .app-shell-search-wrap { display: none; }
-
-        .app-shell-sidebar,
-        .app-shell-toggle,
-        .app-shell-backdrop { display: none !important; }
-
-        .app-shell-main,
-        .app-shell-sidebar.collapsed + .app-shell-toggle + .app-shell-main {
-          margin-left: 0;
-        }
-      }
-    `;
-
-    document.head.appendChild(style);
+    if (document.querySelector('link[href$="styles.css"]')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'styles.css';
+    document.head.appendChild(link);
   }
-
   function initialsFromName(nome) {
     return String(nome || '')
       .split(' ')
@@ -841,7 +47,9 @@
       ? 'sidebarBadgeTarefas'
       : item.id === 'comunicados'
         ? 'sidebarBadgeCom'
-        : '';
+        : item.id === 'chat'
+          ? 'sidebarBadgeChat'
+          : '';
 
     return `
       <a class="app-shell-link${activePage === item.id ? ' active' : ''}" href="${item.href}"${extraAttrs || ''}>
@@ -889,7 +97,7 @@
     `;
   }
 
-  // Secções de navegação — define agrupamento visual na sidebar
+  // SecÃ§Ãµes de navegaÃ§Ã£o â€” define agrupamento visual na sidebar
   const NAV_SECTIONS = [
     { label: null, ids: ['tarefas', 'comunicados', 'chat'] },
     { label: 'Recursos Humanos', ids: ['ferias', 'reclamacoes', 'admissoes', 'despesas'] },
@@ -907,7 +115,7 @@
       html += items.map(item => navLinkHtml(item, activePage)).join('');
     });
 
-    // Módulos não mapeados em nenhuma secção (catch-all)
+    // M&oacute;dulos nÃ£o mapeados em nenhuma secÃ§Ã£o (catch-all)
     mainModules.filter(m => !allSectionedIds.has(m.id)).forEach(m => {
       html += navLinkHtml(m, activePage);
     });
@@ -916,6 +124,7 @@
   }
 
   function buildSidebarHtml(activePage) {
+    const isAdmin = window.isAdmin ? window.isAdmin() : false;
     const mainModules = getModules('main');
     const adminModules = getModules('admin');
 
@@ -935,12 +144,15 @@
           </div>
         </div>
         <div class="app-shell-office-wrap">
-          <button class="app-shell-office-btn" type="button" id="appShellOfficeBtn" title="Escritório activo">
+          <button class="app-shell-office-btn" type="button" id="appShellOfficeBtn" title="Escrit&oacute;rio activo"${!isAdmin ? ' disabled' : ''}>
             <span class="app-shell-office-dot" id="appShellOfficeDot"></span>
-            <span class="app-shell-office-name" id="appShellOfficeName">A carregar…</span>
-            <svg aria-hidden="true" class="app-shell-office-chevron" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></svg>
+            <span class="app-shell-office-meta">
+              <span class="app-shell-office-label">Escrit&oacute;rio</span>
+              <span class="app-shell-office-name" id="appShellOfficeName">A carregar&hellip;</span>
+            </span>
+            ${isAdmin ? '<svg aria-hidden="true" class="app-shell-office-chevron" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></svg>' : ''}
           </button>
-          ${buildOfficeMenuHtml()}
+          ${isAdmin ? buildOfficeMenuHtml() : ''}
         </div>
         <nav class="app-shell-nav">
           ${buildNavSectionsHtml(mainModules, activePage)}
@@ -986,22 +198,42 @@
       <header class="app-shell-topbar" id="appShellTopbar">
         <button class="app-shell-modules-btn" type="button" onclick="window.toggleSidebar()">
           <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg>
-          Módulos
+          M&oacute;dulos
         </button>
         <h1 class="app-shell-topbar-title">${title}</h1>
         <div class="app-shell-search-wrap">
           <div class="app-shell-search">
             <svg aria-hidden="true" viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="5"/><path d="M10.5 10.5l3.5 3.5"/></svg>
-            <input type="search" placeholder="Pesquisar…" id="appShellSearchInput" autocomplete="off">
-            <span class="app-shell-search-kbd">⌘K</span>
+            <input type="search" placeholder="Pesquisar&hellip;" id="appShellSearchInput" autocomplete="off"
+              oninput="window._shellSearchInput && window._shellSearchInput(this.value)"
+              onfocus="window.openShellSearch && window.openShellSearch()"
+              onkeydown="window._shellSearchKey && window._shellSearchKey(event)">
+            <span class="app-shell-search-kbd">&#8984;K</span>
+          </div>
+          <div class="app-shell-search-panel" id="appShellSearchPanel" role="listbox" aria-label="Resultados de pesquisa">
+            <div class="app-shell-search-results" id="appShellSearchResults"></div>
+            <div class="app-shell-search-footer">
+              <span class="app-shell-search-footer-label">Ir para:</span>
+              <a href="tarefas.html">Tarefas</a>
+              <a href="comunicados.html">Comunicados</a>
+              <a href="reclamacoes.html">Reclama&ccedil;&otilde;es</a>
+              <a href="admissoes.html">Admiss&otilde;es</a>
+            </div>
           </div>
         </div>
         <span class="app-shell-spacer"></span>
         <div class="app-shell-topbar-actions">
           ${customizeBtn}
-          <button class="app-shell-icon-btn" type="button" id="appShellNotifBtn" title="Notificações" aria-label="Notificações">
+          <button class="app-shell-icon-btn" type="button" id="appShellNotifBtn" title="Notifica&ccedil;&otilde;es" aria-label="Notifica&ccedil;&otilde;es">
             <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M8 1a5 5 0 015 5c0 2.5.5 4 1.5 5H1.5C2.5 10 3 8.5 3 6a5 5 0 015-5z"/><path d="M6 13a2 2 0 004 0"/></svg>
             <span class="app-shell-notif-badge" id="appShellNotifBadge"></span>
+          </button>
+          <button class="app-shell-icon-btn" type="button" id="appShellHelpBtn" title="Ajuda" aria-label="Ajuda">
+            <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="8" cy="8" r="6.5"/>
+              <path d="M6 6a2 2 0 113.5 1.4C9 8.1 8 8.5 8 9.5"/>
+              <circle cx="8" cy="12" r=".6" fill="currentColor" stroke="none"/>
+            </svg>
           </button>
           <button class="app-shell-icon-btn" type="button" onclick="window.toggleDarkMode()" title="Modo escuro">
             <span class="dark-toggle-icon">${isDark ? '☀️' : '🌙'}</span>
@@ -1061,15 +293,48 @@
       item.addEventListener('click', event => {
         event.stopPropagation();
         const officeId = item.getAttribute('data-office-id') || '';
+        wrap.classList.remove('open');
+        btn.classList.remove('open');
         if (window.isAdmin && window.isAdmin()) {
           sessionStorage.setItem('filtroEscritorio', officeId || 'todos');
           document.dispatchEvent(new CustomEvent('escritorioChanged', { detail: { escritorio: officeId || 'todos' } }));
+          window.location.reload();
         }
-        wrap.classList.remove('open');
-        btn.classList.remove('open');
-        window.renderNavbar(window.__appShellActivePage || '');
       });
     });
+  }
+
+  const MOBILE_TAB_IDS = ['dashboard', 'tarefas', 'ferias', 'reclamacoes', 'chat'];
+
+  function ensureMobileTabbar(activePage) {
+    const main = document.getElementById('appShellMain');
+    if (!main) return;
+
+    const allModules = [DASHBOARD_LINK].concat(getModules('main'));
+    const tabs = MOBILE_TAB_IDS
+      .map(id => allModules.find(m => m.id === id))
+      .filter(Boolean);
+
+    let tabbar = document.getElementById('appShellTabbar');
+    if (!tabbar) {
+      tabbar = document.createElement('nav');
+      tabbar.id = 'appShellTabbar';
+      tabbar.className = 'mobile-tabbar';
+      tabbar.setAttribute('aria-label', 'Navegação móvel');
+      main.appendChild(tabbar);
+    }
+
+    tabbar.innerHTML = tabs.map(tab => {
+      const badgeId = tab.id === 'tarefas' ? 'tabbarBadgeTarefas'
+        : tab.id === 'chat' ? 'tabbarBadgeChat' : '';
+      return `
+        <a class="mobile-tab-item${activePage === tab.id ? ' active' : ''}" href="${tab.href}" aria-label="${tab.label}">
+          <svg viewBox="0 0 16 16" aria-hidden="true">${tab.icon || ''}</svg>
+          <span class="mobile-tab-label">${tab.label}</span>
+          ${badgeId ? `<span class="mobile-tab-badge" id="${badgeId}" style="display:none"></span>` : ''}
+        </a>
+      `;
+    }).join('');
   }
 
   function ensureMobileModulesMenu(activePage) {
@@ -1282,6 +547,7 @@
       }
     }
 
+    ensureMobileTabbar(activePage);
     ensureMobileModulesMenu(activePage);
     bindOfficeSwitcher();
     applySidebarState();
@@ -1289,6 +555,89 @@
   };
 
   window.addEventListener('resize', applySidebarState);
+
+  // ── Shell search panel ──────────────────────────────────────────
+
+  function ensureSearchBackdrop() {
+    let bd = document.getElementById('appShellSearchBackdrop');
+    if (!bd) {
+      bd = document.createElement('div');
+      bd.id = 'appShellSearchBackdrop';
+      bd.className = 'app-shell-search-backdrop';
+      bd.onclick = function() { window.closeShellSearch(); };
+      document.body.appendChild(bd);
+    }
+    return bd;
+  }
+
+  window.openShellSearch = function() {
+    const panel = document.getElementById('appShellSearchPanel');
+    const results = document.getElementById('appShellSearchResults');
+    if (!panel) return;
+    panel.classList.add('open');
+    ensureSearchBackdrop().classList.add('open');
+    if (results && !results.innerHTML.trim()) {
+      results.innerHTML = '<div class="gsearch-empty">Escreve para pesquisar…</div>';
+    }
+    const input = document.getElementById('appShellSearchInput');
+    if (input) { input.focus(); }
+  };
+
+  window.closeShellSearch = function() {
+    const panel = document.getElementById('appShellSearchPanel');
+    if (panel) panel.classList.remove('open');
+    const bd = document.getElementById('appShellSearchBackdrop');
+    if (bd) bd.classList.remove('open');
+  };
+
+  // Input handler — delegates to doGlobalSearch if available (dashboard)
+  window._shellSearchInput = function(q) {
+    if (typeof window.doGlobalSearch === 'function') {
+      window.doGlobalSearch(q);
+    }
+  };
+
+  // Keyboard: Escape closes, arrow keys navigate results
+  window._shellSearchKey = function(event) {
+    if (event.key === 'Escape') {
+      window.closeShellSearch();
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const panel = document.getElementById('appShellSearchPanel');
+      if (!panel) return;
+      const items = Array.from(panel.querySelectorAll('.gsearch-item'));
+      if (!items.length) return;
+      const focused = panel.querySelector('.gsearch-item.focused');
+      const idx = focused ? items.indexOf(focused) : -1;
+      if (focused) focused.classList.remove('focused');
+      const next = event.key === 'ArrowDown'
+        ? items[Math.min(idx + 1, items.length - 1)]
+        : items[Math.max(idx - 1, 0)];
+      next.classList.add('focused');
+      next.scrollIntoView({ block: 'nearest' });
+    }
+    if (event.key === 'Enter') {
+      const panel = document.getElementById('appShellSearchPanel');
+      if (!panel) return;
+      const focused = panel.querySelector('.gsearch-item.focused');
+      if (focused) { focused.click(); }
+    }
+  };
+
+  // Ctrl+K / Cmd+K — open search
+  document.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+      event.preventDefault();
+      const input = document.getElementById('appShellSearchInput');
+      if (input) {
+        input.focus();
+        window.openShellSearch();
+      }
+    }
+  });
+
   document.addEventListener('click', event => {
     const wrap = document.getElementById('appShellModulesWrap') || document.getElementById('dashModulesWrap');
     if (wrap && !wrap.contains(event.target)) {
@@ -1307,7 +656,7 @@
     const profile = detail.profile || window.userProfile || null;
     updateShellUser(profile);
 
-    // Aplicar tema guardado nas preferências do utilizador
+    // Aplicar tema guardado nas preferÃªncias do utilizador
     const prefs = profile && profile.preferencias && profile.preferencias.dashboard
       ? profile.preferencias.dashboard
       : {};
@@ -1344,3 +693,4 @@
     }
   });
 })();
+
