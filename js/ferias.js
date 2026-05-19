@@ -14,6 +14,7 @@
   let podeGerir = false;
   let currentUid = '';
   let unsub = null;
+  let editingFeriasId = null;
 
   const PALETTE = [
     '#0284c7','#16a34a','#dc2626','#d97706','#7c3aed',
@@ -138,6 +139,12 @@
     return map;
   }
 
+  function calcDias(inicio, fim) {
+    if (!inicio || !fim) return 0;
+    const d = Math.round((new Date(fim + 'T00:00:00') - new Date(inicio + 'T00:00:00')) / 86400000) + 1;
+    return d > 0 ? d : 0;
+  }
+
   function pad(n) { return String(n).padStart(2, '0'); }
   function toDateStr(y, m, d) { return `${y}-${pad(m + 1)}-${pad(d)}`; }
 
@@ -167,38 +174,49 @@
 
   // ── Render dispatcher ──────────────────────────────────────
   function render() {
-    renderStats();
+    renderBalance();
+    renderTabCounts();
     renderCollabChips();
     if (viewMode === 'lista')        renderLista();
     else if (viewMode === 'mensal')  renderMensal();
     else                             renderAnual();
   }
 
-  // ── Stats ──────────────────────────────────────────────────
-  function renderStats() {
+  // ── Balance card ───────────────────────────────────────────
+  function renderBalance() {
     const ano = new Date().getFullYear();
-    const set = podeGerir ? allPedidos : allPedidos.filter(p => p.uid === currentUid);
-    setText('statTotal',    set.length);
-    setText('statPendente', set.filter(p => p.estado === 'pendente').length);
-    setText('statAprovado', set.filter(p => p.estado === 'aprovado').length);
-    const dias = set
-      .filter(p => p.estado === 'aprovado' && p.tipo === 'ferias' && new Date(p.dataInicio + 'T00:00:00').getFullYear() === ano)
-      .reduce((acc, p) => {
-        const d = Math.round((new Date(p.dataFim + 'T00:00:00') - new Date(p.dataInicio + 'T00:00:00')) / 86400000) + 1;
-        return acc + (d > 0 ? d : 0);
-      }, 0);
-    setText('statDias', dias);
+    const meus = allPedidos.filter(p => p.uid === currentUid && p.tipo === 'ferias' &&
+      p.dataInicio && new Date(p.dataInicio + 'T00:00:00').getFullYear() === ano);
+    const totalAnual = (window.userProfile && window.userProfile.diasFeriasAnual) || 22;
+    const used    = meus.filter(p => p.estado === 'aprovado').reduce((s, p) => s + calcDias(p.dataInicio, p.dataFim), 0);
+    const pending = meus.filter(p => p.estado === 'pendente').reduce((s, p) => s + calcDias(p.dataInicio, p.dataFim), 0);
+    const left    = Math.max(0, totalAnual - used - pending);
 
-    // Tab counts (respect escritório filter but not estado filter)
+    const circ = 339.29;
+    const offset = totalAnual > 0 ? circ * (1 - Math.min(1, (used + pending) / totalAnual)) : circ;
+    const ring = document.getElementById('balanceRingFill');
+    if (ring) ring.style.strokeDashoffset = offset;
+
+    setText('balRingVal', left);
+    setText('balTotal',   totalAnual);
+    setText('balUsed',    used);
+    setText('balPending', pending);
+    setText('balLeft',    left);
+    const titleEl = document.getElementById('balTitle');
+    if (titleEl) titleEl.textContent = `O meu saldo de ${ano}`;
+  }
+
+  // ── Tab counts ─────────────────────────────────────────────
+  function renderTabCounts() {
     const visBase = allPedidos.filter(p => {
       if (!podeGerir && p.uid !== currentUid) return false;
       if (filtroEscritorio && p.escritorio !== filtroEscritorio) return false;
       return true;
     });
-    setText('tabCountTodos',      visBase.length);
-    setText('tabCountPendente',   visBase.filter(p => p.estado === 'pendente').length);
-    setText('tabCountAprovado',   visBase.filter(p => p.estado === 'aprovado').length);
-    setText('tabCountRejeitado',  visBase.filter(p => p.estado === 'rejeitado').length);
+    setText('tabCountTodos',     visBase.length);
+    setText('tabCountPendente',  visBase.filter(p => p.estado === 'pendente').length);
+    setText('tabCountAprovado',  visBase.filter(p => p.estado === 'aprovado').length);
+    setText('tabCountRejeitado', visBase.filter(p => p.estado === 'rejeitado').length);
   }
 
   // ── Collaborator chips ─────────────────────────────────────
@@ -256,11 +274,9 @@
   }
 
   function reqRowHtml(p) {
-    const meu = p.uid === currentUid;
     const inicio = p.dataInicio ? new Date(p.dataInicio + 'T00:00:00').toLocaleDateString('pt-PT') : '—';
     const fim    = p.dataFim   ? new Date(p.dataFim   + 'T00:00:00').toLocaleDateString('pt-PT') : '—';
-    const dias   = p.dataInicio && p.dataFim
-      ? Math.round((new Date(p.dataFim + 'T00:00:00') - new Date(p.dataInicio + 'T00:00:00')) / 86400000) + 1 : '?';
+    const dias   = calcDias(p.dataInicio, p.dataFim);
     const tipoLabel = { ferias:'Férias', folga:'Folga', licenca:'Licença', outro:'Outro' }[p.tipo] || p.tipo;
     const estadoLabel = { pendente:'Pendente', aprovado:'Aprovado', rejeitado:'Rejeitado', cancelado:'Cancelado' }[p.estado] || p.estado;
     const cor = collabColors[p.uid] || '#94a3b8';
@@ -272,41 +288,17 @@
         <button class="btn btn-red btn-sm" onclick="event.stopPropagation();rejeitarRapido('${p.id}')" title="Rejeitar">✕</button>
       </div>` : '';
 
-    const bodyActions = [];
-    if (podeGerir && p.estado === 'pendente') bodyActions.push(`
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <input class="obs-input" id="obs_${p.id}" placeholder="Observação (opcional)">
-        <button class="btn btn-secondary btn-sm" onclick="aprovar('${p.id}')">✓ Aprovar</button>
-        <button class="btn btn-red btn-sm" onclick="rejeitar('${p.id}')">✕ Rejeitar</button>
-      </div>`);
-    if (meu && p.estado === 'pendente') bodyActions.push(
-      `<button class="btn btn-secondary btn-sm" onclick="cancelar('${p.id}')">Cancelar pedido</button>`);
-
     return `
       <div class="req-item estado-${window.escHtml(p.estado)}" id="card_${p.id}">
-        <div class="req-row" onclick="toggleCard('${p.id}')">
+        <div class="req-row" onclick="window.abrirModalDetalhe('${p.id}')">
           <div class="req-avatar" style="background:${cor}">${window.escHtml(initials)}</div>
           <div class="req-info">
             <div class="req-name">${window.escHtml(p.nomeCompleto || p.email || '—')}</div>
-            <div class="req-sub">${window.escHtml(tipoLabel)}${p.escritorio ? ' · ' + window.escHtml(p.escritorio) : ''} · ${inicio} → ${fim}</div>
+            <div class="req-sub">${window.escHtml(tipoLabel)}${p.escritorio ? ' · ' + window.escHtml(p.escritorio) : ''} · ${inicio} → ${fim} · ${dias} dia${dias !== 1 ? 's' : ''}</div>
           </div>
           <span class="tipo-tag">${window.escHtml(tipoLabel)}</span>
           <span class="estado-pill ${window.escHtml(p.estado)}">${window.escHtml(estadoLabel)}</span>
           ${inlineActions}
-          <svg class="req-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
-        </div>
-        <div class="req-body" id="body_${p.id}">
-          <div class="card-detail-row">
-            <span class="detail-item">
-              <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12"/></svg>
-              ${inicio} → ${fim} (${dias} dia${dias !== 1 ? 's' : ''})
-            </span>
-            ${p.escritorio ? `<span class="detail-item">${window.escHtml(p.escritorio)}</span>` : ''}
-            <span class="detail-item">${window.escHtml(window.fmtShort ? window.fmtShort(p.criadoEm) : '')}</span>
-          </div>
-          ${p.motivo ? `<div class="card-motivo">${window.escHtml(p.motivo)}</div>` : ''}
-          ${p.observacao ? `<div class="card-obs">Obs: ${window.escHtml(p.observacao)}</div>` : ''}
-          ${bodyActions.length ? `<div class="card-actions">${bodyActions.join('')}</div>` : ''}
         </div>
       </div>`;
   }
@@ -328,7 +320,7 @@
       const visible = entries.slice(0, 3);
       const extra   = entries.length - 3;
       const bars = visible.map(e =>
-        `<div class="cal-bar ${window.escHtml(e.estado)}" style="background:${e.cor}" title="${window.escHtml(e.nome)}">${window.escHtml(e.nome)}</div>`
+        `<div class="cal-bar ${window.escHtml(e.estado)}" style="background-color:${e.cor}" title="${window.escHtml(e.nome)}">${window.escHtml(e.nome)}</div>`
       ).join('') + (extra > 0 ? `<div class="cal-more">+${extra} mais</div>` : '');
       html += `<div class="cal-day${isOther ? ' other-month' : ''}${isWeekend ? ' weekend' : ''}${isToday ? ' today' : ''}${isSel ? ' sel-start' : ''}"
                     onclick="calDayClick('${dateStr}')">
@@ -433,16 +425,146 @@
     renderLista();
   };
 
-  window.toggleCard = function(id) {
-    const item = document.getElementById('card_' + id);
-    if (item) item.classList.toggle('open');
+  window.toggleCard = function(id) { window.abrirModalDetalhe(id); };
+
+  window.toggleForm = function() {
+    const m = document.getElementById('modalNovoPedido');
+    if (m && m.style.display !== 'none') window.fecharModalPedido(); else window.abrirModalPedido();
   };
 
-  window.toggleForm = function() { document.getElementById('formPanel').classList.toggle('open'); };
+  window.abrirFormulario = function() { window.abrirModalPedido(); };
 
-  window.abrirFormulario = function() {
-    document.getElementById('formPanel').classList.add('open');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  // ── Modal: Novo pedido ─────────────────────────────────────
+  window.abrirModalPedido = function() {
+    editingFeriasId = null;
+    document.getElementById('editModeWarn').style.display = 'none';
+    document.getElementById('modalNovoPedido').style.display = 'flex';
+    atualizarDiasInfo();
+  };
+
+  window.fecharModalPedido = function() {
+    document.getElementById('modalNovoPedido').style.display = 'none';
+    editingFeriasId = null;
+    document.getElementById('editModeWarn').style.display = 'none';
+  };
+
+  window.abrirModalEditar = function(id) {
+    const p = allPedidos.find(x => x.id === id);
+    if (!p) return;
+    editingFeriasId = id;
+    document.getElementById('fTipo').value    = p.tipo || 'ferias';
+    document.getElementById('fInicio').value  = p.dataInicio || '';
+    document.getElementById('fFim').value     = p.dataFim    || '';
+    document.getElementById('fMotivo').value  = p.motivo     || '';
+    document.getElementById('editModeWarn').style.display = '';
+    document.getElementById('modalDetalhe').style.display = 'none';
+    document.getElementById('modalNovoPedido').style.display = 'flex';
+    atualizarDiasInfo();
+  };
+
+  window.atualizarDiasInfo = function() {
+    const inicio = (document.getElementById('fInicio') || {}).value;
+    const fim    = (document.getElementById('fFim')    || {}).value;
+    const wrap   = document.getElementById('diasInfoWrap');
+    const text   = document.getElementById('diasInfoText');
+    if (!wrap || !text) return;
+    if (inicio && fim && fim >= inicio) {
+      const dias = calcDias(inicio, fim);
+      const ano = new Date().getFullYear();
+      const meus = allPedidos.filter(p => p.uid === currentUid && p.tipo === 'ferias' &&
+        p.dataInicio && new Date(p.dataInicio + 'T00:00:00').getFullYear() === ano);
+      const totalAnual = (window.userProfile && window.userProfile.diasFeriasAnual) || 22;
+      const used    = meus.filter(p => p.estado === 'aprovado').reduce((s, p) => s + calcDias(p.dataInicio, p.dataFim), 0);
+      const pending = meus.filter(p => p.estado === 'pendente').reduce((s, p) => s + calcDias(p.dataInicio, p.dataFim), 0);
+      const left = Math.max(0, totalAnual - used - pending);
+      wrap.style.display = '';
+      text.innerHTML = `<strong>${dias}</strong> dia${dias > 1 ? 's' : ''} solicitados · saldo restante após aprovação: <strong>${left - dias}</strong>`;
+    } else {
+      wrap.style.display = 'none';
+    }
+  };
+
+  // ── Modal: Detalhe ─────────────────────────────────────────
+  window.abrirModalDetalhe = function(id) {
+    const p = allPedidos.find(x => x.id === id);
+    if (!p) return;
+    const meu    = p.uid === currentUid;
+    const inicio = p.dataInicio ? new Date(p.dataInicio + 'T00:00:00').toLocaleDateString('pt-PT') : '—';
+    const fim    = p.dataFim   ? new Date(p.dataFim   + 'T00:00:00').toLocaleDateString('pt-PT') : '—';
+    const dias   = calcDias(p.dataInicio, p.dataFim);
+    const tipoLabel   = { ferias:'Férias', folga:'Folga', licenca:'Licença', outro:'Outro' }[p.tipo] || p.tipo;
+    const estadoLabel = { pendente:'Pendente', aprovado:'Aprovado', rejeitado:'Rejeitado', cancelado:'Cancelado' }[p.estado] || p.estado;
+
+    document.getElementById('modalDetalheTitulo').textContent = `Pedido de ${p.nomeCompleto || p.email || '?'}`;
+    document.getElementById('modalDetalheBody').innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+        <span class="estado-pill ${window.escHtml(p.estado)}">${window.escHtml(estadoLabel)}</span>
+        <span class="tipo-tag">${window.escHtml(tipoLabel)}</span>
+        ${p.criadoEm ? `<span style="font-size:12px;color:var(--text-3);margin-left:4px;">Submetido em ${new Date(p.criadoEm).toLocaleDateString('pt-PT')}</span>` : ''}
+      </div>
+      <div style="padding:14px 16px;background:var(--surface-2,var(--bg-inset));border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:16px;">
+        <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:6px;">Período solicitado</div>
+        <div style="font-family:'Sora',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.02em;">${inicio} → ${fim}</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:2px;">${dias} dia${dias !== 1 ? 's' : ''} úteis</div>
+      </div>
+      ${p.motivo ? `<div class="card-motivo" style="margin-bottom:12px;">${window.escHtml(p.motivo)}</div>` : ''}
+      ${p.observacao ? `<div style="padding:10px 12px;background:var(--red-soft,#fef2f2);border:1px solid var(--red-border,#fecaca);border-radius:var(--r-sm);font-size:12.5px;color:var(--red,#dc2626);"><strong>Observações:</strong> ${window.escHtml(p.observacao)}</div>` : ''}
+      ${(podeGerir && p.estado === 'pendente') ? `
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <label class="field-label" style="display:block;margin-bottom:6px;">Observação (opcional)</label>
+          <input class="obs-input" id="modalObs_${p.id}" placeholder="Motivo de aprovação ou rejeição" style="width:100%;box-sizing:border-box;">
+        </div>` : ''}
+    `;
+
+    const canEdit = meu && p.dataInicio > todayStr && (p.estado === 'pendente' || p.estado === 'aprovado');
+    const editBtn = canEdit ? `<button class="btn btn-ghost btn-sm" onclick="window.abrirModalEditar('${p.id}')">Editar</button>` : '';
+
+    let footerHtml = `${editBtn}<button class="btn btn-secondary btn-sm" onclick="window.fecharModalDetalhe()">Fechar</button>`;
+    if (podeGerir && p.estado === 'pendente') {
+      footerHtml = `
+        <button class="btn btn-red btn-sm" onclick="window.rejeitarModal('${p.id}')">✕ Rejeitar</button>
+        <button class="btn btn-secondary btn-sm" onclick="window.aprovarModal('${p.id}')">✓ Aprovar</button>
+        ${editBtn}
+        <button class="btn btn-ghost btn-sm" onclick="window.fecharModalDetalhe()">Fechar</button>`;
+    } else if (meu && p.estado === 'pendente') {
+      footerHtml = `
+        <button class="btn btn-red btn-sm" onclick="window.cancelarModal('${p.id}')">Cancelar pedido</button>
+        ${editBtn}
+        <button class="btn btn-secondary btn-sm" onclick="window.fecharModalDetalhe()">Fechar</button>`;
+    }
+    document.getElementById('modalDetalheFooter').innerHTML = footerHtml;
+    document.getElementById('modalDetalhe').style.display = 'flex';
+  };
+
+  window.fecharModalDetalhe = function() {
+    document.getElementById('modalDetalhe').style.display = 'none';
+  };
+
+  window.aprovarModal = async function(id) {
+    const obs = (document.getElementById('modalObs_' + id) || {}).value || '';
+    try {
+      await window.FeriasService.update(id, { estado: 'aprovado', observacao: obs, resolvidoEm: Date.now(), resolvidoPor: window.userProfile.uid });
+      window.toast('Pedido aprovado.');
+      window.fecharModalDetalhe();
+    } catch(e) { window.toast('Erro ao aprovar.'); }
+  };
+
+  window.rejeitarModal = async function(id) {
+    const obs = (document.getElementById('modalObs_' + id) || {}).value || '';
+    try {
+      await window.FeriasService.update(id, { estado: 'rejeitado', observacao: obs, resolvidoEm: Date.now(), resolvidoPor: window.userProfile.uid });
+      window.toast('Pedido rejeitado.');
+      window.fecharModalDetalhe();
+    } catch(e) { window.toast('Erro ao rejeitar.'); }
+  };
+
+  window.cancelarModal = async function(id) {
+    if (!confirm('Cancelar este pedido?')) return;
+    try {
+      await window.FeriasService.update(id, { estado: 'cancelado' });
+      window.toast('Pedido cancelado.');
+      window.fecharModalDetalhe();
+    } catch(e) { window.toast('Erro ao cancelar.'); }
   };
 
   // ── Submit / Aprovar / Rejeitar / Cancelar ─────────────────
@@ -451,6 +573,23 @@
     const fim    = document.getElementById('fFim').value;
     if (!inicio || !fim)  { window.toast('Preenche as datas.'); return; }
     if (fim < inicio)     { window.toast('A data de fim não pode ser anterior ao início.'); return; }
+
+    if (editingFeriasId) {
+      try {
+        await window.FeriasService.update(editingFeriasId, {
+          tipo:        document.getElementById('fTipo').value,
+          dataInicio:  inicio,
+          dataFim:     fim,
+          motivo:      document.getElementById('fMotivo').value.trim(),
+          estado:      'pendente',
+          atualizadoEm: Date.now(),
+        });
+        window.toast('Pedido atualizado. Aguarda nova aprovação.');
+        window.fecharModalPedido();
+      } catch(e) { console.error(e); window.toast('Erro ao atualizar pedido.'); }
+      return;
+    }
+
     const profile = window.userProfile;
     const escritorio = isAdmin
       ? (document.getElementById('fEscritorio').value || window.escritorioAtivo())
@@ -469,7 +608,7 @@
       window.toast('Pedido submetido com sucesso.');
       document.getElementById('fMotivo').value = '';
       setDataDefaults();
-      document.getElementById('formPanel').classList.remove('open');
+      window.fecharModalPedido();
       if (typeof window.logAuditoria === 'function') window.logAuditoria('ferias', 'create', data);
     } catch(e) { console.error(e); window.toast('Erro ao submeter pedido.'); }
   };
