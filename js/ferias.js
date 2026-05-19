@@ -33,9 +33,12 @@
   }, ({ profile, escritorio }) => {
     isAdmin = profile.role === 'admin';
     podeGerir = isAdmin || window.temPermissao('modules.ferias.manage');
+    const podeCriar = isAdmin || window.temPermissao('modules.ferias.create');
     currentUid = profile.uid;
     document.getElementById('pageSubtitle').textContent =
       podeGerir ? 'Gestão de pedidos de ausência' : 'Os teus pedidos de ausência';
+    const btnNovo = document.getElementById('btnNovoPedido');
+    if (btnNovo) btnNovo.style.display = podeCriar ? '' : 'none';
     if (podeGerir) {
       document.getElementById('fEscritorioWrap').style.display = '';
       popularEscritorios();
