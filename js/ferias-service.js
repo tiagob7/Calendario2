@@ -17,6 +17,17 @@
     );
   }
 
+  function listenApproved({ onData, onError }) {
+    return collection()
+      .where('estado', '==', 'aprovado')
+      .orderBy('criadoEm', 'desc')
+      .limit(500)
+      .onSnapshot(
+        snap => { if (typeof onData === 'function') onData(snap.docs.map(d => ({ id: d.id, ...d.data() }))); },
+        err  => { if (typeof onError === 'function') onError(err); }
+      );
+  }
+
   function create(data)       { return collection().add(data); }
   function update(id, patch)  { return collection().doc(id).update(patch); }
   function remove(id)         { return collection().doc(id).delete(); }

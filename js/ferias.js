@@ -14,6 +14,8 @@
   let podeGerir = false;
   let currentUid = '';
   let unsub = null;
+  let unsubApproved = null;
+  let allApproved = [];
   let editingFeriasId = null;
 
   const PALETTE = [
@@ -66,6 +68,7 @@
   // ── Sync ───────────────────────────────────────────────────
   function startSync() {
     if (unsub) unsub();
+    if (unsubApproved) { unsubApproved(); unsubApproved = null; }
     window.setStatus('A sincronizar…');
     unsub = window.FeriasService.listenAll({
       uid: podeGerir ? null : currentUid,
@@ -80,6 +83,17 @@
         window.setStatus('Erro ao carregar', 'var(--red)');
       },
     });
+    // Utilizadores normais: segundo listener só para aprovados (calendário)
+    if (!podeGerir) {
+      unsubApproved = window.FeriasService.listenApproved({
+        onData(docs) {
+          allApproved = docs;
+          assignColors();
+          render();
+        },
+        onError(err) { console.error('[ferias:approved]', err); },
+      });
+    }
   }
 
   function assignColors() {
@@ -108,8 +122,10 @@
   // ── Filtering ──────────────────────────────────────────────
   function pedidosVisiveis(opts) {
     const forCal = (opts || {}).forCal;
-    return allPedidos.filter(p => {
-      if (!podeGerir && p.uid !== currentUid) return false;
+    // Para calendário, merge dos próprios + aprovados de terceiros
+    const base = forCal && !podeGerir ? mergedParaCalendario() : allPedidos;
+    return base.filter(p => {
+      if (!forCal && !podeGerir && p.uid !== currentUid) return false;
       if (filtroEscritorio && p.escritorio !== filtroEscritorio) return false;
       if (forCal) {
         if (!calEstados.includes(p.estado)) return false;
@@ -119,6 +135,13 @@
       }
       return true;
     });
+  }
+
+  // Junta os próprios pedidos com os aprovados de terceiros (sem duplicados)
+  function mergedParaCalendario() {
+    const ownIds = new Set(allPedidos.map(p => p.id));
+    const others = allApproved.filter(p => !ownIds.has(p.id));
+    return [...allPedidos, ...others];
   }
 
   // ── Date helpers ───────────────────────────────────────────
