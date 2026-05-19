@@ -68,6 +68,7 @@
     if (unsub) unsub();
     window.setStatus('A sincronizar…');
     unsub = window.FeriasService.listenAll({
+      uid: podeGerir ? null : currentUid,
       onData(docs) {
         allPedidos = docs;
         assignColors();

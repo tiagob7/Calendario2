@@ -6,7 +6,12 @@
   function listenAll(options) {
     const cfg = options || {};
     const limit = cfg.limit || 300;
-    return collection().orderBy('criadoEm', 'desc').limit(limit).onSnapshot(
+    let q = collection().orderBy('criadoEm', 'desc').limit(limit);
+    // Without a uid filter the query returns all docs — Firestore rules can't
+    // verify resource.data.uid == request.auth.uid at query level and reject it.
+    // Managers have hasPerm('ferias','manage') so no filter needed for them.
+    if (cfg.uid) q = q.where('uid', '==', cfg.uid);
+    return q.onSnapshot(
       snap => { if (typeof cfg.onData === 'function') cfg.onData(snap.docs.map(d => ({ id: d.id, ...d.data() }))); },
       err  => { if (typeof cfg.onError === 'function') cfg.onError(err); }
     );
