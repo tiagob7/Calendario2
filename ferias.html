@@ -11,13 +11,22 @@
 <body>
 
 <div class="page ferias-page">
-  <div class="header-row">
-    <div class="header-top">
+  <div class="page-head">
+    <div>
+      <div class="kicker">Recursos Humanos</div>
       <h1>Férias &amp; Ausências</h1>
-      <span id="syncStatus"></span>
-      <button id="btnNovoPedido" class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="window.abrirModalPedido()">+ Novo pedido</button>
+      <div class="page-lede-row">
+        <p class="lede" id="pageSubtitle">A carregar…</p>
+        <div class="hd-actions">
+          <span id="syncStatus"></span>
+          <button id="btnTotaisAdmin" class="btn btn-secondary btn-sm" style="display:none;" onclick="window.abrirModalTotais()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="10" width="3" height="5" rx="1"/><rect x="6" y="6" width="3" height="9" rx="1"/><rect x="11" y="2" width="3" height="13" rx="1"/></svg>
+            Totais
+          </button>
+          <button id="btnNovoPedido" class="btn btn-primary btn-sm" onclick="window.abrirModalPedido()">+ Novo pedido</button>
+        </div>
+      </div>
     </div>
-    <p class="subtitle" id="pageSubtitle">A carregar…</p>
   </div>
 
   <!-- BALANCE CARD -->
@@ -36,7 +45,6 @@
     </div>
     <div class="balance-meta">
       <div class="balance-title" id="balTitle">O meu saldo</div>
-      <div class="balance-sub">Com base no teu contrato anual.</div>
       <div class="balance-breakdown">
         <div class="bal-item">
           <div class="bal-val" id="balTotal">—</div>
@@ -194,6 +202,24 @@
     </div>
     <div class="fer-modal-body" id="modalDetalheBody"></div>
     <div class="fer-modal-footer" id="modalDetalheFooter"></div>
+  </div>
+</div>
+
+<!-- MODAL: Totais de férias (admin) -->
+<div class="fer-modal-overlay" id="modalTotais" style="display:none" onclick="if(event.target===this)window.fecharModalTotais()">
+  <div class="fer-modal fer-modal-wide">
+    <div class="fer-modal-header">
+      <h3>Totais de férias — <span id="totaisAnoLabel"></span></h3>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+        <select class="filter-select" id="totaisFilterEscritorio" onchange="window.renderTotais()">
+          <option value="">Todos os escritórios</option>
+        </select>
+        <button class="fer-modal-close" onclick="window.fecharModalTotais()">×</button>
+      </div>
+    </div>
+    <div class="fer-modal-body tot-body">
+      <div id="totaisTableWrap"></div>
+    </div>
   </div>
 </div>
 

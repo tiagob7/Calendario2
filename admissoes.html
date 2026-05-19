@@ -16,22 +16,20 @@
     <div>
       <div class="kicker">Recursos Humanos</div>
       <h1>Admissões &amp; Cessações</h1>
-      <p class="lede">Pedidos de entrada e saída de trabalhadores temporários, submetidos pelos recrutadores e processados pela equipa de RH.</p>
-    </div>
-    <div class="hd-actions">
-      <span id="syncStatus"></span>
-      <button class="btn btn-secondary btn-sm" id="btnVozAdm" onclick="VozAI && VozAI.abrir('admissao')" style="display:none">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="1" width="6" height="9" rx="3"/><path d="M2 8c0 3.3 2.7 6 6 6s6-2.7 6-6"/><path d="M8 14v2"/></svg>
-        Voz
-      </button>
-      <button class="btn btn-secondary btn-sm" id="btnGestor" onclick="openGestor()">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
-        Modo Gestor
-      </button>
-      <button class="btn btn-primary btn-sm" id="btnNovoPedido" onclick="openModalNovo()" style="display:none">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>
-        Novo pedido
-      </button>
+      <div class="page-lede-row">
+        <p class="lede">Pedidos de entrada e saída de trabalhadores temporários, submetidos pelos recrutadores e processados pela equipa de RH.</p>
+        <div class="hd-actions">
+          <span id="syncStatus"></span>
+          <button class="btn btn-secondary btn-sm" id="btnGestor" onclick="openGestor()">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+            Modo Gestor
+          </button>
+          <button class="btn btn-primary btn-sm" id="btnNovoPedido" onclick="openModalNovo()" style="display:none">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>
+            Novo pedido
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

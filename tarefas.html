@@ -13,18 +13,20 @@
 <div class="page">
 
   <!-- ── Page header ── -->
-  <div class="page-head page-header">
+  <div class="page-head">
     <div>
       <div class="kicker">Produtividade</div>
       <h1>Tarefas</h1>
-      <p class="lede">Acompanha o trabalho das equipas com kanban arrastável.</p>
-    </div>
-    <div class="hd-actions page-header-actions">
-      <span id="syncStatus"></span>
-      <button class="btn btn-primary btn-sm" id="btnNovaTarefa" onclick="openTaskForm()">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 2v12M2 8h12"/></svg>
-        Nova tarefa
-      </button>
+      <div class="page-lede-row">
+        <p class="lede">Acompanha o trabalho das equipas com kanban arrastável.</p>
+        <div class="hd-actions">
+          <span id="syncStatus"></span>
+          <button class="btn btn-primary btn-sm" id="btnNovaTarefa" onclick="openTaskForm()">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 2v12M2 8h12"/></svg>
+            Nova tarefa
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -147,14 +149,14 @@
           <textarea class="textarea" id="fDescricao" rows="2" placeholder="ex: Enviar até sexta com anexo PDF" maxlength="400"></textarea>
         </div>
         <div class="field">
-          <label class="field-label">Escritório</label>
+          <label class="field-label">Escritório atribuído</label>
           <select class="select" id="fEscritorio"></select>
         </div>
         <div class="field">
           <label class="field-label">Prioridade</label>
           <div class="prio-row">
-            <button type="button" class="prio-pill" data-p="urgente" onclick="selPrio('urgente')">Urgente</button>
-            <button type="button" class="prio-pill sel" data-p="normal" onclick="selPrio('normal')">Normal</button>
+            <button type="button" class="prio-pill" data-p="urgente" onclick="selPrio('urgente')">Alta</button>
+            <button type="button" class="prio-pill sel" data-p="normal" onclick="selPrio('normal')">Média</button>
             <button type="button" class="prio-pill" data-p="baixa" onclick="selPrio('baixa')">Baixa</button>
           </div>
         </div>
@@ -165,9 +167,18 @@
           </div>
         </div>
         <div class="field full">
+          <label class="field-label">Checklist (opcional)</label>
+          <div class="checklist-add" style="margin-top:0">
+            <input class="input" id="fChecklistInput" placeholder="ex: Verificar documento" maxlength="100" autocomplete="off"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();addPendingChecklistItem()}">
+            <button type="button" class="btn btn-secondary" onclick="addPendingChecklistItem()">+ Adicionar</button>
+          </div>
+          <div id="pendingChecklistList" style="margin-top:4px"></div>
+        </div>
+        <div class="field full">
           <label class="field-label">Anexos (opcional)</label>
-          <label class="btn-attach">
-            📎 Adicionar ficheiros
+          <label class="btn-attach btn-attach-sm">
+            📎 Anexar
             <input type="file" id="fFicheiros" multiple onchange="onPendingFilesChange(this)">
           </label>
           <div id="pendingFilesList" class="pending-files-list"></div>

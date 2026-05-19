@@ -18,22 +18,24 @@
     <div>
       <div class="kicker">Recursos Humanos</div>
       <h1 class="display">Reclamações de Horas</h1>
-      <p class="lede" id="pageLede">Registo e gestão de reclamações de horas de trabalhadores temporários.</p>
-    </div>
-    <div class="page-actions">
-      <span id="syncStatus" class="sync-status"></span>
-      <button class="btn btn-secondary btn-sm" onclick="exportarExcel()" title="Exportar para Excel" style="display:flex;align-items:center;gap:5px;">
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 6l2 2 2-2M7 8v4M5 10h4"/></svg>
-        Excel
-      </button>
-      <button class="btn btn-secondary btn-sm" onclick="exportarPDF()" title="Exportar para PDF" style="display:flex;align-items:center;gap:5px;">
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V6L9 2z"/><path d="M9 2v4h4"/></svg>
-        PDF
-      </button>
-      <button class="btn btn-primary" id="btnNovaReclamacao" style="display:none" onclick="toggleFormRec()" style="display:flex;align-items:center;gap:6px;">
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
-        Nova reclamação
-      </button>
+      <div class="page-lede-row">
+        <p class="lede" id="pageLede">Registo e gestão de reclamações de horas de trabalhadores temporários.</p>
+        <div class="hd-actions">
+          <span id="syncStatus" class="sync-status"></span>
+          <button class="btn btn-secondary btn-sm" onclick="exportarExcel()" title="Exportar para Excel" style="display:flex;align-items:center;gap:5px;">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 6l2 2 2-2M7 8v4M5 10h4"/></svg>
+            Excel
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="exportarPDF()" title="Exportar para PDF" style="display:flex;align-items:center;gap:5px;">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V6L9 2z"/><path d="M9 2v4h4"/></svg>
+            PDF
+          </button>
+          <button class="btn btn-primary btn-sm" id="btnNovaReclamacao" style="display:none" onclick="toggleFormRec()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
+            Nova reclamação
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -25,44 +25,12 @@
       <div class="dash-date" id="dashDate"></div>
     </div>
     <div class="dash-welcome-right">
-      <!-- Admin: filtro de escritório -->
-      <div id="adminEscritorioPills"></div>
-      <span id="escritorioBadge"></span>
       <span class="last-update" id="lastUpdate"></span>
-      <button class="layout-reset-btn" id="layoutResetBtn" onclick="resetLayout()" title="Repor layout original">
-        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8a6 6 0 1 0 1.5-4M2 4v4h4"/></svg>
-        Repor layout
-      </button>
     </div>
   </div>
 
   <!-- subtitle row kept as hidden anchor for JS updateSubtitle() compat -->
   <div id="subtitleRow" class="is-hidden"></div>
-
-  <!-- NAV LINKS (preenchidos pelo module-registry) -->
-  <div class="dash-section-label">Módulos</div>
-  <div class="nav-links">
-    <a class="nav-link" href="tarefas.html">
-      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="10" height="10" rx="1.5"/><path d="M6 7l1.5 1.5L10 6"/></svg>
-      Tarefas
-    </a>
-    <a class="nav-link" href="comunicados.html">
-      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2H3a1 1 0 00-1 1v9a1 1 0 001 1h3l2 2 2-2h3a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg>
-      Comunicados
-    </a>
-    <a class="nav-link" href="calendario.html">
-      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12"/></svg>
-      Calendário
-    </a>
-    <a class="nav-link" href="admissoes.html">
-      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5"/><path d="M11 8l2 2 3-3"/></svg>
-      Admissões
-    </a>
-    <a class="nav-link" href="reclamacoes.html">
-      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v4"/><circle cx="8" cy="11.5" r=".6" fill="currentColor"/></svg>
-      Reclamações
-    </a>
-  </div>
 
   <!-- URGENTE BANNER (preenchido pelo JS) -->
   <div id="urgenteBanner" class="is-hidden"></div>
@@ -73,6 +41,47 @@
     <div class="kpi-card"><div class="skeleton skeleton-kpi-value"></div><div class="skeleton skeleton-kpi-label"></div></div>
     <div class="kpi-card"><div class="skeleton skeleton-kpi-value"></div><div class="skeleton skeleton-kpi-label w-50"></div></div>
     <div class="kpi-card"><div class="skeleton skeleton-kpi-value"></div><div class="skeleton skeleton-kpi-label"></div></div>
+  </div>
+
+  <!-- AÇÕES RÁPIDAS -->
+  <div class="dash-section-label">Ações rápidas</div>
+  <div class="quick-actions">
+    <a class="quick-action-btn" href="tarefas.html?novo=1">
+      <span class="qa-icon qa-task">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="10" height="10" rx="1.5"/><path d="M6 7l1.5 1.5L10 6"/></svg>
+      </span>
+      <span class="qa-body">
+        <span class="qa-label">Nova tarefa</span>
+        <span class="qa-sub">Atribuir a alguém</span>
+      </span>
+    </a>
+    <a class="quick-action-btn" href="comunicados.html?novo=1">
+      <span class="qa-icon qa-com">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2H3a1 1 0 00-1 1v9a1 1 0 001 1h3l2 2 2-2h3a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg>
+      </span>
+      <span class="qa-body">
+        <span class="qa-label">Novo comunicado</span>
+        <span class="qa-sub">Para um escritório</span>
+      </span>
+    </a>
+    <a class="quick-action-btn" href="reclamacoes.html?novo=1">
+      <span class="qa-icon qa-rec">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L1.5 13h13L8 2z"/><path d="M8 7v3M8 11.5v.5"/></svg>
+      </span>
+      <span class="qa-body">
+        <span class="qa-label">Registar reclamação</span>
+        <span class="qa-sub">Receber novo caso</span>
+      </span>
+    </a>
+    <a class="quick-action-btn" href="admissoes.html?novo=1">
+      <span class="qa-icon qa-adm">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5"/></svg>
+      </span>
+      <span class="qa-body">
+        <span class="qa-label">Nova admissão</span>
+        <span class="qa-sub">Criar novo processo</span>
+      </span>
+    </a>
   </div>
 
   <!-- MAIN GRID — painéis arrastáveis e redimensionáveis -->
