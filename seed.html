@@ -72,6 +72,11 @@
           <div class="mc-name">Comunicados</div>
           <div class="mc-col">comunicados</div>
         </div>
+        <div class="mod-card on" data-m="ferias" onclick="toggleMod(this)">
+          <div class="mc-icon"></div>
+          <div class="mc-name">Férias</div>
+          <div class="mc-col">ferias</div>
+        </div>
       </div>
 
       <div class="count-row">
@@ -179,6 +184,7 @@
         <div class="stat-mini"><b id="cs-admissoes">—</b>admissoes</div>
         <div class="stat-mini"><b id="cs-reclamacoes">—</b>reclamacoes</div>
         <div class="stat-mini"><b id="cs-comunicados">—</b>comunicados</div>
+        <div class="stat-mini"><b id="cs-ferias">—</b>ferias</div>
         <div class="stat-mini"><b id="cs-users">—</b>utilizadores</div>
       </div>
 
@@ -205,6 +211,9 @@
         </label>
         <label style="display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;">
           <input type="checkbox" id="cleanComunicados" checked> Comunicados
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;">
+          <input type="checkbox" id="cleanFerias" checked> Férias
         </label>
         <label style="display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;">
           <input type="checkbox" id="cleanUsers"> Utilizadores de teste
@@ -255,6 +264,9 @@
         </label>
         <label style="display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--red-border);">
           <input type="checkbox" id="nukeEscalas"> escalas
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--red-border);">
+          <input type="checkbox" id="nukeFerias" checked> ferias
         </label>
         <label style="display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--red-border);">
           <input type="checkbox" id="nukeUtilizadores"> utilizadores
@@ -531,11 +543,43 @@ function buildComunicado(tag) {
   };
 }
 
+function buildFerias(tag) {
+  const escs    = escAtivos();
+  const tipos   = ['ferias','ferias','ferias','folga','licenca'];
+  const estados = ['pendente','pendente','aprovado','aprovado','rejeitado','cancelado'];
+  const user    = rndUser();
+  const estado  = rnd(estados);
+  const diasOffset = rndInt(-60, 60);
+  const duracao    = rndInt(1, 14);
+  const inicio  = new Date(Date.now() + diasOffset * 864e5).toISOString().slice(0,10);
+  const fim     = new Date(Date.now() + (diasOffset + duracao) * 864e5).toISOString().slice(0,10);
+  const doc = {
+    uid:          user.uid,
+    nomeCompleto: user.nome,
+    email:        '',
+    escritorio:   escs.length ? rnd(escs) : '',
+    tipo:         rnd(tipos),
+    dataInicio:   inicio,
+    dataFim:      fim,
+    motivo:       rnd(['Férias de verão','Consulta médica','Assuntos pessoais','Casamento familiar','','','']),
+    estado,
+    criadoEm:     Date.now() - rndInt(0, 30) * 864e5,
+    ...(estado === 'aprovado' || estado === 'rejeitado' ? {
+      resolvidoEm:  Date.now() - rndInt(0, 10) * 864e5,
+      resolvidoPor: user.uid,
+      observacao:   rnd(['','','Aprovado.','Sem stock de dias suficiente.'])
+    } : {}),
+    ...(tag ? {_seed: true} : {})
+  };
+  return doc;
+}
+
 const BUILDERS = {
   tarefas_todo: buildTarefa,
   admissoes:    buildAdmissao,
   reclamacoes:  buildReclamacao,
-  comunicados:  buildComunicado
+  comunicados:  buildComunicado,
+  ferias:       buildFerias,
 };
 
 //  SEED 
@@ -689,6 +733,7 @@ async function contarSeedDocs() {
     { id:'cs-admissoes',  col:'admissoes' },
     { id:'cs-reclamacoes',col:'reclamacoes_horas' },
     { id:'cs-comunicados',col:'comunicados' },
+    { id:'cs-ferias',     col:'ferias' },
     { id:'cs-users',      col:'utilizadores' },
   ];
   for (const c of cols) {
@@ -709,6 +754,7 @@ function confirmarLimpeza() {
     { id:'cleanAdmissoes',  col:'admissoes',          label:'Admissões' },
     { id:'cleanReclamacoes',col:'reclamacoes_horas',  label:'Reclamações' },
     { id:'cleanComunicados',col:'comunicados',        label:'Comunicados' },
+    { id:'cleanFerias',     col:'ferias',             label:'Férias' },
     { id:'cleanUsers',      col:'utilizadores',       label:'Utilizadores' },
   ];
   const sel = checkboxes.filter(c => document.getElementById(c.id).checked);
@@ -783,6 +829,7 @@ function confirmarNuke() {
     { id:'nukeTrabalhadores', col:'trabalhadores_portal', label:'trabalhadores_portal' },
     { id:'nukeAuditoria',     col:'auditoria',           label:'auditoria' },
     { id:'nukeEscalas',       col:'escalas',             label:'escalas' },
+    { id:'nukeFerias',        col:'ferias',              label:'ferias' },
     { id:'nukeUtilizadores',  col:'utilizadores',        label:'utilizadores' },
   ];
   const sel = cols.filter(c => document.getElementById(c.id).checked);

@@ -15,27 +15,46 @@
     <div class="header-top">
       <h1>Férias &amp; Ausências</h1>
       <span id="syncStatus"></span>
+      <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="window.abrirModalPedido()">+ Novo pedido</button>
     </div>
     <p class="subtitle" id="pageSubtitle">A carregar…</p>
   </div>
 
-  <!-- STATS STRIP -->
-  <div class="fer-stats" id="statsBar">
-    <div class="fer-stat">
-      <div class="fer-stat-lbl">Total</div>
-      <div class="fer-stat-val" id="statTotal">—</div>
+  <!-- BALANCE CARD -->
+  <div class="balance-card-wrap" id="balanceCardWrap">
+    <div class="balance-ring-wrap">
+      <svg viewBox="0 0 120 120" class="balance-ring-svg">
+        <circle class="balance-ring-track" cx="60" cy="60" r="54"/>
+        <circle class="balance-ring-fill" id="balanceRingFill" cx="60" cy="60" r="54"
+          stroke-dasharray="339.29" stroke-dashoffset="339.29"
+          transform="rotate(-90 60 60)"/>
+      </svg>
+      <div class="balance-ring-inner">
+        <div class="balance-ring-value" id="balRingVal">—</div>
+        <div class="balance-ring-label">dias restantes</div>
+      </div>
     </div>
-    <div class="fer-stat">
-      <div class="fer-stat-lbl">Pendentes</div>
-      <div class="fer-stat-val fer-amber" id="statPendente">—</div>
-    </div>
-    <div class="fer-stat">
-      <div class="fer-stat-lbl">Aprovados</div>
-      <div class="fer-stat-val fer-green" id="statAprovado">—</div>
-    </div>
-    <div class="fer-stat">
-      <div class="fer-stat-lbl">Dias férias (ano)</div>
-      <div class="fer-stat-val fer-blue" id="statDias">—</div>
+    <div class="balance-meta">
+      <div class="balance-title" id="balTitle">O meu saldo</div>
+      <div class="balance-sub">Com base no teu contrato anual.</div>
+      <div class="balance-breakdown">
+        <div class="bal-item">
+          <div class="bal-val" id="balTotal">—</div>
+          <div class="bal-lbl">Total anual</div>
+        </div>
+        <div class="bal-item">
+          <div class="bal-val bal-used" id="balUsed">—</div>
+          <div class="bal-lbl">Já gozados</div>
+        </div>
+        <div class="bal-item">
+          <div class="bal-val bal-pending" id="balPending">—</div>
+          <div class="bal-lbl">Aguardando</div>
+        </div>
+        <div class="bal-item">
+          <div class="bal-val bal-left" id="balLeft">—</div>
+          <div class="bal-lbl">Disponíveis</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -79,50 +98,6 @@
   <!-- Collaborator chips -->
   <div class="chips-row" id="collabChips"></div>
 
-  <!-- FORM -->
-  <div class="form-panel" id="formPanel">
-    <div class="panel-title panel-toggle" onclick="toggleForm()">
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12"/></svg>
-      Novo Pedido de Ausência
-      <span class="panel-toggle-chevron">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
-      </span>
-    </div>
-    <div class="form-panel-body">
-      <div class="form-grid">
-        <div>
-          <label class="field-label">Tipo de ausência</label>
-          <select class="form-select" id="fTipo">
-            <option value="ferias">Férias</option>
-            <option value="folga">Folga</option>
-            <option value="licenca">Licença</option>
-            <option value="outro">Outro</option>
-          </select>
-        </div>
-        <div id="fEscritorioWrap" style="display:none;">
-          <label class="field-label">Escritório</label>
-          <select class="form-select" id="fEscritorio"><option value="">A carregar…</option></select>
-        </div>
-        <div>
-          <label class="field-label">Data início *</label>
-          <input type="date" class="form-input" id="fInicio">
-        </div>
-        <div>
-          <label class="field-label">Data fim *</label>
-          <input type="date" class="form-input" id="fFim">
-        </div>
-        <div class="full">
-          <label class="field-label">Motivo / observações</label>
-          <textarea class="form-textarea" id="fMotivo" placeholder="Descreva brevemente o motivo (opcional)" maxlength="400"></textarea>
-        </div>
-      </div>
-      <div style="display:flex;justify-content:flex-end;margin-top:14px;">
-        <button class="btn btn-secondary btn-sm" onclick="toggleForm()" style="margin-right:8px;">Cancelar</button>
-        <button class="btn btn-primary" onclick="submitPedido()">Submeter pedido</button>
-      </div>
-    </div>
-  </div>
-
   <!-- LISTA VIEW -->
   <div id="listaView">
     <div class="req-list" id="feriasList"></div>
@@ -134,7 +109,6 @@
       <button class="cal-nav-btn" onclick="prevMonth()">‹</button>
       <span class="cal-nav-label" id="calMonthLabel"></span>
       <button class="cal-nav-btn" onclick="nextMonth()">›</button>
-      <button class="btn btn-secondary btn-sm" style="margin-left:auto;" onclick="abrirFormulario()">+ Novo pedido</button>
     </div>
     <div id="selHint" class="sel-hint"></div>
     <div class="cal-mensal">
@@ -156,6 +130,70 @@
       <button class="cal-nav-btn" onclick="nextYear()">›</button>
     </div>
     <div class="cal-anual" id="calAnualGrid"></div>
+  </div>
+</div>
+
+<!-- MODAL: Novo pedido -->
+<div class="fer-modal-overlay" id="modalNovoPedido" style="display:none" onclick="if(event.target===this)window.fecharModalPedido()">
+  <div class="fer-modal">
+    <div class="fer-modal-header">
+      <h3>Novo pedido de ausência</h3>
+      <button class="fer-modal-close" onclick="window.fecharModalPedido()">×</button>
+    </div>
+    <div class="fer-modal-body">
+      <div id="editModeWarn" style="display:none;padding:10px 12px;background:var(--amber-soft,#fffbeb);border:1px solid var(--amber-border,#fde68a);border-radius:var(--r-md);font-size:12px;color:var(--amber,#d97706);margin-bottom:14px;">
+        <strong>Atenção:</strong> Ao guardar, o pedido volta para <strong>Pendente</strong> e terá de ser re-aprovado pelo gestor.
+      </div>
+      <div class="form-grid">
+        <div>
+          <label class="field-label">Tipo de ausência</label>
+          <select class="form-select" id="fTipo">
+            <option value="ferias">Férias</option>
+            <option value="folga">Folga</option>
+            <option value="licenca">Licença</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div id="fEscritorioWrap" style="display:none;">
+          <label class="field-label">Escritório</label>
+          <select class="form-select" id="fEscritorio"><option value="">A carregar…</option></select>
+        </div>
+        <div>
+          <label class="field-label">Data início *</label>
+          <input type="date" class="form-input" id="fInicio" onchange="atualizarDiasInfo()">
+        </div>
+        <div>
+          <label class="field-label">Data fim *</label>
+          <input type="date" class="form-input" id="fFim" onchange="atualizarDiasInfo()">
+        </div>
+        <div class="full" id="diasInfoWrap" style="display:none;">
+          <div class="dias-info-box">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12"/></svg>
+            <span id="diasInfoText"></span>
+          </div>
+        </div>
+        <div class="full">
+          <label class="field-label">Motivo / observações</label>
+          <textarea class="form-textarea" id="fMotivo" placeholder="Descreva brevemente o motivo (opcional)" maxlength="400"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="fer-modal-footer">
+      <button class="btn btn-secondary btn-sm" onclick="window.fecharModalPedido()">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitPedido()">Submeter pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Detalhe do pedido -->
+<div class="fer-modal-overlay" id="modalDetalhe" style="display:none" onclick="if(event.target===this)window.fecharModalDetalhe()">
+  <div class="fer-modal">
+    <div class="fer-modal-header">
+      <h3 id="modalDetalheTitulo">Pedido</h3>
+      <button class="fer-modal-close" onclick="window.fecharModalDetalhe()">×</button>
+    </div>
+    <div class="fer-modal-body" id="modalDetalheBody"></div>
+    <div class="fer-modal-footer" id="modalDetalheFooter"></div>
   </div>
 </div>
 

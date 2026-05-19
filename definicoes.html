@@ -50,7 +50,7 @@
   <!-- Section header -->
   <div class="section-head">
     <h2>Categorias</h2>
-    <span class="count">7 secções</span>
+    <span class="count">8 secções</span>
   </div>
 
 
@@ -148,6 +148,21 @@
     </button>
 
     <!-- Seed de Dados -->
+    <!-- Gerir Férias -->
+    <button class="def-card-v2" id="cardGerirFerias" onclick="togglePainel('GerirFerias');window.gfPainelAberto&&window.gfPainelAberto()">
+      <div class="def-card-top">
+        <div class="def-card-icon-v2 tone-teal">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12"/><path d="M5 10h2M9 10h2"/></svg>
+        </div>
+        <div class="def-card-title-v2">Gerir Férias</div>
+      </div>
+      <div class="def-card-desc-v2">Lançar, editar e apagar registos de férias e ausências, incluindo colaboradores externos.</div>
+      <div class="def-card-cta">
+        Gerir férias
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+      </div>
+    </button>
+
     <button class="def-card-v2" id="cardSeed" onclick="togglePainel('Seed')">
       <div class="def-card-top">
         <div class="def-card-icon-v2 tone-red">
@@ -316,6 +331,52 @@
     <div class="def-panel-body">
       <div id="defCalendarioBody">
         <p style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;">A carregar…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL GERIR FÉRIAS -->
+  <div class="panel def-panel-v2" id="panelGerirFerias">
+    <div class="def-panel-head">
+      <div class="def-panel-ic" style="background:var(--teal-bg);color:var(--teal);">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:18px;height:18px;"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12"/><path d="M5 10h2M9 10h2"/></svg>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <h3>Gerir Férias &amp; Ausências</h3>
+        <div class="def-panel-sub" id="gfSubtitle">Todos os registos</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="gfNovo()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;"><path d="M8 2v12M2 8h12"/></svg>
+        Nova entrada
+      </button>
+      <button class="btn btn-sm btn-secondary" onclick="togglePainel('GerirFerias')">Fechar</button>
+    </div>
+    <div class="def-panel-body">
+      <!-- Filtros -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+        <select class="select-v2" id="gfFiltroEscritorio" onchange="gfSetFiltro('escritorio',this.value)" style="min-width:140px;">
+          <option value="">Todos os escritórios</option>
+        </select>
+        <select class="select-v2" id="gfFiltroEstado" onchange="gfSetFiltro('estado',this.value)" style="min-width:130px;">
+          <option value="">Todos os estados</option>
+          <option value="pendente">Pendente</option>
+          <option value="aprovado">Aprovado</option>
+          <option value="rejeitado">Rejeitado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <select class="select-v2" id="gfFiltroTipo" onchange="gfSetFiltro('origem',this.value)" style="min-width:130px;">
+          <option value="">Todos</option>
+          <option value="plataforma">Utilizadores</option>
+          <option value="externo">Externos</option>
+        </select>
+        <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 10px;flex:1;min-width:160px;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px;flex-shrink:0;color:var(--muted);"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/></svg>
+          <input class="input-v2" id="gfSearch" placeholder="Pesquisar nome…" oninput="gfSetFiltro('search',this.value)" style="border:none;background:transparent;padding:7px 0;">
+        </div>
+      </div>
+      <!-- Lista -->
+      <div id="gerirFeriasList">
+        <p style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0;">A carregar…</p>
       </div>
     </div>
   </div>
@@ -565,6 +626,118 @@
   </div>
 </div>
 
+<!-- MODAL GERIR FÉRIAS: Formulário -->
+<div class="modal-overlay" id="modalFeriasForm" onclick="if(event.target===this)gfFecharForm()">
+  <div class="modal-v2" style="width:560px;">
+    <div class="modal-head">
+      <h3 id="gfModalTitle">Nova entrada de férias</h3>
+      <button class="icon-btn" onclick="gfFecharForm()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+      <!-- Tipo de utilizador -->
+      <div style="margin-bottom:14px;">
+        <label class="field-label">Tipo de registo</label>
+        <div style="display:flex;gap:6px;">
+          <select class="input-v2" id="gfTipoUser" onchange="gfTipoUserChange()" style="max-width:220px;">
+            <option value="plataforma">Utilizador da plataforma</option>
+            <option value="externo">Colaborador externo</option>
+          </select>
+        </div>
+      </div>
+      <!-- Utilizador da plataforma -->
+      <div id="gfWrapPlataforma" style="margin-bottom:14px;">
+        <label class="field-label">Utilizador *</label>
+        <select class="input-v2" id="gfUtilizador">
+          <option value="">— Selecionar —</option>
+        </select>
+      </div>
+      <!-- Externo -->
+      <div id="gfWrapExterno" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div>
+            <label class="field-label">Nome *</label>
+            <input class="input-v2" type="text" id="gfNomeExterno" placeholder="Nome completo">
+          </div>
+          <div>
+            <label class="field-label">Empresa / Entidade</label>
+            <input class="input-v2" type="text" id="gfEmpresa" placeholder="Opcional">
+          </div>
+        </div>
+      </div>
+      <!-- Escritório + Tipo -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div>
+          <label class="field-label">Escritório</label>
+          <select class="input-v2" id="gfEscritorio">
+            <option value="">— Selecionar —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Tipo de ausência</label>
+          <select class="input-v2" id="gfTipo">
+            <option value="ferias">Férias</option>
+            <option value="folga">Folga</option>
+            <option value="licenca">Licença</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+      </div>
+      <!-- Datas + Estado -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div>
+          <label class="field-label">Data início *</label>
+          <input class="input-v2" type="date" id="gfInicio">
+        </div>
+        <div>
+          <label class="field-label">Data fim *</label>
+          <input class="input-v2" type="date" id="gfFim">
+        </div>
+        <div>
+          <label class="field-label">Estado</label>
+          <select class="input-v2" id="gfEstado">
+            <option value="aprovado">Aprovado</option>
+            <option value="pendente">Pendente</option>
+            <option value="rejeitado">Rejeitado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+      </div>
+      <!-- Motivo + Observações -->
+      <div style="margin-bottom:10px;">
+        <label class="field-label">Motivo / observações</label>
+        <textarea class="input-v2" id="gfMotivo" rows="2" placeholder="Opcional" style="resize:vertical;"></textarea>
+      </div>
+      <div style="margin-bottom:4px;">
+        <label class="field-label">Observação do gestor</label>
+        <textarea class="input-v2" id="gfObservacao" rows="2" placeholder="Opcional" style="resize:vertical;"></textarea>
+      </div>
+      <div id="gfFormErr" style="display:none;font-size:11px;color:var(--red);margin-top:8px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="gfFecharForm()">Cancelar</button>
+      <button class="btn btn-primary" id="gfBtnGuardar" onclick="gfGuardar()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GERIR FÉRIAS: Confirmar apagar -->
+<div class="modal-overlay" id="modalFeriasConfirm" onclick="if(event.target===this)gfFecharConfirm()">
+  <div class="modal-v2" style="width:400px;">
+    <div class="modal-head">
+      <h3>Apagar registo?</h3>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--muted);line-height:1.8;" id="gfConfirmText"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="gfFecharConfirm()">Cancelar</button>
+      <button class="btn btn-danger" onclick="gfExecutarApagar()">Apagar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -583,5 +756,274 @@
 <script src="js/auditoria.js"></script>
 <script src="js/perfis-service.js"></script>
 <script src="js/definicoes.js"></script>
+<script>
+// ── Gerir Férias (admin panel) ────────────────────────────────
+(function () {
+  const col = () => firebase.firestore().collection('ferias');
+  let allFerias = [];
+  let utilizadoresList = [];
+  let escritoriosList = [];
+  let unsub = null;
+  let editingId = null;
+  let deletingId = null;
+  let filtroEscritorio = '';
+  let filtroEstado = '';
+  let filtroOrigem = '';   // '' | 'plataforma' | 'externo'
+  let filtroSearch = '';
+
+  // Chamado ao abrir o painel
+  window.gfPainelAberto = function () {
+    if (unsub) return; // já carregado
+    window.loadEscritorios && window.loadEscritorios().then(lista => {
+      escritoriosList = lista;
+      popularEscs();
+    });
+    firebase.firestore().collection('utilizadores').where('ativo', '==', true).get().then(snap => {
+      utilizadoresList = snap.docs.map(d => ({ uid: d.id, ...d.data() }))
+        .sort((a, b) => (a.nomeCompleto || '').localeCompare(b.nomeCompleto || ''));
+    });
+    unsub = col().orderBy('criadoEm', 'desc').limit(400).onSnapshot(snap => {
+      allFerias = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderLista();
+    }, err => console.error('[gf]', err));
+  };
+
+  // ── Filtros ──────────────────────────────────────────────────
+  window.gfSetFiltro = function (field, val) {
+    if (field === 'escritorio') filtroEscritorio = val;
+    else if (field === 'estado')   filtroEstado   = val;
+    else if (field === 'origem')   filtroOrigem   = val;
+    else if (field === 'search')   filtroSearch   = val.toLowerCase();
+    renderLista();
+  };
+
+  function getVisible() {
+    return allFerias.filter(f => {
+      if (filtroEscritorio && f.escritorio !== filtroEscritorio) return false;
+      if (filtroEstado     && f.estado     !== filtroEstado)     return false;
+      if (filtroOrigem === 'externo'    && !f.externo)  return false;
+      if (filtroOrigem === 'plataforma' &&  f.externo)  return false;
+      if (filtroSearch) {
+        const haystack = ((f.nomeCompleto || '') + ' ' + (f.empresa || '')).toLowerCase();
+        if (!haystack.includes(filtroSearch)) return false;
+      }
+      return true;
+    });
+  }
+
+  // ── Render lista ─────────────────────────────────────────────
+  function renderLista() {
+    const el = document.getElementById('gerirFeriasList');
+    if (!el) return;
+    const visible = getVisible();
+
+    const subtitle = document.getElementById('gfSubtitle');
+    if (subtitle) subtitle.textContent = `${visible.length} registo${visible.length !== 1 ? 's' : ''}`;
+
+    if (!visible.length) {
+      el.innerHTML = '<p style="font-size:12px;color:var(--muted);text-align:center;padding:24px 0;">Nenhum registo encontrado.</p>';
+      return;
+    }
+
+    el.innerHTML = visible.map(f => {
+      const inicio = f.dataInicio ? new Date(f.dataInicio + 'T00:00:00').toLocaleDateString('pt-PT') : '—';
+      const fim    = f.dataFim    ? new Date(f.dataFim    + 'T00:00:00').toLocaleDateString('pt-PT') : '—';
+      const dias   = (f.dataInicio && f.dataFim)
+        ? Math.round((new Date(f.dataFim+'T00:00:00') - new Date(f.dataInicio+'T00:00:00')) / 86400000) + 1 : '?';
+      const tipoLabel   = {ferias:'Férias',folga:'Folga',licenca:'Licença',outro:'Outro'}[f.tipo] || f.tipo || '—';
+      const estadoLabel = {pendente:'Pendente',aprovado:'Aprovado',rejeitado:'Rejeitado',cancelado:'Cancelado'}[f.estado] || f.estado || '—';
+      const initials = (f.nomeCompleto || '?').trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase();
+      const externoTag = f.externo
+        ? '<span style="font-size:9px;padding:1px 7px;border-radius:8px;background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);margin-left:5px;">Externo</span>'
+        : '';
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;">${window.escHtml(initials)}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);">${window.escHtml(f.nomeCompleto || '—')}${externoTag}${f.empresa ? `<span style="font-size:11px;color:var(--muted);margin-left:6px;">${window.escHtml(f.empresa)}</span>` : ''}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">${window.escHtml(tipoLabel)} · ${window.escHtml(f.escritorio || '—')} · ${inicio} → ${fim} <span style="color:var(--text-3);">(${dias}d)</span></div>
+          </div>
+          <span class="estado-pill ${window.escHtml(f.estado || '')}">${window.escHtml(estadoLabel)}</span>
+          <div style="display:flex;gap:5px;flex-shrink:0;">
+            <button class="btn btn-secondary btn-sm" onclick="gfEditar('${f.id}')">Editar</button>
+            <button class="btn btn-sm" style="color:var(--red);border-color:var(--red-border);" onclick="gfConfirmarApagar('${f.id}')">Apagar</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Formulário: novo ─────────────────────────────────────────
+  window.gfNovo = function () {
+    editingId = null;
+    document.getElementById('gfModalTitle').textContent = 'Nova entrada de férias';
+    resetForm();
+    popularUtilizadores();
+    popularEscsForm();
+    document.getElementById('modalFeriasForm').classList.add('open');
+  };
+
+  // ── Formulário: editar ───────────────────────────────────────
+  window.gfEditar = function (id) {
+    const f = allFerias.find(x => x.id === id);
+    if (!f) return;
+    editingId = id;
+    document.getElementById('gfModalTitle').textContent = 'Editar entrada de férias';
+    popularUtilizadores();
+    popularEscsForm();
+    const isExt = !!f.externo;
+    document.getElementById('gfTipoUser').value = isExt ? 'externo' : 'plataforma';
+    gfTipoUserChange();
+    if (isExt) {
+      document.getElementById('gfNomeExterno').value = f.nomeCompleto || '';
+      document.getElementById('gfEmpresa').value     = f.empresa      || '';
+    } else {
+      document.getElementById('gfUtilizador').value = f.uid || '';
+    }
+    document.getElementById('gfEscritorio').value = f.escritorio  || '';
+    document.getElementById('gfTipo').value       = f.tipo        || 'ferias';
+    document.getElementById('gfInicio').value     = f.dataInicio  || '';
+    document.getElementById('gfFim').value        = f.dataFim     || '';
+    document.getElementById('gfEstado').value     = f.estado      || 'aprovado';
+    document.getElementById('gfMotivo').value     = f.motivo      || '';
+    document.getElementById('gfObservacao').value = f.observacao  || '';
+    document.getElementById('modalFeriasForm').classList.add('open');
+  };
+
+  window.gfTipoUserChange = function () {
+    const ext = document.getElementById('gfTipoUser').value === 'externo';
+    document.getElementById('gfWrapPlataforma').style.display = ext ? 'none' : '';
+    document.getElementById('gfWrapExterno').style.display    = ext ? ''     : 'none';
+  };
+
+  function resetForm() {
+    document.getElementById('gfTipoUser').value   = 'plataforma';
+    gfTipoUserChange();
+    document.getElementById('gfNomeExterno').value = '';
+    document.getElementById('gfEmpresa').value     = '';
+    document.getElementById('gfEscritorio').value  = '';
+    document.getElementById('gfTipo').value        = 'ferias';
+    const hoje = new Date().toISOString().slice(0, 10);
+    document.getElementById('gfInicio').value      = hoje;
+    document.getElementById('gfFim').value         = hoje;
+    document.getElementById('gfEstado').value      = 'aprovado';
+    document.getElementById('gfMotivo').value      = '';
+    document.getElementById('gfObservacao').value  = '';
+    const err = document.getElementById('gfFormErr');
+    err.style.display = 'none'; err.textContent = '';
+  }
+
+  // ── Guardar ──────────────────────────────────────────────────
+  window.gfGuardar = async function () {
+    const tipoUser    = document.getElementById('gfTipoUser').value;
+    const escritorio  = document.getElementById('gfEscritorio').value;
+    const tipo        = document.getElementById('gfTipo').value;
+    const inicio      = document.getElementById('gfInicio').value;
+    const fim         = document.getElementById('gfFim').value;
+    const estado      = document.getElementById('gfEstado').value;
+    const motivo      = document.getElementById('gfMotivo').value.trim();
+    const observacao  = document.getElementById('gfObservacao').value.trim();
+
+    if (!inicio || !fim)  { gfErr('Datas obrigatórias.'); return; }
+    if (fim < inicio)     { gfErr('Data fim não pode ser anterior ao início.'); return; }
+
+    let uid = '', nomeCompleto = '', empresa = '', externo = false;
+    if (tipoUser === 'externo') {
+      nomeCompleto = document.getElementById('gfNomeExterno').value.trim();
+      empresa      = document.getElementById('gfEmpresa').value.trim();
+      if (!nomeCompleto) { gfErr('Nome obrigatório para colaboradores externos.'); return; }
+      externo = true;
+    } else {
+      uid = document.getElementById('gfUtilizador').value;
+      if (!uid) { gfErr('Seleciona um utilizador.'); return; }
+      const u = utilizadoresList.find(x => x.uid === uid);
+      nomeCompleto = u ? (u.nomeCompleto || u.nome || u.email || '') : '';
+    }
+
+    const data = {
+      uid, nomeCompleto, empresa, externo,
+      escritorio, tipo, dataInicio: inicio, dataFim: fim,
+      estado, motivo, observacao,
+      ...(editingId
+        ? { atualizadoEm: Date.now(), atualizadoPor: window.userProfile.uid }
+        : { criadoEm: Date.now(), lancadoPor: window.userProfile.uid }),
+    };
+
+    const btn = document.getElementById('gfBtnGuardar');
+    btn.disabled = true; btn.textContent = 'A guardar…';
+    try {
+      if (editingId) await col().doc(editingId).update(data);
+      else           await col().add(data);
+      window.toast && window.toast(editingId ? 'Registo atualizado.' : 'Registo criado.');
+      document.getElementById('modalFeriasForm').classList.remove('open');
+    } catch (e) {
+      gfErr('Erro: ' + e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Guardar';
+    }
+  };
+
+  function gfErr(msg) {
+    const el = document.getElementById('gfFormErr');
+    el.textContent = msg; el.style.display = '';
+  }
+
+  window.gfFecharForm = function () {
+    document.getElementById('modalFeriasForm').classList.remove('open');
+  };
+
+  // ── Apagar ───────────────────────────────────────────────────
+  window.gfConfirmarApagar = function (id) {
+    const f = allFerias.find(x => x.id === id);
+    if (!f) return;
+    deletingId = id;
+    document.getElementById('gfConfirmText').textContent =
+      `Apagar o registo de "${f.nomeCompleto || '?'}" (${f.dataInicio || '?'} → ${f.dataFim || '?'})?`;
+    document.getElementById('modalFeriasConfirm').classList.add('open');
+  };
+
+  window.gfExecutarApagar = async function () {
+    if (!deletingId) return;
+    try {
+      await col().doc(deletingId).delete();
+      window.toast && window.toast('Registo apagado.');
+      document.getElementById('modalFeriasConfirm').classList.remove('open');
+    } catch (e) {
+      window.toast && window.toast('Erro ao apagar: ' + e.message);
+    }
+    deletingId = null;
+  };
+
+  window.gfFecharConfirm = function () {
+    document.getElementById('modalFeriasConfirm').classList.remove('open');
+    deletingId = null;
+  };
+
+  // ── Helpers de select ────────────────────────────────────────
+  function popularEscs() {
+    ['gfFiltroEscritorio', 'gfEscritorio'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const isFilter = id === 'gfFiltroEscritorio';
+      el.innerHTML = (isFilter ? '<option value="">Todos os escritórios</option>' : '<option value="">— Escritório —</option>') +
+        escritoriosList.map(e => `<option value="${window.escHtml(e.id)}">${window.escHtml(e.nome)}</option>`).join('');
+    });
+  }
+
+  function popularEscsForm() {
+    const el = document.getElementById('gfEscritorio');
+    if (!el || el.options.length > 1) return;
+    popularEscs();
+  }
+
+  function popularUtilizadores() {
+    const sel = document.getElementById('gfUtilizador');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Selecionar utilizador —</option>' +
+      utilizadoresList.map(u =>
+        `<option value="${window.escHtml(u.uid)}">${window.escHtml(u.nomeCompleto || u.email || u.uid)}</option>`
+      ).join('');
+  }
+})();
+</script>
 </body>
 </html>

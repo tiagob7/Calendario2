@@ -153,6 +153,59 @@ service cloud.firestore {
       allow create, update, delete: if isActiveUser() && hasPerm('escalas', 'manage') && officeMatches(escritorioId);
     }
 
+    match /ferias/{docId} {
+      // Utilizadores veem os próprios pedidos; gestores veem todos do escritório
+      allow read: if isActiveUser() && hasPerm('ferias', 'view')
+        && (resource.data.uid == request.auth.uid || hasPerm('ferias', 'manage'));
+      // Qualquer utilizador ativo cria o próprio pedido; admin pode criar por terceiros
+      allow create: if isActiveUser() && hasPerm('ferias', 'create')
+        && (request.resource.data.uid == request.auth.uid || isAdmin())
+        && officeMatches(request.resource.data.escritorio);
+      allow update: if isActiveUser() && (
+        // Gestores aprovam/rejeitam
+        (hasPerm('ferias', 'manage') && officeMatches(resource.data.escritorio))
+        // Dono cancela o próprio pedido pendente
+        || (resource.data.uid == request.auth.uid
+          && resource.data.estado == 'pendente'
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['estado'])
+          && request.resource.data.estado == 'cancelado')
+        // Dono edita pedido futuro (estado reposto para pendente para re-aprovação)
+        || (resource.data.uid == request.auth.uid
+          && request.resource.data.estado == 'pendente'
+          && request.resource.data.diff(resource.data).changedKeys()
+             .hasOnly(['tipo', 'dataInicio', 'dataFim', 'motivo', 'estado', 'atualizadoEm']))
+      );
+      allow delete: if isAdmin() || hasPerm('ferias', 'manage');
+    }
+
+    match /visitas/{docId} {
+      allow read: if isActiveUser() && hasPerm('visitas', 'view')
+        && (resource.data.uid == request.auth.uid || hasPerm('visitas', 'manage'));
+      allow create: if isActiveUser() && hasPerm('visitas', 'create')
+        && (request.resource.data.uid == request.auth.uid || isAdmin())
+        && officeMatches(request.resource.data.escritorio);
+      allow update: if isActiveUser() && (
+        hasPerm('visitas', 'manage') && officeMatches(resource.data.escritorio)
+        || (resource.data.uid == request.auth.uid && hasPerm('visitas', 'edit'))
+      );
+      allow delete: if isAdmin() || hasPerm('visitas', 'manage');
+    }
+
+    match /despesas/{docId} {
+      allow read: if isActiveUser() && hasPerm('despesas', 'view')
+        && (resource.data.uid == request.auth.uid || hasPerm('despesas', 'manage'));
+      allow create: if isActiveUser() && hasPerm('despesas', 'create')
+        && (request.resource.data.uid == request.auth.uid || isAdmin())
+        && officeMatches(request.resource.data.escritorio);
+      allow update: if isActiveUser() && (
+        hasPerm('despesas', 'manage') && officeMatches(resource.data.escritorio)
+        || (resource.data.uid == request.auth.uid && resource.data.estado == 'pendente'
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['estado'])
+          && request.resource.data.estado == 'cancelado')
+      );
+      allow delete: if isAdmin() || hasPerm('despesas', 'manage');
+    }
+
     match /auditoria/{docId} {
       allow read: if isActiveUser() && hasPerm('auditoria', 'view');
       // Valida que o uid e email no log correspondem ao utilizador autenticado
@@ -194,7 +247,7 @@ service cloud.firestore {
       allow create: if isActiveUser()
         && request.auth.uid == request.resource.data.uid;
 
-      allow read, update, delete: if isActiveUser()
+      allow read, update: if isActiveUser()
         && request.auth.uid == resource.data.uid;
     }
 
