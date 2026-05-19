@@ -17,10 +17,10 @@ html.dark {
 }
 
 /* ── Page header ── */
-.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+.page-head { margin-bottom: 28px; }
 .kicker { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-ink); margin-bottom: 5px; }
-.lede { font-size: 12px; color: var(--text-3); margin-top: 5px; line-height: 1.55; max-width: 480px; }
-.hd-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 6px; }
+.lede { font-size: 12px; color: var(--text-3); margin-top: 5px; line-height: 1.55; }
+.hd-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 #syncStatus { font-size: 10px; color: var(--text-4); letter-spacing: .04em; }
 
 /* ── Stat grid ── */
@@ -56,7 +56,7 @@ html.dark {
 @media (max-width: 900px) { .kanban { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 500px) { .kanban { grid-template-columns: 1fr; } }
 
-.kanban-col { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-lg); display: flex; flex-direction: column; min-height: 240px; transition: border-color var(--d-fast), background var(--d-fast); }
+.kanban-col { background: color-mix(in srgb, var(--bg) 75%, var(--border)); border: 1px solid var(--border); border-radius: var(--r-lg); display: flex; flex-direction: column; min-height: 240px; transition: border-color var(--d-fast), background var(--d-fast); }
 .kanban-col.drag-over { border-color: var(--accent-ink); background: var(--accent-soft); }
 
 .kanban-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); }
@@ -75,7 +75,7 @@ html.dark {
 .kcol-empty { text-align: center; padding: 24px 12px; font-size: 11px; color: var(--text-4); border: 1.5px dashed var(--border); border-radius: var(--r-md); }
 
 /* ── Kanban card ── */
-.kcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 13px; cursor: pointer; transition: box-shadow var(--d-fast), border-color var(--d-fast); box-shadow: var(--shadow-xs); position: relative; overflow: hidden; }
+.kcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 13px 16px; cursor: pointer; transition: box-shadow var(--d-fast), border-color var(--d-fast); box-shadow: var(--shadow-xs); position: relative; overflow: hidden; min-height: 110px; }
 .kcard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
 .kcard.prio-urgente::before { background: var(--red); }
 .kcard.prio-normal::before  { background: var(--amber); }
@@ -87,7 +87,7 @@ html.dark {
 
 .kcard-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 7px; }
 .kcard-num { font-size: 10px; color: var(--text-4); font-weight: 500; }
-.kcard-title { font-size: 12px; font-weight: 500; line-height: 1.45; color: var(--text); margin-bottom: 8px; }
+.kcard-title { font-size: 14px; font-weight: 500; line-height: 1.45; color: var(--text); margin-bottom: 8px; }
 .kcard-title.done { text-decoration: line-through; color: var(--text-4); }
 
 .kcard-prog { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -176,6 +176,30 @@ html.dark {
 .btn-attach { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 20px; font-size: 10px; cursor: pointer; color: var(--text-3); background: none; font-family: inherit; transition: all var(--d-fast); }
 .btn-attach:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
 .btn-attach input[type=file] { display: none; }
+.btn-attach-sm { padding: 3px 9px; font-size: 9px; }
+
+/* ── Checklist ── */
+.task-checklist { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.checklist-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.checklist-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); flex: 1; }
+.checklist-count { font-size: 10px; color: var(--text-3); white-space: nowrap; }
+.checklist-prog { flex: 1; height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; max-width: 120px; }
+.checklist-prog-fill { height: 100%; background: var(--blue); border-radius: 99px; transition: width .3s ease; }
+.checklist-items { display: flex; flex-direction: column; gap: 1px; }
+.checklist-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
+.checklist-item:last-child { border-bottom: none; }
+.checklist-item input[type=checkbox] { flex-shrink: 0; width: 14px; height: 14px; cursor: pointer; accent-color: var(--accent-ink); }
+.checklist-item-text { flex: 1; color: var(--text); }
+.checklist-item-text.done { text-decoration: line-through; color: var(--text-4); }
+.checklist-item-del { background: none; border: none; cursor: pointer; color: var(--text-4); font-size: 12px; padding: 0 2px; flex-shrink: 0; transition: color var(--d-fast); line-height: 1; }
+.checklist-item-del:hover { color: var(--red); }
+.checklist-add { display: flex; gap: 6px; margin-top: 10px; }
+.checklist-add .input { padding: 6px 9px; font-size: 11px; }
+.checklist-add .btn { font-size: 10px; padding: 6px 10px; white-space: nowrap; flex-shrink: 0; }
+
+/* pending checklist items in form */
+.checklist-pending-item { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 5px 8px; border-radius: 6px; background: var(--surface2); border: 1px solid var(--border); margin-bottom: 4px; }
+.checklist-pending-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 .file-item { display: flex; align-items: center; gap: 6px; font-size: 10px; padding: 6px 9px; border-radius: 6px; background: var(--surface2); border: 1px solid var(--border); margin-bottom: 4px; }
 .file-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-item-size { color: var(--text-4); white-space: nowrap; font-size: 9px; flex-shrink: 0; }

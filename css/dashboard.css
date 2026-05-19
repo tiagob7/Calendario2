@@ -477,6 +477,74 @@ h1 {
   filter: brightness(.96);
 }
 
+/* ── Quick actions ────────────────────────────────────────────── */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: var(--shadow-xs);
+  transition: var(--t);
+}
+
+.quick-action-btn:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.qa-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.qa-icon svg { width: 17px; height: 17px; }
+
+.qa-task { background: #dbeafe; color: #2563eb; }
+.qa-com  { background: #ede9fe; color: #7c3aed; }
+.qa-rec  { background: #fef3c7; color: #d97706; }
+.qa-adm  { background: #dcfce7; color: #16a34a; }
+
+.qa-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.qa-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qa-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* ── Nav links ────────────────────────────────────────────────── */
 .nav-links {
   display: flex;
@@ -1355,6 +1423,9 @@ html.dark .rec-kpi-chip.aguarda-proc { background: #0a2020; color: #2dd4bf; bord
   .layout-presets { order: 2; }
   .nav-links { display: none; }
   .nav-link { flex-shrink: 0; }
+  .quick-actions { grid-template-columns: repeat(2, 1fr); }
+  .qa-label { font-size: 12px; }
+  .qa-sub { font-size: 10px; }
   #globalSearchWrap { order: 99; flex-basis: 100%; width: 100%; margin-left: 0; }
   #globalSearchBtn { width: 100%; justify-content: center; }
   .dashboard-editor { width: 100vw; }

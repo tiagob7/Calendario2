@@ -618,7 +618,9 @@ html.dark {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: drawerSlideIn .22s var(--cli-ease);
+  transform: none;
+  transition: none;
+  animation: drawerSlideIn .22s var(--cli-ease) forwards;
   box-shadow: var(--shadow-xl);
 }
 

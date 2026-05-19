@@ -1,23 +1,25 @@
 /* ── Page ── */
 .ferias-page { max-width: 1320px; }
+.header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 
 /* ── Balance card ── */
 .balance-card-wrap {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 36px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  padding: 20px 24px;
+  padding: 28px 32px;
   margin-bottom: 16px;
+  box-shadow: var(--shadow-xs, 0 1px 4px rgba(0,0,0,.05));
 }
-@media (max-width: 600px) { .balance-card-wrap { flex-direction: column; align-items: flex-start; gap: 16px; } }
+@media (max-width: 600px) { .balance-card-wrap { flex-direction: column; align-items: flex-start; gap: 20px; } }
 
 .balance-ring-wrap {
   position: relative;
-  width: 100px;
-  height: 100px;
+  width: 130px;
+  height: 130px;
   flex-shrink: 0;
 }
 .balance-ring-svg { width: 100%; height: 100%; }
@@ -44,24 +46,23 @@
 }
 .balance-ring-value {
   font-family: 'Sora', sans-serif;
-  font-size: 22px;
+  font-size: 30px;
   font-weight: 800;
   letter-spacing: -.03em;
   color: var(--text);
   line-height: 1;
 }
-.balance-ring-label { font-size: 8px; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; margin-top: 3px; }
+.balance-ring-label { font-size: 8px; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
 
 .balance-meta { flex: 1; min-width: 0; }
-.balance-title { font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
-.balance-sub { font-size: 11px; color: var(--text-3); margin-bottom: 14px; }
-.balance-breakdown { display: flex; gap: 20px; flex-wrap: wrap; }
-.bal-item { display: flex; flex-direction: column; gap: 2px; }
-.bal-val { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -.02em; color: var(--text); }
+.balance-title { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+.balance-breakdown { display: flex; gap: 32px; flex-wrap: wrap; }
+.bal-item { display: flex; flex-direction: column; gap: 3px; }
+.bal-val { font-family: 'Sora', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -.02em; color: var(--text); }
 .bal-val.bal-used    { color: var(--accent); }
 .bal-val.bal-pending { color: var(--amber); }
 .bal-val.bal-left    { color: var(--green); }
-.bal-lbl { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; }
+.bal-lbl { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; }
 
 /* ── Dias info box (form) ── */
 .dias-info-box {
@@ -406,6 +407,52 @@
 .cal-mini-dots { display: flex; justify-content: center; gap: 1px; min-height: 5px; flex-wrap: wrap; }
 .cal-mini-dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
 .cal-mini-dot.pendente { opacity: .55; }
+
+/* ── Totais modal ── */
+.fer-modal.fer-modal-wide { max-width: 780px; }
+.tot-body { padding: 0 !important; }
+
+.tot-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tot-table thead th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-3);
+  background: var(--bg-inset, var(--bg));
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.tot-table thead th:not(:first-child) { text-align: center; }
+.tot-table tbody tr { border-bottom: 1px solid var(--border); transition: background var(--d-fast); }
+.tot-table tbody tr:last-child { border-bottom: none; }
+.tot-table tbody tr:hover { background: var(--surface-hover); }
+.tot-table td { padding: 10px 16px; vertical-align: middle; }
+.tot-table td:not(:first-child) { text-align: center; }
+
+.tot-user-cell { display: flex; align-items: center; gap: 10px; }
+.tot-ava {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; font-family: 'Poppins', sans-serif;
+  flex-shrink: 0;
+}
+.tot-name-text { font-weight: 600; color: var(--text); font-size: 13px; line-height: 1.3; }
+.tot-escritorio { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+
+.tot-num {
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--text);
+}
+.tot-used    { color: var(--accent); }
+.tot-pending { color: var(--amber); }
+.tot-avail   { color: var(--green); }
 
 /* ── filter-btn (cal estado) ── */
 .filter-btn { display: inline-flex; align-items: center; padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface); font-family: inherit; font-size: 11px; color: var(--text-3); cursor: pointer; transition: all .15s; }
