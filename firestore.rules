@@ -154,11 +154,15 @@ service cloud.firestore {
     }
 
     match /ferias/{docId} {
-      // Utilizadores veem os próprios pedidos; gestores veem todos do escritório
-      allow read: if isActiveUser() && hasPerm('ferias', 'view')
-        && (resource.data.uid == request.auth.uid || hasPerm('ferias', 'manage'));
+      // Utilizadores veem os próprios pedidos; gestores veem todos
+      // Não exige hasPerm('ferias','view') — o doc pode não ter a chave (utilizadores antigos);
+      // o controlo de navegação é feito pelo module-registry no lado do cliente.
+      allow read: if isActiveUser()
+        && (resource.data.uid == request.auth.uid
+          || hasPerm('ferias', 'manage')
+          || resource.data.estado == 'aprovado');
       // Qualquer utilizador ativo cria o próprio pedido; admin pode criar por terceiros
-      allow create: if isActiveUser() && hasPerm('ferias', 'create')
+      allow create: if isActiveUser()
         && (request.resource.data.uid == request.auth.uid || isAdmin())
         && officeMatches(request.resource.data.escritorio);
       allow update: if isActiveUser() && (
@@ -179,9 +183,9 @@ service cloud.firestore {
     }
 
     match /visitas/{docId} {
-      allow read: if isActiveUser() && hasPerm('visitas', 'view')
+      allow read: if isActiveUser()
         && (resource.data.uid == request.auth.uid || hasPerm('visitas', 'manage'));
-      allow create: if isActiveUser() && hasPerm('visitas', 'create')
+      allow create: if isActiveUser()
         && (request.resource.data.uid == request.auth.uid || isAdmin())
         && officeMatches(request.resource.data.escritorio);
       allow update: if isActiveUser() && (
@@ -192,9 +196,9 @@ service cloud.firestore {
     }
 
     match /despesas/{docId} {
-      allow read: if isActiveUser() && hasPerm('despesas', 'view')
+      allow read: if isActiveUser()
         && (resource.data.uid == request.auth.uid || hasPerm('despesas', 'manage'));
-      allow create: if isActiveUser() && hasPerm('despesas', 'create')
+      allow create: if isActiveUser()
         && (request.resource.data.uid == request.auth.uid || isAdmin())
         && officeMatches(request.resource.data.escritorio);
       allow update: if isActiveUser() && (
