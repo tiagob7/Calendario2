@@ -41,9 +41,9 @@
       podeGerir ? 'Gestão de pedidos de ausência' : 'Os teus pedidos de ausência';
     const btnNovo = document.getElementById('btnNovoPedido');
     if (btnNovo) btnNovo.style.display = podeCriar ? '' : 'none';
+    popularEscritorios();
     if (podeGerir) {
       document.getElementById('fEscritorioWrap').style.display = '';
-      popularEscritorios();
     }
     setDataDefaults();
     startSync();
@@ -251,8 +251,8 @@
     const container = document.getElementById('collabChips');
     if (!container) return;
     const seen = new Map();
-    allPedidos.forEach(p => {
-      if (!podeGerir && p.uid !== currentUid) return;
+    const chipSource = podeGerir ? allPedidos : mergedParaCalendario();
+    chipSource.forEach(p => {
       if (filtroEscritorio && p.escritorio !== filtroEscritorio) return;
       if (!seen.has(p.uid)) seen.set(p.uid, p.nomeCompleto || p.email || p.uid);
     });
