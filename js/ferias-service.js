@@ -33,5 +33,5 @@
   function remove(id)         { return collection().doc(id).delete(); }
   function getById(id)        { return collection().doc(id).get(); }
 
-  window.FeriasService = { listenAll, create, update, remove, getById };
+  window.FeriasService = { listenAll, listenApproved, create, update, remove, getById };
 })();
