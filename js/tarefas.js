@@ -5,6 +5,7 @@ let col;
 let tasks = [], selPrioVal = 'normal', filterMode = 'activos', filterPessoa = '';
 let filterEscritorio = '';
 let pendingFiles = [];
+let pendingChecklist = [];
 window._files = {};
 let _dragging = null;
 let _activeDetailId = null;
@@ -21,7 +22,7 @@ const KANBAN_CONC_LIMIT  = 20;
 
 const PRIO_ORDER  = { urgente:0, normal:1, baixa:2 };
 const ESTADO_LABEL = { aguardar:'A aguardar', progresso:'Em progresso', concluido:'Concluído', cancelado:'Cancelado', pendente:'Pendente' };
-const PRIO_LABEL   = { urgente:'Urgente', normal:'Normal', baixa:'Baixa' };
+const PRIO_LABEL   = { urgente:'Alta', normal:'Média', baixa:'Baixa' };
 
 const KANBAN_COLS = [
   { id:'aguardar',  label:'A aguardar',   dot:'#94a3b8' },
@@ -60,6 +61,9 @@ window.bootProtectedPage({
       selFil.innerHTML = '<option value="">Todos os escritórios</option>' +
         lista.map(e => `<option value="${e.id}">${e.nome}</option>`).join('');
       if (filterEscritorio) selFil.value = filterEscritorio;
+    }
+    if (new URLSearchParams(location.search).get('novo') === '1' && canCreate) {
+      openTaskForm();
     }
   });
 
@@ -131,6 +135,7 @@ async function submitTarefa() {
     const dados = {
       titulo, descricao, solicitante,
       prioridade: selPrioVal, estado: 'aguardar', notas: '',
+      checklist: pendingChecklist.length ? pendingChecklist.map(i => ({...i})) : [],
       criadaEm: Date.now(), ordemChegada: maxOrdem + 1,
       escritorio: destino, escritorioOrigem,
       criadoPor: window.currentUser ? window.currentUser.uid : ''
@@ -156,7 +161,9 @@ async function submitTarefa() {
     }
 
     pendingFiles = [];
+    pendingChecklist = [];
     renderPendingFilesList();
+    renderPendingChecklist();
     const fTitulo = document.getElementById('fTitulo'); if (fTitulo) fTitulo.value = '';
     const fDesc   = document.getElementById('fDescricao'); if (fDesc) fDesc.value = '';
     selPrio('normal');
@@ -304,17 +311,30 @@ function renderKCard(t) {
   const ficheiros = t.ficheiros && t.ficheiros.length;
   const notas     = t.notas && t.notas.trim();
 
+  const checklist = t.checklist || [];
+  const clTotal   = checklist.length;
+  const clDone    = checklist.filter(i => i.feito).length;
+  const clPct     = clTotal ? Math.round(clDone / clTotal * 100) : 0;
+
+  const cardDate = t.criadaEm
+    ? new Date(t.criadaEm).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' })
+    : '—';
+
   return `<div class="kcard prio-${t.prioridade} estado-${t.estado}" data-id="${t.id}" title="${escHtml(t.titulo)}">
     <div class="kcard-top">
       <span class="kcard-num">T-${t.ordemChegada||''}</span>
       <span class="pill ${pilltone}">${PRIO_LABEL[t.prioridade]||t.prioridade}</span>
     </div>
     <div class="kcard-title${isDone?' done':''}">${escHtml(t.titulo)}</div>
-    ${notas ? `<div style="font-size:10px;color:var(--text-4);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(notas)}</div>` : ''}
+    ${notas ? `<div style="font-size:11px;color:var(--text-4);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(notas)}</div>` : ''}
+    ${clTotal ? `<div class="kcard-prog">
+      <div class="prog-bar"><div class="prog-fill" style="width:${clPct}%"></div></div>
+      <span class="prog-label">${clDone}/${clTotal}</span>
+    </div>` : ''}
     <div class="kcard-foot">
       <div class="kcard-meta">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="2.5"/><path d="M3 13c0-2.5 2.2-4.5 5-4.5s5 2 5 4.5"/></svg>
-        ${escHtml(t.solicitante||'—')}
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5l2 2"/></svg>
+        ${escHtml(cardDate)}
         ${ficheiros ? `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-left:4px"><path d="M13.5 9.5l-5.5 5.5a4 4 0 01-5.66-5.66L8.5 2.5a2.67 2.67 0 013.77 3.77L6 12.5a1.33 1.33 0 01-1.88-1.88L9.5 5"/></svg>` : ''}
       </div>
       <div class="kcard-ava">${escHtml(iniciais)}</div>
@@ -388,6 +408,7 @@ function renderDetailBody(task) {
           ${task.escritorio ? `<span class="pill neutral">${escHtml(task.escritorio)}</span>` : ''}
         </div>
         ${task.descricao ? `<div class="task-detail-desc">${escHtml(task.descricao)}</div>` : ''}
+        ${renderChecklistDetail(task, canResolve)}
         ${canResolve ? `<div class="task-detail-notas">
           <label>Nota interna</label>
           <textarea id="notasInput" onchange="updateNotas('${task.id}',this.value)" placeholder="Escreve uma nota…">${escHtml(task.notas||'')}</textarea>
@@ -427,6 +448,102 @@ function renderDetailBody(task) {
     </div>`;
 }
 
+function renderChecklistDetail(task, canResolve) {
+  const checklist = task.checklist || [];
+  if (!checklist.length && !canResolve) return '';
+  const total = checklist.length;
+  const done  = checklist.filter(i => i.feito).length;
+  const pct   = total ? Math.round(done / total * 100) : 0;
+  const items = checklist.map((item, i) => `
+    <div class="checklist-item">
+      <input type="checkbox" ${item.feito ? 'checked' : ''} onchange="toggleChecklistItem('${escHtml(task.id)}',${i})">
+      <span class="checklist-item-text${item.feito ? ' done' : ''}">${escHtml(item.texto)}</span>
+      ${canResolve ? `<button class="checklist-item-del" onclick="removeChecklistItem('${escHtml(task.id)}',${i})" title="Remover">✕</button>` : ''}
+    </div>`).join('');
+  return `<div class="task-checklist">
+    <div class="checklist-header">
+      <span class="checklist-lbl">Checklist</span>
+      ${total ? `<div class="checklist-prog"><div class="checklist-prog-fill" style="width:${pct}%"></div></div>
+      <span class="checklist-count">${done}/${total}</span>` : ''}
+    </div>
+    <div class="checklist-items">${items}</div>
+    ${canResolve ? `<div class="checklist-add">
+      <input class="input" id="checklistAddInput" placeholder="Novo item…" maxlength="100" autocomplete="off"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();addChecklistItemToTask('${escHtml(task.id)}')}">
+      <button class="btn btn-secondary" onclick="addChecklistItemToTask('${escHtml(task.id)}')">+ Adicionar</button>
+    </div>` : ''}
+  </div>`;
+}
+
+async function toggleChecklistItem(taskId, index) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const updated = (task.checklist || []).map((item, i) => i === index ? {...item, feito: !item.feito} : item);
+  try {
+    await col.doc(taskId).update({ checklist: updated });
+    tasks = tasks.map(t => t.id === taskId ? {...t, checklist: updated} : t);
+    renderKanban();
+    const updatedTask = tasks.find(t => t.id === taskId);
+    if (updatedTask && _activeDetailId === taskId) renderDetailBody(updatedTask);
+  } catch(e) { toast('Erro.'); }
+}
+
+async function addChecklistItemToTask(taskId) {
+  const input = document.getElementById('checklistAddInput');
+  if (!input) return;
+  const texto = input.value.trim();
+  if (!texto) return;
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const updated = [...(task.checklist || []), { texto, feito: false }];
+  try {
+    await col.doc(taskId).update({ checklist: updated });
+    tasks = tasks.map(t => t.id === taskId ? {...t, checklist: updated} : t);
+    renderKanban();
+    const updatedTask = tasks.find(t => t.id === taskId);
+    if (updatedTask) renderDetailBody(updatedTask);
+  } catch(e) { toast('Erro.'); }
+}
+
+async function removeChecklistItem(taskId, index) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const updated = (task.checklist || []).filter((_, i) => i !== index);
+  try {
+    await col.doc(taskId).update({ checklist: updated });
+    tasks = tasks.map(t => t.id === taskId ? {...t, checklist: updated} : t);
+    renderKanban();
+    const updatedTask = tasks.find(t => t.id === taskId);
+    if (updatedTask) renderDetailBody(updatedTask);
+  } catch(e) { toast('Erro.'); }
+}
+
+function addPendingChecklistItem() {
+  const input = document.getElementById('fChecklistInput');
+  if (!input) return;
+  const texto = input.value.trim();
+  if (!texto) return;
+  pendingChecklist.push({ texto, feito: false });
+  input.value = '';
+  renderPendingChecklist();
+}
+
+function removePendingChecklistItem(i) {
+  pendingChecklist.splice(i, 1);
+  renderPendingChecklist();
+}
+
+function renderPendingChecklist() {
+  const container = document.getElementById('pendingChecklistList');
+  if (!container) return;
+  if (!pendingChecklist.length) { container.innerHTML = ''; return; }
+  container.innerHTML = pendingChecklist.map((item, i) => `
+    <div class="checklist-pending-item">
+      <span class="checklist-pending-text">${escHtml(item.texto)}</span>
+      <button class="file-item-del" onclick="removePendingChecklistItem(${i})" title="Remover">✕</button>
+    </div>`).join('');
+}
+
 function closeTaskDetail() {
   document.getElementById('taskDetailModal').classList.remove('open');
   _activeDetailId = null;
@@ -438,7 +555,9 @@ function openTaskForm() {
   const fDesc   = document.getElementById('fDescricao'); if (fDesc) fDesc.value = '';
   selPrio('normal');
   pendingFiles = [];
+  pendingChecklist = [];
   renderPendingFilesList();
+  renderPendingChecklist();
   document.getElementById('taskFormModal').classList.add('open');
   if (fTitulo) setTimeout(() => fTitulo.focus(), 0);
 }

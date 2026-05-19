@@ -1,38 +1,5 @@
 const db = firebase.firestore();
 
-function renderDashboardModuleNav() {
-  if (typeof window.getAppModules !== 'function') return;
-
-  let host = document.getElementById('dashboardModulesNav');
-  if (!host) {
-    const nav = document.querySelector('.nav-links');
-    const searchWrap = document.getElementById('globalSearchWrap');
-    if (!nav) return;
-
-    host = document.createElement('div');
-    host.id = 'dashboardModulesNav';
-    host.style.display = 'flex';
-    host.style.gap = '8px';
-    host.style.flexWrap = 'wrap';
-
-    [...nav.querySelectorAll('.nav-link')].forEach(link => link.remove());
-    if (searchWrap) nav.insertBefore(host, searchWrap);
-    else nav.prepend(host);
-  }
-
-  const modules = window.getAppModules({
-    group: 'main',
-    forDashboardNav: true,
-    profile: window.userProfile,
-  });
-
-  host.innerHTML = modules.map(m => `
-    <a class="nav-link" href="${m.href}">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">${m.icon}</svg>
-      ${m.label}
-    </a>
-  `).join('');
-}
 
 // ── Dark mode — icon init (toggle via window.toggleDarkMode em auth.js) ──
 (function() {
@@ -105,8 +72,6 @@ function saveLayout() {
   _layoutSaveTimer = setTimeout(() => {
     const layout = readLayoutFromDOM();
     dashboardLayout = layout;
-    const resetBtn = document.getElementById('layoutResetBtn');
-    if (resetBtn) resetBtn.classList.toggle('visible', !isDefaultLayout(layout));
     if (window.currentUser) {
       firebase.firestore()
         .collection('utilizadores').doc(window.currentUser.uid)
@@ -129,8 +94,6 @@ function toggleWidth(btn) {
 function resetLayout() {
   applyLayout(LAYOUT_DEFAULT);
   dashboardLayout = LAYOUT_DEFAULT.slice();
-  const resetBtn = document.getElementById('layoutResetBtn');
-  if (resetBtn) resetBtn.classList.remove('visible');
   if (window.currentUser) {
     firebase.firestore()
       .collection('utilizadores').doc(window.currentUser.uid)
@@ -163,7 +126,6 @@ let reclamacoes = [];
 let calData     = null;
 let loadedFlags = { tasks: false, com: false, cal: false, adm: false, rec: false };
 let unsubFns    = []; // mantido por compatibilidade (agora vazio — sem listeners ativos)
-let _switchEscTimer = null;
 let errorFlags  = {}; // regista pedidos que falharam
 
 // ── CACHE DO DASHBOARD ───────────────────────────────────────────────────────
@@ -196,63 +158,21 @@ document.addEventListener('authReady', ({ detail }) => {
 
   window.renderNavbar('dashboard');
 
-  const isAdmin = window.isAdmin();
-
-  // filtro de escritório para admin — pills sem reload
   const escritorio = window.escritorioAtivo();
-
-  if (isAdmin) {
-    const pillsWrap = document.getElementById('adminEscritorioPills');
-    if (pillsWrap) {
-      pillsWrap.style.display = 'flex';
-      // Carregar escritórios dinâmicos a partir da configuração partilhada
-      loadEscritorios().then(lista => {
-        pillsWrap.innerHTML = '';
-        const opcoes = [
-          { val: 'todos', label: 'Todos' },
-          ...lista.map(e => ({ val: e.id, label: e.nome }))
-        ];
-        opcoes.forEach(({ val, label }) => {
-          const btn = document.createElement('button');
-          btn.dataset.e = val;
-          btn.textContent = label;
-          const ativo = (val === escritorio) || (val === 'todos' && (!escritorio || escritorio === 'todos'));
-          btn.className = 'dash-esc-pill' + (ativo ? ' ativo' : '');
-          btn.onclick = () => switchEscritorioDash(val);
-          pillsWrap.appendChild(btn);
-        });
-      }).catch(() => {
-        // fallback simples: mostrar apenas "Todos"
-        pillsWrap.innerHTML = '';
-        const btn = document.createElement('button');
-        btn.dataset.e = 'todos';
-        btn.textContent = 'Todos';
-        btn.className = 'dash-esc-pill ativo';
-        btn.onclick = () => switchEscritorioDash('todos');
-        pillsWrap.appendChild(btn);
-      });
-    }
-  }
-
-  updateSubtitle(escritorio);
 
   // ── Carregar layout guardado ──
   const savedLayout = window.userProfile && window.userProfile.dashboardLayout;
   if (savedLayout && Array.isArray(savedLayout) && savedLayout.length) {
-    // Garantir que todos os painéis estão representados (retrocompatibilidade)
     const merged = LAYOUT_DEFAULT.map(def => {
       const saved = savedLayout.find(s => s.id === def.id);
       return saved || def;
     });
-    // Acrescentar painéis novos não presentes no layout guardado
     savedLayout.filter(s => !LAYOUT_DEFAULT.find(d => d.id === s.id)).forEach(s => merged.push(s));
     dashboardLayout = merged;
   } else {
     dashboardLayout = LAYOUT_DEFAULT.slice();
   }
   applyLayout(dashboardLayout);
-  const resetBtn = document.getElementById('layoutResetBtn');
-  if (resetBtn) resetBtn.classList.toggle('visible', !isDefaultLayout(dashboardLayout));
 
   // Inicializar drag & drop
   initSortable();
@@ -260,41 +180,6 @@ document.addEventListener('authReady', ({ detail }) => {
   startSync(escritorio);
 });
 
-// ── TROCAR ESCRITÓRIO (admin, sem reload) ──
-function switchEscritorioDash(val) {
-  // Atualizar pills imediatamente para feedback visual
-  document.querySelectorAll('.dash-esc-pill').forEach(b => {
-    b.classList.toggle('ativo', b.dataset.e === val);
-  });
-  updateSubtitle(val);
-
-  // Debounce: evitar múltiplos re-subscribes em cliques rápidos
-  clearTimeout(_switchEscTimer);
-  _switchEscTimer = setTimeout(() => {
-    sessionStorage.setItem('filtroEscritorio', val);
-    startSync(val);
-  }, 200);
-}
-
-function updateSubtitle(escritorio) {
-  let label;
-  if (!escritorio || escritorio === 'todos') {
-    label = 'Todos os escritórios';
-  } else if (window.nomeEscritorio) {
-    label = window.nomeEscritorio(escritorio);
-  } else {
-    label = escritorio.charAt(0).toUpperCase() + escritorio.slice(1);
-  }
-
-  const badge = document.getElementById('escritorioBadge');
-  if (!badge) return;
-  badge.innerHTML = `
-    <span class="escritorio-badge">
-      <span class="escritorio-dot"></span>
-      ${label}
-    </span>
-  `;
-}
 
 // ── ESCRITÓRIO ATIVO (atualizado sem reload) ──
 let escritorioAtivoDash = '';

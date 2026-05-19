@@ -95,6 +95,11 @@ window.bootProtectedPage({
   }
 
   carregarComunicados();
+
+  if (new URLSearchParams(location.search).get('novo') === '1' &&
+      window.temPermissao('modules.comunicados.manage')) {
+    openNovoModal();
+  }
 });
 
 // ── Modal: novo comunicado ────────────────────────────────────────────────

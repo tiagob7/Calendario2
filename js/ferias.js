@@ -17,6 +17,7 @@
   let unsubApproved = null;
   let allApproved = [];
   let editingFeriasId = null;
+  let allUtilizadores = [];
 
   const PALETTE = [
     '#0284c7','#16a34a','#dc2626','#d97706','#7c3aed',
@@ -41,9 +42,15 @@
       podeGerir ? 'Gestão de pedidos de ausência' : 'Os teus pedidos de ausência';
     const btnNovo = document.getElementById('btnNovoPedido');
     if (btnNovo) btnNovo.style.display = podeCriar ? '' : 'none';
+    const btnTotais = document.getElementById('btnTotaisAdmin');
+    if (btnTotais && podeGerir) btnTotais.style.display = '';
     popularEscritorios();
     if (podeGerir) {
       document.getElementById('fEscritorioWrap').style.display = '';
+    } else if (profile.escritorio) {
+      filtroEscritorio = profile.escritorio;
+      const sel = document.getElementById('filterEscritorio');
+      if (sel) sel.value = profile.escritorio;
     }
     setDataDefaults();
     startSync();
@@ -679,5 +686,102 @@
       await window.FeriasService.update(id, { estado: 'cancelado' });
       window.toast('Pedido cancelado.');
     } catch(e) { window.toast('Erro ao cancelar.'); }
+  };
+
+  // ── Modal: Totais de férias (admin) ────────────────────────
+  window.abrirModalTotais = async function() {
+    const ano = new Date().getFullYear();
+    document.getElementById('totaisAnoLabel').textContent = ano;
+    document.getElementById('modalTotais').style.display = 'flex';
+
+    const escritorios = window.getEscritoriosSync ? window.getEscritoriosSync() : [];
+    const sel = document.getElementById('totaisFilterEscritorio');
+    sel.innerHTML = '<option value="">Todos os escritórios</option>' +
+      escritorios.map(e => `<option value="${window.escHtml(e.id)}">${window.escHtml(e.nome)}</option>`).join('');
+
+    if (!allUtilizadores.length) {
+      document.getElementById('totaisTableWrap').innerHTML =
+        '<div class="empty-msg" style="padding:32px">A carregar utilizadores…</div>';
+      try {
+        const snap = await firebase.firestore().collection('utilizadores').get();
+        allUtilizadores = snap.docs
+          .map(d => ({ uid: d.id, ...d.data() }))
+          .filter(u => u.ativo !== false);
+      } catch(e) {
+        console.error('[totais]', e);
+        document.getElementById('totaisTableWrap').innerHTML =
+          '<div class="empty-msg" style="padding:32px">Erro ao carregar utilizadores.</div>';
+        return;
+      }
+    }
+    window.renderTotais();
+  };
+
+  window.fecharModalTotais = function() {
+    document.getElementById('modalTotais').style.display = 'none';
+  };
+
+  window.renderTotais = function() {
+    const ano = new Date().getFullYear();
+    const filtroEsc = (document.getElementById('totaisFilterEscritorio') || {}).value || '';
+    const wrap = document.getElementById('totaisTableWrap');
+    if (!wrap) return;
+
+    let users = allUtilizadores;
+    if (filtroEsc) users = users.filter(u => u.escritorio === filtroEsc);
+    users = users.slice().sort((a, b) => {
+      const na = (a.nomeCompleto || a.nome || a.email || '').toLowerCase();
+      const nb = (b.nomeCompleto || b.nome || b.email || '').toLowerCase();
+      return na.localeCompare(nb, 'pt-PT');
+    });
+
+    if (!users.length) {
+      wrap.innerHTML = '<div class="empty-msg" style="padding:40px">Nenhum utilizador encontrado.</div>';
+      return;
+    }
+
+    const rows = users.map(u => {
+      const totalAnual = u.diasFeriasAnual || 22;
+      const pedidosUser = allPedidos.filter(p =>
+        p.uid === u.uid && p.tipo === 'ferias' && p.dataInicio &&
+        new Date(p.dataInicio + 'T00:00:00').getFullYear() === ano
+      );
+      const gozados   = pedidosUser.filter(p => p.estado === 'aprovado')
+                          .reduce((s, p) => s + calcDias(p.dataInicio, p.dataFim), 0);
+      const aguardando = pedidosUser.filter(p => p.estado === 'pendente')
+                          .reduce((s, p) => s + calcDias(p.dataInicio, p.dataFim), 0);
+      const disponivel = Math.max(0, totalAnual - gozados - aguardando);
+      const nome = (u.nomeCompleto || ((u.nome || '') + ' ' + (u.apelido || '')).trim() || u.email || u.uid).trim();
+      const esc  = window.nomeEscritorio ? window.nomeEscritorio(u.escritorio) : (u.escritorio || '—');
+
+      return `<tr>
+        <td>
+          <div class="tot-user-cell">
+            <div class="tot-ava">${window.escHtml(getInitials(nome))}</div>
+            <div>
+              <div class="tot-name-text">${window.escHtml(nome)}</div>
+              <div class="tot-escritorio">${window.escHtml(esc)}</div>
+            </div>
+          </div>
+        </td>
+        <td class="tot-num">${totalAnual}</td>
+        <td class="tot-num tot-used">${gozados}</td>
+        <td class="tot-num tot-pending">${aguardando}</td>
+        <td class="tot-num tot-avail">${disponivel}</td>
+      </tr>`;
+    });
+
+    wrap.innerHTML = `<table class="tot-table">
+      <thead>
+        <tr>
+          <th>Utilizador</th>
+          <th>Total anual</th>
+          <th>Já gozados</th>
+          <th>Aguardando</th>
+          <th>Disponível</th>
+        </tr>
+      </thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>`;
   };
 })();

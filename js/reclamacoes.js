@@ -364,6 +364,7 @@ document.addEventListener('authReady', ({detail}) => {
   if (canCreate) {
     document.getElementById('btnNovaReclamacao').style.display = '';
     adicionarPeriodo();
+    if (new URLSearchParams(location.search).get('novo') === '1') toggleFormRec();
   }
   filtroEscritorio = isAdminUser ? '' : (profile ? (profile.escritorio||'') : '');
   window.loadEscritorios().then(lista => {

@@ -846,6 +846,7 @@ document.addEventListener('authReady', ({ detail }) => {
   // Botão "Novo pedido"
   const btnNovo = document.getElementById('btnNovoPedido');
   if (btnNovo) btnNovo.style.display = canCriar ? '' : 'none';
+  if (canCriar && new URLSearchParams(location.search).get('novo') === '1') openModalNovo();
 
   // Botão VOZ
   const btnVoz = document.getElementById('btnVozAdm');

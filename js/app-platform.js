@@ -224,11 +224,11 @@
         <span class="app-shell-spacer"></span>
         <div class="app-shell-topbar-actions">
           ${customizeBtn}
-          <button class="app-shell-icon-btn" type="button" id="appShellNotifBtn" title="Notifica&ccedil;&otilde;es" aria-label="Notifica&ccedil;&otilde;es">
+          <button class="app-shell-icon-btn" type="button" id="appShellNotifBtn" onclick="window.openNotifPanel()" title="Notifica&ccedil;&otilde;es" aria-label="Notifica&ccedil;&otilde;es">
             <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M8 1a5 5 0 015 5c0 2.5.5 4 1.5 5H1.5C2.5 10 3 8.5 3 6a5 5 0 015-5z"/><path d="M6 13a2 2 0 004 0"/></svg>
             <span class="app-shell-notif-badge" id="appShellNotifBadge"></span>
           </button>
-          <button class="app-shell-icon-btn" type="button" id="appShellHelpBtn" title="Ajuda" aria-label="Ajuda">
+          <button class="app-shell-icon-btn" type="button" id="appShellHelpBtn" onclick="window.openHelpPanel()" title="Ajuda" aria-label="Ajuda">
             <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
               <circle cx="8" cy="8" r="6.5"/>
               <path d="M6 6a2 2 0 113.5 1.4C9 8.1 8 8.5 8 9.5"/>
@@ -239,6 +239,25 @@
             <span class="dark-toggle-icon">${isDark ? '☀️' : '🌙'}</span>
           </button>
           <div class="app-shell-topbar-avatar" id="appShellTopbarAvatar" title="">?</div>
+
+          <div class="app-shell-notif-panel" id="appShellNotifPanel">
+            <div class="app-shell-panel-header">
+              <span>Tarefas urgentes</span>
+              <button class="app-shell-panel-close" type="button" onclick="window.closeNotifPanel()">&#x2715;</button>
+            </div>
+            <div class="app-shell-notif-list" id="appShellNotifList"></div>
+            <div class="app-shell-panel-footer">
+              <a href="tarefas.html">Ver todas as tarefas &rarr;</a>
+            </div>
+          </div>
+
+          <div class="app-shell-help-panel" id="appShellHelpPanel">
+            <div class="app-shell-panel-header">
+              <span>Ajuda</span>
+              <button class="app-shell-panel-close" type="button" onclick="window.closeHelpPanel()">&#x2715;</button>
+            </div>
+            <div class="app-shell-help-body" id="appShellHelpBody"></div>
+          </div>
         </div>
       </header>
     `;
@@ -638,6 +657,49 @@
     }
   });
 
+  // ── MODULE GUIDES ──────────────────────────────────────────────────────────
+  const MODULE_GUIDES = {
+    dashboard:           '<h4>Dashboard</h4><p>Vis&atilde;o geral de tarefas, comunicados, reclama&ccedil;&otilde;es e calend&aacute;rio do teu escrit&oacute;rio.</p>',
+    tarefas:             '<h4>Tarefas</h4><p>Cria, edita e resolve tarefas. Usa as prioridades (urgente / normal / baixa) e o filtro de estado para gerir o trabalho da equipa.</p>',
+    comunicados:         '<h4>Comunicados</h4><p>Publica comunicados internos por escrit&oacute;rio. Tipos dispon&iacute;veis: Geral, Urgente, Info e Aviso.</p>',
+    calendario:          '<h4>Calend&aacute;rio</h4><p>Visualiza a carga de trabalho mensal por departamento. Usa &ldquo;Editar&rdquo; para ajustar valores.</p>',
+    admissoes:           '<h4>Admiss&otilde;es</h4><p>Regista processos de admiss&atilde;o ou cessa&ccedil;&atilde;o. Podes anexar documentos e acompanhar o estado de cada processo.</p>',
+    reclamacoes:         '<h4>Reclama&ccedil;&otilde;es</h4><p>Regista reclama&ccedil;&otilde;es de horas. Preenche os per&iacute;odos, turnos e canal de contacto. Exporta em Excel ou PDF.</p>',
+    escalas:             '<h4>Escalas</h4><p>Gere as escalas de trabalho do teu escrit&oacute;rio por dia.</p>',
+    clientes:            '<h4>Clientes</h4><p>Gest&atilde;o de clientes partilhada entre escrit&oacute;rios.</p>',
+    ferias:              '<h4>F&eacute;rias</h4><p>Pede e gere marca&ccedil;&otilde;es de f&eacute;rias. Consulta o saldo dispon&iacute;vel no cart&atilde;o de saldo.</p>',
+    visitas:             '<h4>Visitas</h4><p>Regista visitas a clientes ou locais de trabalho.</p>',
+    despesas:            '<h4>Despesas</h4><p>Submete e acompanha despesas para reembolso.</p>',
+    chat:                '<h4>Chat</h4><p>Mensagens diretas e grupos entre utilizadores. Usa o &iacute;cone + para iniciar uma nova conversa.</p>',
+    definicoes:          '<h4>Defini&ccedil;&otilde;es</h4><p>Configura escrit&oacute;rios (nome, cor, estado activo). S&oacute; acess&iacute;vel a administradores.</p>',
+    utilizadores:        '<h4>Utilizadores</h4><p>Gere contas, permiss&otilde;es e perfis dos utilizadores. S&oacute; acess&iacute;vel a administradores.</p>',
+    perfis:              '<h4>Perfis</h4><p>Cria perfis de permiss&atilde;o reutiliz&aacute;veis e aplica-os a utilizadores em bloco.</p>',
+    'gerir-calendarios': '<h4>Gerir Calend&aacute;rios</h4><p>Publica e edita calend&aacute;rios de carga de trabalho por escrit&oacute;rio e m&ecirc;s.</p>',
+    auditoria:           '<h4>Auditoria</h4><p>Hist&oacute;rico de altera&ccedil;&otilde;es no sistema. Pesquisa por m&oacute;dulo, utilizador ou intervalo de datas.</p>',
+    _default:            '<h4>Ajuda</h4><p>Consulta o gestor de sistema para mais informa&ccedil;&otilde;es sobre esta sec&ccedil;&atilde;o.</p>',
+  };
+
+  // ── NOTIF PANEL ────────────────────────────────────────────────────────────
+  window.openNotifPanel = function() {
+    document.getElementById('appShellNotifPanel')?.classList.add('open');
+    document.getElementById('appShellHelpPanel')?.classList.remove('open');
+  };
+  window.closeNotifPanel = function() {
+    document.getElementById('appShellNotifPanel')?.classList.remove('open');
+  };
+
+  // ── HELP PANEL ─────────────────────────────────────────────────────────────
+  window.openHelpPanel = function() {
+    const page = window.__appShellActivePage || '_default';
+    const body = document.getElementById('appShellHelpBody');
+    if (body) body.innerHTML = MODULE_GUIDES[page] || MODULE_GUIDES['_default'];
+    document.getElementById('appShellHelpPanel')?.classList.add('open');
+    document.getElementById('appShellNotifPanel')?.classList.remove('open');
+  };
+  window.closeHelpPanel = function() {
+    document.getElementById('appShellHelpPanel')?.classList.remove('open');
+  };
+
   document.addEventListener('click', event => {
     const wrap = document.getElementById('appShellModulesWrap') || document.getElementById('dashModulesWrap');
     if (wrap && !wrap.contains(event.target)) {
@@ -648,6 +710,12 @@
       officeWrap.classList.remove('open');
       const btn = document.getElementById('appShellOfficeBtn');
       if (btn) btn.classList.remove('open');
+    }
+    if (!event.target.closest('#appShellNotifPanel') && !event.target.closest('#appShellNotifBtn')) {
+      window.closeNotifPanel && window.closeNotifPanel();
+    }
+    if (!event.target.closest('#appShellHelpPanel') && !event.target.closest('#appShellHelpBtn')) {
+      window.closeHelpPanel && window.closeHelpPanel();
     }
   });
 
@@ -691,6 +759,65 @@
     } else {
       document.documentElement.style.removeProperty('--bg');
     }
+  });
+})();
+
+// ── NOTIFICATION BADGE — tarefas urgentes ──────────────────────────────────
+(function initNotifBadge() {
+  if (window.__notifBadgeInit) return;
+  window.__notifBadgeInit = true;
+
+  let _unsub = null;
+
+  function updateBadge(n) {
+    const badge = document.getElementById('appShellNotifBadge');
+    if (!badge) return;
+    if (n > 0) {
+      badge.textContent = n > 9 ? '9+' : String(n);
+      badge.classList.add('show');
+    } else {
+      badge.textContent = '';
+      badge.classList.remove('show');
+    }
+  }
+
+  function renderList(tasks) {
+    const list = document.getElementById('appShellNotifList');
+    if (!list) return;
+    if (!tasks.length) {
+      list.innerHTML = '<div class="notif-empty">Sem tarefas urgentes ✓</div>';
+      return;
+    }
+    const esc = window.escHtml || function(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+    list.innerHTML = tasks.slice(0, 10).map(function(t) {
+      return '<a class="notif-item" href="tarefas.html">' +
+        '<div class="notif-dot urgente"></div>' +
+        '<div class="notif-item-body">' +
+          '<div class="notif-item-title">' + esc(t.titulo || '—') + '</div>' +
+          '<div class="notif-item-sub">' + esc(t.solicitante || '—') + ' &middot; ' + esc(t.escritorio || '—') + '</div>' +
+        '</div>' +
+      '</a>';
+    }).join('');
+  }
+
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (_unsub) { _unsub(); _unsub = null; }
+    if (!user) { updateBadge(0); return; }
+
+    _unsub = firebase.firestore()
+      .collection('tarefas_todo')
+      .where('prioridade', '==', 'urgente')
+      .onSnapshot(function(snap) {
+        var tasks = snap.docs
+          .map(function(d) { return Object.assign({ id: d.id }, d.data()); })
+          .filter(function(t) { return ['concluido','cancelado'].indexOf(t.estado) === -1; });
+        updateBadge(tasks.length);
+        renderList(tasks);
+      }, function() {});
+  });
+
+  window.addEventListener('beforeunload', function() {
+    if (_unsub) { _unsub(); _unsub = null; }
   });
 })();
 
