@@ -44,7 +44,38 @@
 
       <div class="chat-thread-inner" id="threadInner" style="display:none;">
         <div class="chat-thread-head" id="threadHead"></div>
+
+        <!-- Barra de pesquisa dentro da conversa -->
+        <div class="chat-search-bar" id="chatSearchBar" style="display:none;">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="6.5" cy="6.5" r="5"/><path d="M10.5 10.5l3.5 3.5"/>
+          </svg>
+          <input type="search" id="chatSearchInput" placeholder="Pesquisar na conversa…" autocomplete="off">
+          <button class="close-search" id="btnCloseSearch" title="Fechar pesquisa">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 3l10 10M13 3L3 13"/>
+            </svg>
+          </button>
+        </div>
+
         <div class="chat-messages" id="chatMessages"></div>
+
+        <!-- Indicador de typing -->
+        <div class="chat-typing" id="chatTyping"></div>
+
+        <!-- Barra de resposta (reply) -->
+        <div class="chat-reply-bar" id="chatReplyBar" style="display:none;">
+          <div class="reply-bar-inner">
+            <div class="reply-bar-label">A responder a <strong id="replyToName"></strong></div>
+            <div class="reply-bar-text" id="replyToText"></div>
+          </div>
+          <button class="reply-bar-close" id="btnCancelReply" title="Cancelar resposta">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 3l10 10M13 3L3 13"/>
+            </svg>
+          </button>
+        </div>
+
         <div class="chat-composer">
           <div class="chat-composer-wrap">
             <button class="attach-btn" title="Anexar ficheiro">
@@ -76,6 +107,24 @@
       <div class="chat-info-body" id="chatInfoBody"></div>
     </aside>
 
+  </div>
+</div>
+
+<!--  Modal: adicionar membro ao grupo  -->
+<div class="modal-overlay" id="addMemberModal">
+  <div class="new-chat-modal" style="max-height:60vh;">
+    <div class="modal-head">
+      <span class="modal-title">Adicionar membro</span>
+      <button class="modal-close" id="btnCloseAddMember">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 3l10 10M13 3L3 13"/>
+        </svg>
+      </button>
+    </div>
+    <div id="tabAddMember" style="padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;">
+      <input type="search" id="addMemberSearch" placeholder="Pesquisar utilizador…" autocomplete="off">
+      <div id="addMemberList" class="user-picker-list"></div>
+    </div>
   </div>
 </div>
 

@@ -15,7 +15,7 @@
 | Admissões | main | 40 | — | Com anexos e modo gestor |
 | Reclamações | main | 50 | — | Com exportação e anexos |
 | Escalas | main | 60 | — | Sub-coleção Firestore por escritório |
-| Clientes | main | 65 | ✓ | Gestão de clientes |
+| Clientes | main | 65 | ✓ | Gestão de clientes + gerador de propostas (`proposta-builder.html`) |
 | Férias | main | 67 | — | Gestão de marcação de férias |
 | Visitas | main | 68 | — | Registo de visitas |
 | Despesas | main | 69 | — | Gestão de despesas |
@@ -63,7 +63,9 @@
 | `js/admissoes-service.js` | Admissões |
 | `js/calendario-service.js` | Calendário |
 | `js/reclamacoes-service.js` | Reclamações |
-| `js/clientes-service.js` | Clientes |
+| `js/clientes-service.js` | Clientes (inclui `criarProposta`, `gerarProximaReferencia`, `getDefaultsProposta`) |
+| `js/proposta-template.js` | Template HTML A4 do documento de proposta + `window.PropostaTemplate.render(dados)` |
+| `js/proposta-builder.js` | Lógica do builder de propostas (`proposta-builder.html`) |
 | `js/ferias-service.js` | Férias |
 | `js/visitas-service.js` | Visitas |
 | `js/despesas-service.js` | Despesas |
@@ -213,6 +215,15 @@ Padrão: `modules.<modulo>.<acao>`
 | `edit` | Editar conteúdo |
 | `manage` | Criar, editar e apagar |
 
+#### Permissões específicas do módulo Clientes
+
+| Ação | Descrição |
+|---|---|
+| `view` | Ver módulo e drawer |
+| `import` | Importar Excel de preços |
+| `edit` | Editar dados do cliente e preços actuais |
+| `propose` | Criar e editar propostas (acede ao `proposta-builder.html`) |
+
 ### Permissões legacy (ainda em uso via `LEGACY_PERMISSION_MAP` em `auth.js`)
 
 `criarTarefas`, `resolverTarefas`, `gerirComunicados`, `criarAdmissoes`, `resolverAdmissoes`, `editarCalendario`, `criarReclamacoes`
@@ -226,6 +237,8 @@ Padrão: `modules.<modulo>.<acao>`
 | `utilizadores/{uid}` | Perfil, permissões, escritório — fonte de verdade das rules |
 | `config/escritorios` | `{ lista: [...] }` — lista de escritórios |
 | `config/perfis` | `{ lista: [...] }` — perfis de permissão |
+| `config/proposta_defaults` | Defaults editáveis das propostas (signatário, gestores, listas) |
+| `clientes/{id}.propostasContador` | Contador atómico **por cliente e por ano** (`{ ano, ultimo }`). Refª: `PROP-YYYY-C<numCliente>-NNN`; revisões adicionam sufixo `/V2`, `/V3`. |
 | `tarefas_todo/{id}` | Filtrado por `escritorio` |
 | `comunicados/{id}` | Filtrado por `destinosEscritorio` |
 | `admissoes/{id}` | Filtrado por `escritorio` |
@@ -297,6 +310,7 @@ Tema ativo guardado em Firestore (`preferencias.dashboard.themePreset`) e aplica
 hub-algartempo/
 ├── styles.css                  ← base partilhada (tokens, temas, componentes)
 ├── login.html / dashboard.html / [modulo].html
+├── proposta-builder.html       ← gerador de propostas (full-screen, sem navbar)
 ├── design-system.html          ← referência visual dos componentes
 ├── seed.html                   ← seed de dados (admin)
 │
@@ -304,6 +318,7 @@ hub-algartempo/
 │   ├── login.css / dashboard2.css / dashboard2-real.css
 │   ├── perfis.css / auditoria.css / escalas.css
 │   ├── calendario.css / gerir-calendarios.css (standalone)
+│   ├── proposta-builder.css    ← standalone, design system próprio A4
 │   └── ...
 │
 ├── js/
@@ -314,10 +329,13 @@ hub-algartempo/
 │   ├── perfis.js / definicoes.js / utilizadores.js
 │   ├── gerir-calendarios.js / auditoria-page.js
 │   ├── clientes.js / ferias.js / visitas.js / despesas.js
+│   ├── proposta-builder.js     ← lógica do builder (state, form, preview, export)
+│   ├── proposta-template.js    ← TEMPLATE_HTML + window.PropostaTemplate.render()
 │   └── voz-ai.js
 │
 ├── templates/                  ← ponto de partida para módulos novos
 ├── prototipos/                 ← fora do escopo (não tocar)
+│   └── gerador_proposta.html   ← protótipo original do gerador (referência)
 ├── firestore.rules
 ├── firestore.indexes.json      ← índice composto para chat
 ├── storage.rules

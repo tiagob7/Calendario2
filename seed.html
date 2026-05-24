@@ -77,6 +77,65 @@
           <div class="mc-name">Férias</div>
           <div class="mc-col">ferias</div>
         </div>
+        <div class="mod-card on" data-m="clientes" onclick="toggleMod(this);toggleClientesConfig(this)">
+          <div class="mc-icon"></div>
+          <div class="mc-name">Clientes</div>
+          <div class="mc-col">clientes</div>
+        </div>
+      </div>
+
+      <!-- Configuração específica: Clientes -->
+      <div id="clientesConfig" style="margin-top:12px;padding:14px 16px;background:var(--surface2,#f8fafc);border:1px solid var(--border,#e2e8f0);border-radius:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/></svg>
+          Opções de clientes
+        </div>
+        <div class="form-grid-2" style="margin-bottom:12px;">
+          <div>
+            <label class="field-label">Valor/Hora — mín. (€)</label>
+            <input class="field-input" type="number" id="cliHoraMin" value="8" min="1" max="200" step="0.5">
+          </div>
+          <div>
+            <label class="field-label">Valor/Hora — máx. (€)</label>
+            <input class="field-input" type="number" id="cliHoraMax" value="22" min="1" max="500" step="0.5">
+          </div>
+          <div>
+            <label class="field-label">Valor/Mês — mín. (€)</label>
+            <input class="field-input" type="number" id="cliMesMin" value="950" min="100" max="9000" step="50">
+          </div>
+          <div>
+            <label class="field-label">Valor/Mês — máx. (€)</label>
+            <input class="field-input" type="number" id="cliMesMax" value="3200" min="100" max="15000" step="50">
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+          <div style="flex:1;min-width:120px;">
+            <label class="field-label" style="display:block;margin-bottom:6px;">Categorias por cliente</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="range" min="1" max="8" value="4" id="cliCatSlider" style="flex:1;" oninput="document.getElementById('cliCatVal').textContent=this.value">
+              <span id="cliCatVal" style="font-family:var(--font-mono,monospace);font-size:12px;font-weight:700;min-width:16px;text-align:right;">4</span>
+            </div>
+          </div>
+          <div style="min-width:140px;">
+            <label class="field-label" style="display:block;margin-bottom:6px;">Ano de vigência</label>
+            <select class="field-select" id="cliAnoVigencia" style="font-size:11px;padding:5px 8px;">
+              <option value="">— sem ano —</option>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+            </select>
+          </div>
+          <div style="min-width:140px;">
+            <label class="field-label" style="display:block;margin-bottom:6px;">Anos de histórico</label>
+            <select class="field-select" id="cliAnosHistorico" style="font-size:11px;padding:5px 8px;">
+              <option value="0">Nenhum</option>
+              <option value="1">1 ano anterior</option>
+              <option value="2" selected>2 anos anteriores</option>
+              <option value="3">3 anos anteriores</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div class="count-row">
@@ -185,6 +244,7 @@
         <div class="stat-mini"><b id="cs-reclamacoes">—</b>reclamacoes</div>
         <div class="stat-mini"><b id="cs-comunicados">—</b>comunicados</div>
         <div class="stat-mini"><b id="cs-ferias">—</b>ferias</div>
+        <div class="stat-mini"><b id="cs-clientes">—</b>clientes</div>
         <div class="stat-mini"><b id="cs-users">—</b>utilizadores</div>
       </div>
 
@@ -214,6 +274,9 @@
         </label>
         <label style="display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;">
           <input type="checkbox" id="cleanFerias" checked> Férias
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;">
+          <input type="checkbox" id="cleanClientes" checked> Clientes
         </label>
         <label style="display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;">
           <input type="checkbox" id="cleanUsers"> Utilizadores de teste
@@ -269,6 +332,9 @@
           <input type="checkbox" id="nukeFerias" checked> ferias
         </label>
         <label style="display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--red-border);">
+          <input type="checkbox" id="nukeClientes" checked> clientes
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--red-border);">
           <input type="checkbox" id="nukeUtilizadores"> utilizadores
         </label>
       </div>
@@ -318,8 +384,9 @@
 //  DATA 
 const NOMES_PROPRIOS = ['Ana','João','Marta','Rui','Sofia','Bruno','Catarina','Pedro','Inês','Miguel','Filipa','Gonçalo','Beatriz','Tiago','Leonor'];
 const APELIDOS       = ['Ferreira','Silva','Costa','Mendes','Lopes','Carvalho','Sousa','Alves','Rodrigues','Santos','Pereira','Oliveira','Martins','Fernandes'];
-const EMPRESAS       = ['TechLabs Lda','Construções ABC SA','LogiFlow Lda','RetailPlus SA','AgriTech Norte Lda','FoodServe SA','IndusPack Lda','AutoServ SA','HealthCare Lda','EventPro SA'];
-const CATEGORIAS     = ['Operador de armazém','Técnico de contabilidade','Comercial','Gestor de projeto','Auxiliar administrativo','Técnico de RH','Motorista','Operador de linha'];
+const EMPRESAS       = ['TechLabs Lda','Construções ABC SA','LogiFlow Lda','RetailPlus SA','AgriTech Norte Lda','FoodServe SA','IndusPack Lda','AutoServ SA','HealthCare Lda','EventPro SA','Hotelaria do Sul SA','Algarve Resorts Lda','ServiLimpo SA','TransNorte Lda','CuiDados Lda','GreenWork SA','Alfa Segurança Lda','Portimar SA','SoluçõesRH Lda','Vivenda Hotels SA'];
+const CATEGORIAS     = ['Operador de armazém','Técnico de contabilidade','Comercial','Gestor de projeto','Auxiliar administrativo','Técnico de RH','Motorista','Operador de linha','Segurança','Rececionista','Empregado de andares','Técnico de manutenção'];
+const GRUPOS         = ['Grupo Algarvio','Holding Norte','Grupo Central','Investimentos Sul','Grupo Tejo','Iberian Group','Grupo Atlântico','','',''];
 const MOTIVOS        = ['Rescisão por iniciativa do trabalhador','Caducidade do contrato'];
 const TITULOS_TAR    = ['Relatório mensal','Envio de folhas de ponto','Verificar contrato','Atualizar base de dados','Preparar reunião de equipa','Revisão de processos','Confirmar admissão','Processar cessação','Enviar documentação','Fechar mês'];
 const TITULOS_COM    = ['Reunião de equipa — sexta às 10h','Atualização de processos internos','Aviso: sistema em manutenção','Nova política de férias','Bem-vindos ao novo colega','Encerramento antecipado esta sexta','Formação obrigatória • inscrições abertas'];
@@ -574,12 +641,90 @@ function buildFerias(tag) {
   return doc;
 }
 
+function toggleClientesConfig(el) {
+  const cfg = document.getElementById('clientesConfig');
+  if (cfg) cfg.style.display = el.classList.contains('on') ? '' : 'none';
+}
+
+function slugify(s) {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+}
+
+function rndPreco(min, max) {
+  return Math.round((min + Math.random() * (max - min)) * 100) / 100;
+}
+
+function buildCliente(tag) {
+  const escs         = escAtivos();
+  const user         = rndUser();
+  const now          = Date.now() - rndInt(0, 90) * 864e5;
+
+  const horaMin      = parseFloat(document.getElementById('cliHoraMin').value)     || 8;
+  const horaMax      = parseFloat(document.getElementById('cliHoraMax').value)     || 22;
+  const mesMin       = parseFloat(document.getElementById('cliMesMin').value)      || 950;
+  const mesMax       = parseFloat(document.getElementById('cliMesMax').value)      || 3200;
+  const nCat         = parseInt(document.getElementById('cliCatSlider').value)     || 4;
+  const anoV         = document.getElementById('cliAnoVigencia').value;
+  const nHistorico   = parseInt(document.getElementById('cliAnosHistorico').value) || 0;
+
+  // categorias fixas para este cliente (mesmas em todos os anos)
+  const cats = [...CATEGORIAS].sort(() => Math.random() - .5).slice(0, Math.min(nCat, CATEGORIAS.length));
+
+  // gera um mapa de preços para um dado factor de ajuste (anos anteriores têm preços ligeiramente mais baixos)
+  function buildPrecosMap(factor) {
+    const m = {};
+    cats.forEach(cat => {
+      const hora = Math.round(rndPreco(horaMin, horaMax) * factor * 100) / 100;
+      const mes  = Math.round(rndPreco(mesMin, mesMax)   * factor * 100) / 100;
+      m[slugify(cat)] = { categoria: cat, precoHora: hora, preco22Dias: mes, valorDia: null, obsLinha: '' };
+    });
+    return m;
+  }
+
+  // preços actuais (ano de vigência corrente)
+  const precosAtuais = buildPrecosMap(1);
+
+  // histórico: cada ano anterior tem preços ~3–8% mais baixos que o seguinte
+  const precosPorAno = {};
+  if (anoV && nHistorico > 0) {
+    const anoBase = Number(anoV);
+    // adicionar o próprio ano de vigência ao mapa
+    precosPorAno[String(anoBase)] = precosAtuais;
+    // gerar anos anteriores com desconto acumulado
+    let factor = 1;
+    for (let i = 1; i <= nHistorico; i++) {
+      factor *= (1 - (rndPreco(3, 8) / 100)); // desconto 3-8% por ano
+      precosPorAno[String(anoBase - i)] = buildPrecosMap(factor);
+    }
+  }
+
+  return {
+    nome:             rnd(EMPRESAS),
+    numeroCliente:    String(rndInt(1000, 9999)),
+    grupo:            rnd(GRUPOS),
+    escritorioOrigem: escs.length ? rnd(escs) : '',
+    obs:              rnd(['','','','Cliente prioritário','Contrato anual renovável']),
+    precosAtuais,
+    precosPorAno,
+    anoVigenciaAtual: anoV ? Number(anoV) : null,
+    revisoes:         [],
+    createdAt:        now,
+    createdBy:        user.uid,
+    createdByName:    user.nome,
+    updatedAt:        now,
+    updatedBy:        user.uid,
+    updatedByName:    user.nome,
+    ...(tag ? { _seed: true } : {}),
+  };
+}
+
 const BUILDERS = {
   tarefas_todo: buildTarefa,
   admissoes:    buildAdmissao,
   reclamacoes:  buildReclamacao,
   comunicados:  buildComunicado,
   ferias:       buildFerias,
+  clientes:     buildCliente,
 };
 
 //  SEED 
@@ -734,6 +879,7 @@ async function contarSeedDocs() {
     { id:'cs-reclamacoes',col:'reclamacoes_horas' },
     { id:'cs-comunicados',col:'comunicados' },
     { id:'cs-ferias',     col:'ferias' },
+    { id:'cs-clientes',   col:'clientes' },
     { id:'cs-users',      col:'utilizadores' },
   ];
   for (const c of cols) {
@@ -755,6 +901,7 @@ function confirmarLimpeza() {
     { id:'cleanReclamacoes',col:'reclamacoes_horas',  label:'Reclamações' },
     { id:'cleanComunicados',col:'comunicados',        label:'Comunicados' },
     { id:'cleanFerias',     col:'ferias',             label:'Férias' },
+    { id:'cleanClientes',   col:'clientes',           label:'Clientes' },
     { id:'cleanUsers',      col:'utilizadores',       label:'Utilizadores' },
   ];
   const sel = checkboxes.filter(c => document.getElementById(c.id).checked);
@@ -822,15 +969,16 @@ function checkNukeInput() {
 let _nukePending = null;
 function confirmarNuke() {
   const cols = [
-    { id:'nukeAdmissoes',     col:'admissoes',          label:'admissoes' },
-    { id:'nukeComunicados',   col:'comunicados',         label:'comunicados' },
-    { id:'nukeReclamacoes',   col:'reclamacoes_horas',   label:'reclamacoes_horas' },
-    { id:'nukeTarefas',       col:'tarefas_todo',        label:'tarefas_todo' },
-    { id:'nukeTrabalhadores', col:'trabalhadores_portal', label:'trabalhadores_portal' },
-    { id:'nukeAuditoria',     col:'auditoria',           label:'auditoria' },
-    { id:'nukeEscalas',       col:'escalas',             label:'escalas' },
-    { id:'nukeFerias',        col:'ferias',              label:'ferias' },
-    { id:'nukeUtilizadores',  col:'utilizadores',        label:'utilizadores' },
+    { id:'nukeAdmissoes',     col:'admissoes',           label:'admissoes' },
+    { id:'nukeComunicados',   col:'comunicados',          label:'comunicados' },
+    { id:'nukeReclamacoes',   col:'reclamacoes_horas',    label:'reclamacoes_horas' },
+    { id:'nukeTarefas',       col:'tarefas_todo',         label:'tarefas_todo' },
+    { id:'nukeTrabalhadores', col:'trabalhadores_portal',  label:'trabalhadores_portal' },
+    { id:'nukeAuditoria',     col:'auditoria',            label:'auditoria' },
+    { id:'nukeEscalas',       col:'escalas',              label:'escalas' },
+    { id:'nukeFerias',        col:'ferias',               label:'ferias' },
+    { id:'nukeClientes',      col:'clientes',             label:'clientes' },
+    { id:'nukeUtilizadores',  col:'utilizadores',         label:'utilizadores' },
   ];
   const sel = cols.filter(c => document.getElementById(c.id).checked);
   if (!sel.length) { toast('Selecciona pelo menos uma coleção.'); return; }

@@ -11,54 +11,41 @@
 <body>
 
 <div class="page clientes-page">
-  <div class="header-row">
-    <div class="header-top">
+  <div class="page-head">
+    <div>
+      <div class="kicker">Comercial</div>
       <h1>Clientes</h1>
-      <span id="syncStatus"></span>
-    </div>
-    <p class="subtitle" id="pageSubtitle">Base consolidada de clientes, preços e histórico de importações.</p>
-  </div>
-
-  <div class="cli-stats" id="statsBar">
-    <div class="cli-stat">
-      <div class="cli-stat-lbl">A carregar</div>
-      <div class="cli-stat-val"><span class="skeleton" style="width:48px;height:26px;display:block;border-radius:5px;"></span></div>
-    </div>
-  </div>
-
-  <section class="form-panel clientes-import-panel" id="importPanel">
-    <div class="panel-title panel-toggle" onclick="window.ClientesPage.toggleImportPanel()">
-      <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M8 2v8"/><path d="M5 7.5L8 10.5l3-3"/><path d="M3 13.5h10"/>
-      </svg>
-      Importar Excel
-      <span class="clientes-import-hint" id="importPermissionHint">A validar permissões…</span>
-      <span class="panel-toggle-chevron">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
-      </span>
-    </div>
-
-    <div class="form-panel-body">
-      <div class="clientes-import-drop" id="importDropzone">
-        <div class="clientes-import-copy">
-          <div class="clientes-import-title">Ficheiro de preços por cliente</div>
-          <p>Formato esperado: folha principal com cabeçalho na linha 2 e colunas de cliente, categoria e preços.</p>
+      <div class="page-lede-row">
+        <p class="lede">Base consolidada de clientes, preços e histórico de importações.</p>
+        <div class="hd-actions">
+          <span id="syncStatus"></span>
+          <button class="btn btn-primary btn-sm" id="btnNovoCliente" onclick="window.ClientesPage.openNovoClienteModal()" hidden>
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3v10M3 8h10"/></svg>
+            Novo cliente
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnFormatoExcel" onclick="window.ClientesPage.openFormatoModal()" hidden title="Ver formato do ficheiro Excel">
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6.5"/><path d="M8 7.5v4"/><circle cx="8" cy="5.5" r=".6" fill="currentColor" stroke="none"/></svg>
+            Formato
+          </button>
+          <label class="btn btn-primary btn-sm" for="clientesImportFile" id="btnImportExcel" hidden>
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v8"/><path d="M5 7.5L8 10.5l3-3"/><path d="M3 13.5h10"/></svg>
+            Importar Excel
+          </label>
         </div>
-        <label class="btn btn-primary" for="clientesImportFile">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2v8"/><path d="M5 7.5L8 10.5l3-3"/><path d="M3 13.5h10"/></svg>
-          Selecionar ficheiro
-        </label>
-        <input type="file" id="clientesImportFile" accept=".xlsx,.xls,.xlsm,.csv">
       </div>
-
-      <div class="clientes-import-status" id="importBusyState" hidden>
-        <div class="loading-bar"><div class="loading-bar-inner"></div></div>
-        <p>A analisar o ficheiro e a preparar o preview…</p>
-      </div>
-
-      <div id="importPreviewWrap"></div>
     </div>
-  </section>
+  </div>
+
+  <!-- import helpers (hidden) -->
+  <input type="file" id="clientesImportFile" accept=".xlsx,.xls,.xlsm,.csv" style="display:none">
+  <span id="importPermissionHint" hidden></span>
+  <div id="importDropzone" hidden></div>
+
+  <div class="clientes-import-status" id="importBusyState" hidden>
+    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+    <p>A analisar o ficheiro e a preparar o preview…</p>
+  </div>
+  <div id="importPreviewWrap"></div>
 
   <div class="cli-toolbar">
     <div class="cli-search-wrap">
@@ -92,6 +79,107 @@
   </div>
 
   <div id="clientesList"></div>
+</div>
+
+<!-- Modal: Novo Cliente -->
+<div class="modal-overlay" id="novoClienteModalOverlay" onclick="if(event.target===this)window.ClientesPage.closeNovoClienteModal()">
+  <div class="modal" style="max-width:480px;padding:0;display:flex;flex-direction:column;">
+    <div class="modal-head">
+      <h3>Novo cliente</h3>
+      <button class="icon-btn" onclick="window.ClientesPage.closeNovoClienteModal()">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="clientes-edit-grid">
+        <label class="clientes-edit-field" style="grid-column:1/-1;">
+          <span class="field-label">Nome <span style="color:var(--red,#dc2626)">*</span></span>
+          <input class="form-input" id="novoClienteNome" placeholder="Nome do cliente" autocomplete="off">
+        </label>
+        <label class="clientes-edit-field">
+          <span class="field-label">Nº Cliente</span>
+          <input class="form-input" id="novoClienteNumero" placeholder="Ex: 1042">
+        </label>
+        <label class="clientes-edit-field">
+          <span class="field-label">Grupo</span>
+          <input class="form-input" id="novoClienteGrupo" placeholder="Grupo empresarial">
+        </label>
+        <label class="clientes-edit-field" style="grid-column:1/-1;">
+          <span class="field-label">Escritório</span>
+          <select class="form-input" id="novoClienteEscritorio">
+            <option value="">— Sem escritório —</option>
+          </select>
+        </label>
+      </div>
+      <label class="clientes-edit-field" style="margin-top:4px;">
+        <span class="field-label">Observações</span>
+        <textarea class="form-input form-textarea" id="novoClienteObs" placeholder="Notas sobre este cliente…" rows="3"></textarea>
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary btn-sm" onclick="window.ClientesPage.closeNovoClienteModal()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" id="novoClienteSaveBtn" onclick="window.ClientesPage.saveNovoCliente()">Criar cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Formato Excel -->
+<div class="modal-overlay" id="formatoModalOverlay" onclick="if(event.target===this)window.ClientesPage.closeFormatoModal()">
+  <div class="modal modal-lg" style="max-width:600px;padding:0;display:flex;flex-direction:column;">
+    <div class="modal-head">
+      <h3>Formato do ficheiro Excel</h3>
+      <button class="icon-btn" onclick="window.ClientesPage.closeFormatoModal()">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px 24px;">
+      <div class="clientes-preview-note" style="margin-bottom:16px;">
+        O cabeçalho deve estar na <strong>linha 2</strong>. Os dados começam na <strong>linha 3</strong>. A primeira linha pode ser usada para título ou ficar vazia.
+      </div>
+      <table class="cli-formato-table">
+        <thead>
+          <tr><th>Coluna</th><th>Aliases aceites</th><th>Obrigatória</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Nome</strong></td><td class="cli-muted">cliente · nome cliente · hotel · nome</td><td><span class="clientes-status-badge new">Sim</span></td></tr>
+          <tr><td><strong>Categoria</strong></td><td class="cli-muted">categoria</td><td><span class="clientes-status-badge new">Sim</span></td></tr>
+          <tr><td>Nº Cliente</td><td class="cli-muted">n cliente · numero cliente · num cliente</td><td><span class="clientes-soft-badge">—</span></td></tr>
+          <tr><td>Grupo</td><td class="cli-muted">grupo</td><td><span class="clientes-soft-badge">—</span></td></tr>
+          <tr><td>Escritório</td><td class="cli-muted">escritorio · office</td><td><span class="clientes-soft-badge">—</span></td></tr>
+          <tr><td>Preço 22 Dias</td><td class="cli-muted">preco 22 dias · preço 22 dias · preco 22d</td><td><span class="clientes-soft-badge">—</span></td></tr>
+          <tr><td>Valor Dia</td><td class="cli-muted">valor dia · valor/dia · valordia</td><td><span class="clientes-soft-badge">—</span></td></tr>
+          <tr><td>Preço Hora</td><td class="cli-muted">preco hora · preço hora · preco/hora</td><td><span class="clientes-soft-badge">—</span></td></tr>
+          <tr><td>Data Proposta</td><td class="cli-muted">data proposta contrato · data proposta · contrato</td><td><span class="clientes-soft-badge">—</span></td></tr>
+          <tr><td>Observações</td><td class="cli-muted">obs · observacoes · observações</td><td><span class="clientes-soft-badge">—</span></td></tr>
+        </tbody>
+      </table>
+      <div class="clientes-preview-note" style="margin-top:16px;font-size:11px;">
+        Os nomes das colunas são reconhecidos independentemente de maiúsculas, acentos ou espaços extra.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ano de vigência do import -->
+<div class="modal-overlay" id="anoImportModalOverlay">
+  <div class="modal" style="max-width:400px;padding:0;display:flex;flex-direction:column;">
+    <div class="modal-head">
+      <h3>Ano de vigência dos preços</h3>
+    </div>
+    <div class="modal-body" style="padding:20px 24px;">
+      <p style="font-size:13px;color:var(--text-2);margin-bottom:16px;">Indica o ano a que se referem os preços deste ficheiro. Será usado para manter o histórico por ano.</p>
+      <label class="clientes-edit-field">
+        <span class="field-label">Ano de vigência</span>
+        <select class="form-input" id="importAnoVigencia">
+          <option value="">Não especificar</option>
+        </select>
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary btn-sm" onclick="window.ClientesPage.cancelImportAno()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="window.ClientesPage.confirmImportAno()">Confirmar importação</button>
+    </div>
+  </div>
 </div>
 
 <!-- Detail Drawer -->

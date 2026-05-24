@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nova Proposta — Algartempo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/proposta-builder.css">
+<script>if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+
+<div class="pb-app">
+
+  <header class="pb-topbar">
+    <button class="pb-back" id="pbBack" title="Voltar a clientes" type="button">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 3 5 8l5 5"/></svg>
+    </button>
+    <nav class="pb-crumbs">
+      <span class="muted">Clientes</span>
+      <span class="sep">/</span>
+      <span id="pbCrumbCliente">—</span>
+      <span class="sep">/</span>
+      <span>Proposta</span>
+    </nav>
+    <div class="pb-topbar-right">
+      <div class="pb-badge">Ref: <b id="badgeRef">—</b>&nbsp;·&nbsp;Cliente: <b id="badgeCliente">—</b></div>
+      <span class="pb-save-status" id="pbSaveStatus"></span>
+    </div>
+  </header>
+
+  <div class="pb-workspace">
+
+    <aside class="pb-step-rail">
+      <div class="rail-head">
+        <div class="rail-eyebrow">Proposta Comercial</div>
+        <div class="rail-title" id="railTitle">Nova proposta</div>
+      </div>
+      <span class="nav-divider">Secções</span>
+      <ul class="nav-list">
+        <li><a href="#sec1" class="step-item"><div class="step-num">1</div><div class="step-meta"><div class="step-label">Identificação</div></div></a></li>
+        <li><a href="#sec2" class="step-item"><div class="step-num">2</div><div class="step-meta"><div class="step-label">Cliente</div></div></a></li>
+        <li><a href="#sec3" class="step-item"><div class="step-num">3</div><div class="step-meta"><div class="step-label">Apresentação</div></div></a></li>
+        <li><a href="#sec4" class="step-item"><div class="step-num">4</div><div class="step-meta"><div class="step-label">Tabela de Preços</div></div></a></li>
+        <li><a href="#sec5" class="step-item"><div class="step-num">5</div><div class="step-meta"><div class="step-label">Majorações</div></div></a></li>
+        <li><a href="#sec6" class="step-item"><div class="step-num">6</div><div class="step-meta"><div class="step-label">Inclusões</div></div></a></li>
+        <li><a href="#sec7" class="step-item"><div class="step-num">7</div><div class="step-meta"><div class="step-label">Responsabilidades</div></div></a></li>
+        <li><a href="#sec8" class="step-item"><div class="step-num">8</div><div class="step-meta"><div class="step-label">Termos Contratuais</div></div></a></li>
+        <li><a href="#sec9" class="step-item"><div class="step-num">9</div><div class="step-meta"><div class="step-label">Gestor de Conta</div></div></a></li>
+      </ul>
+      <div class="rail-foot">
+        <span class="rail-version">Algartempo · Builder integrado</span>
+      </div>
+    </aside>
+
+    <main class="pb-form-pane">
+
+      <!-- 1 IDENTIFICAÇÃO -->
+      <div class="section-card" id="sec1">
+        <div class="section-head-row">
+          <span class="step-tag">01</span>
+          <h2>Identificação da Proposta</h2>
+          <span class="section-lede">Referência, data de emissão e prazo de validade</span>
+        </div>
+        <div class="card-wrap"><div class="card-inner">
+          <div class="form-grid">
+            <div class="field" id="field-referencia">
+              <label>Referência <span class="req">*</span></label>
+              <div class="ref-group">
+                <input type="text" id="referencia" placeholder="PROP-2026-001" readonly>
+                <button type="button" class="btn btn-ghost" id="btnGerarRef">Gerar</button>
+              </div>
+              <span class="err-msg">Campo obrigatório</span>
+            </div>
+            <div class="field" id="field-data">
+              <label>Data da Proposta <span class="req">*</span></label>
+              <input type="date" id="data-proposta">
+              <span class="err-msg">Data inválida</span>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Validade</label>
+              <div class="validade-group">
+                <input type="number" id="validade-num" value="30" min="1" max="365">
+                <select id="validade-unit"><option value="dias">dias</option><option value="meses">meses</option></select>
+              </div>
+              <span class="hint">Usado na capa e nas condições gerais</span>
+            </div>
+            <div class="field">
+              <label>Ano de vigência</label>
+              <select id="ano-vigencia"></select>
+              <span class="hint">Ano a que se destinam os preços propostos</span>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- 2 CLIENTE -->
+      <div class="section-card" id="sec2">
+        <div class="section-head-row">
+          <span class="step-tag">02</span>
+          <h2>Dados do Cliente</h2>
+          <span class="section-lede">Nome do responsável e empresa — aparecem na capa</span>
+        </div>
+        <div class="card-wrap"><div class="card-inner">
+          <div class="form-grid">
+            <div class="field" id="field-cliente">
+              <label>Nome do Responsável</label>
+              <input type="text" id="nome-cliente" placeholder="Nome do responsável">
+            </div>
+            <div class="field" id="field-industria">
+              <label>Nome da Empresa <span class="req">*</span></label>
+              <input type="text" id="industria" placeholder="Empresa XYZ, Lda.">
+              <span class="err-msg">Campo obrigatório</span>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- 3 CARTA -->
+      <div class="section-card" id="sec3">
+        <div class="section-head-row">
+          <span class="step-tag">03</span>
+          <h2>Carta de Apresentação</h2>
+          <span class="section-lede">Assinatura da carta (página 2)</span>
+        </div>
+        <div class="card-wrap"><div class="card-inner">
+          <div class="form-grid">
+            <div class="field"><label>Nome do Signatário</label><input type="text" id="sig-nome"></div>
+            <div class="field"><label>Cargo</label><input type="text" id="sig-cargo"></div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- 4 TABELA DE PREÇOS -->
+      <div class="section-card" id="sec4">
+        <div class="section-head-row">
+          <span class="step-tag">04</span>
+          <h2>Tabela de Preços</h2>
+          <span class="section-lede">Selecciona o modelo de precificação — podes activar um ou ambos</span>
+          <div class="calc-btns-row">
+            <button type="button" class="btn-calc-open" onclick="window.PropostaBuilder.abrirCalculadora()">⊕ Calculadora com Bases</button>
+            <button type="button" class="btn-calc-open" onclick="window.PropostaBuilder.abrirCalculadoraSimples()">≡ Calculadora Simples</button>
+          </div>
+        </div>
+        <div class="card-wrap"><div class="card-inner">
+          <div class="toggle-group">
+            <div class="toggle-option active" id="tog-hora" onclick="window.PropostaBuilder.toggleTable('hora')">
+              <div><div class="toggle-label">Tabela Valor/Hora</div><div class="toggle-sub">Categoria · Valor/hora · Valor/mês</div></div>
+              <div class="toggle-switch"></div>
+            </div>
+            <div class="toggle-option" id="tog-coef" onclick="window.PropostaBuilder.toggleTable('coef')">
+              <div><div class="toggle-label">Tabela de Coeficientes</div><div class="toggle-sub">Rubricas · Coeficiente · Ausências</div></div>
+              <div class="toggle-switch"></div>
+            </div>
+          </div>
+          <div class="sub-panel visible" id="panel-hora">
+            <div>
+              <div class="sub-panel-title">Valor/Hora e Valor/Mês</div>
+              <div class="price-table-wrap">
+                <table class="price-table">
+                  <thead><tr>
+                    <th class="col-drag"></th>
+                    <th class="col-category">Categoria Profissional</th>
+                    <th class="r col-price">Valor/Hora</th>
+                    <th class="r col-price">Valor/Mês</th>
+                    <th class="col-actions"></th>
+                  </tr></thead>
+                  <tbody id="tabela-hora-body"></tbody>
+                </table>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button type="button" class="btn-add-row" onclick="window.PropostaBuilder.addHoraRow()">+ Adicionar categoria</button>
+                <button type="button" class="btn-add-row" onclick="window.PropostaBuilder.importarPrecosCliente()">↓ Importar preços do cliente</button>
+                <button type="button" class="btn-add-row" onclick="window.PropostaBuilder.limparTabelaPrecos()" style="border-color:var(--red);color:var(--red);">× Limpar tabela</button>
+              </div>
+            </div>
+          </div>
+          <div class="sub-panel" id="panel-coef">
+            <div>
+              <div class="sub-panel-title">Coeficientes por Rubrica</div>
+              <div class="list-editor-labels coef"><span>Rubrica</span><span class="align-right">Coeficiente</span><span></span></div>
+              <div class="list-editor" id="coef-body"></div>
+              <button type="button" class="btn-add-row" onclick="window.PropostaBuilder.addCoefRow('coef-body','','')">+ Adicionar rubrica</button>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- 5 MAJORAÇÕES -->
+      <div class="section-card" id="sec5">
+        <div class="section-head-row">
+          <span class="step-tag">05</span>
+          <h2>Majorações</h2>
+          <span class="section-lede">Acréscimos sobre o valor/hora — coluna esquerda da página 6</span>
+        </div>
+        <div class="card-wrap"><div class="card-inner">
+          <div class="list-editor-labels two"><span>Título</span><span>Descrição</span><span></span></div>
+          <div class="list-editor" id="majoracoes-body"></div>
+          <button type="button" class="btn-add-row" onclick="window.PropostaBuilder.addListRow('majoracoes-body','','')">+ Adicionar majoração</button>
+        </div></div>
+      </div>
+
+      <!-- 6 INCLUSÕES -->
+      <div class="section-card" id="sec6">
+        <div class="section-head-row">
+          <span class="step-tag">06</span>
+          <h2>Inclusões</h2>
+          <span class="section-lede">O que está incluído no valor de facturação — coluna direita da página 6</span>
+        </div>
+        <div class="card-wrap"><div class="card-inner">
+          <div class="list-editor-labels two"><span>Título</span><span>Descrição</span><span></span></div>
+          <div class="list-editor" id="inclusoes-body"></div>
+          <button type="button" class="btn-add-row" onclick="window.PropostaBuilder.addListRow('inclusoes-body','','')">+ Adicionar inclusão</button>
+        </div></div>
+      </div>
+
+      <!-- 7 RESPONSABILIDADES -->
+      <div class="section-card" id="sec7">
+        <div class="section-head-row">
+          <span class="step-tag">07</span>
+          <h2>Responsabilidades das Partes</h2>
+          <span class="section-lede">Página 7 — duas colunas</span>
+        </div>
+        <div class="card-wrap"><div class="card-inner">
+          <p class="sub-group-label">ALGARTEMPO</p>
+          <div class="list-editor-labels two"><span>Título</span><span>Descrição</span><span></span></div>
+          <div class="list-editor" id="resp-algartempo-body"></div>
+          <button type="button" class="btn-add-row" onclick="window.PropostaBuilder.addListRow('resp-algartempo-body','','')">+ Adicionar item</button>
+          <p class="sub-group-label spaced">Empresa Utilizadora</p>
+          <div class="list-editor-labels two"><span>Título</span><span>Descrição</span><span></span></div>
+          <div class="list-editor" id="resp-empresa-body"></div>
+          <button type="button" class="btn-add-row" onclick="window.PropostaBuilder.addListRow('resp-empresa-body','','')">+ Adicionar item</button>
+        </div></div>
+      </div>
+
+      <!-- 8 TERMOS CONTRATUAIS -->
+      <div class="section-card" id="sec8">
+        <div class="section-head-row">
+          <span class="step-tag">08</span>
+          <h2>Termos Contratuais</h2>
+          <span class="section-lede">Página 8 — duas colunas</span>
+        </div>
+        <div class="card-wrap"><div class="card-inner">
+          <p class="sub-group-label">Coluna esquerda</p>
+          <div class="list-editor-labels two"><span>Título</span><span>Descrição</span><span></span></div>
+          <div class="list-editor" id="termos-esq-body"></div>
+          <button type="button" class="btn-add-row" onclick="window.PropostaBuilder.addListRow('termos-esq-body','','')">+ Adicionar item</button>
+          <p class="sub-group-label spaced">Coluna direita</p>
+          <div class="list-editor-labels two"><span>Título</span><span>Descrição</span><span></span></div>
+          <div class="list-editor" id="termos-dir-body"></div>
+          <button type="button" class="btn-add-row" onclick="window.PropostaBuilder.addListRow('termos-dir-body','','')">+ Adicionar item</button>
+        </div></div>
+      </div>
+
+      <!-- 9 GESTOR DE CONTA -->
+      <div class="section-card" id="sec9">
+        <div class="section-head-row">
+          <span class="step-tag">09</span>
+          <h2>Gestor de Conta</h2>
+          <span class="section-lede">Contactos na última página</span>
+        </div>
+        <div class="card-wrap"><div class="card-inner">
+          <div class="form-grid is-single">
+            <div class="field">
+              <label>Seleccionar gestor</label>
+              <select id="gestor-preset" onchange="window.PropostaBuilder.aplicarGestor(this.value)">
+                <option value="">— outro / preencher manualmente —</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>Nome</label><input type="text" id="gestor-nome"></div>
+            <div class="field"><label>Cargo</label><input type="text" id="gestor-cargo"></div>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>Telefone</label><input type="tel" id="telefone" placeholder="+351 9XX XXX XXX"></div>
+            <div class="field"><label>E-mail</label><input type="email" id="email" placeholder="email@algartempo.pt"></div>
+          </div>
+          <div class="form-grid">
+            <div class="field span-all"><label>Escritório</label><input type="text" id="gestor-escritorio" placeholder="Morada do escritório"></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="action-bar">
+        <div class="action-bar-inner">
+          <span class="status-msg" id="status-msg"></span>
+          <button class="btn btn-outline" id="btn-preview" type="button" onclick="window.PropostaBuilder.previsualizar()">👁 Pré-visualizar</button>
+          <button class="btn btn-secondary" type="button" onclick="window.PropostaBuilder.descarregar()">⬇ HTML</button>
+          <button class="btn btn-secondary" type="button" onclick="window.PropostaBuilder.descarregarPDF()">⬇ PDF</button>
+          <button class="btn btn-secondary" type="button" onclick="window.PropostaBuilder.imprimir()">⎙ Imprimir</button>
+          <button class="btn btn-primary" type="button" id="btnGuardar" onclick="window.PropostaBuilder.guardarProposta()">💾 Guardar proposta</button>
+        </div>
+      </div>
+
+    </main>
+
+    <div class="pb-preview-pane" id="preview-pane">
+      <div class="preview-pane-bar">
+        <span class="dot"></span>
+        Pré-visualização
+        <button class="btn-close-preview" type="button" onclick="window.PropostaBuilder.fecharPreview()" title="Fechar">✕</button>
+      </div>
+      <div class="preview-frame-wrap">
+        <div class="preview-frame-scaler">
+          <iframe id="preview-frame" title="Pré-visualização"></iframe>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Calculadora Simples -->
+<div class="calcs-overlay" id="calcs-overlay">
+  <div class="calcs-modal">
+    <div class="calcs-header">
+      <div class="calcs-header-text">
+        <span class="calcs-header-eyebrow">Ferramenta</span>
+        <h3>Calculadora Simples</h3>
+      </div>
+      <div class="calcs-ctrl-group" style="margin-left:16px">
+        <label>Multiplicador</label>
+        <input class="calcs-ctrl-inp" type="number" id="calcs-mult" value="1.2575" step="0.0001" min="0.01" oninput="window.PropostaBuilder.calcsRecalcular()">
+      </div>
+      <button class="calcs-close" type="button" onclick="window.PropostaBuilder.fecharCalculadoraSimples()">✕</button>
+    </div>
+    <div class="calcs-toolbar">
+      <span class="calcs-toolbar-label">Margens</span>
+      <div class="calcs-margens-list" id="calcs-margens-list"></div>
+      <button class="calcs-mpill-add" type="button" onclick="window.PropostaBuilder.calcsAddMargem()">+ Margem</button>
+    </div>
+    <div class="calcs-body">
+      <div class="calcs-table-wrap">
+        <table class="calcs-table" id="calcs-table">
+          <colgroup id="calcs-colgroup"></colgroup>
+          <thead id="calcs-thead"></thead>
+          <tbody id="calcs-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="calcs-footer">
+      <span class="calcs-insert-hint">
+        <span class="hint-swatch h"></span>Hora &nbsp;
+        <span class="hint-swatch m"></span>Mês — clica numa célula para selecionar
+      </span>
+      <button class="btn-calcs-add" type="button" onclick="window.PropostaBuilder.calcsImportarCategorias()">↓ Importar categorias</button>
+      <button class="btn-calcs-add" type="button" onclick="window.PropostaBuilder.calcsLimpar()" style="border-color:var(--red);color:var(--red);">× Limpar</button>
+      <button class="btn-calcs-add" type="button" onclick="window.PropostaBuilder.calcsAddRow()">+ Linha</button>
+      <button class="btn-calcs-insert-all" type="button" onclick="window.PropostaBuilder.calcsInserirTodas()">→ Inserir na tabela</button>
+    </div>
+  </div>
+</div>
+
+<!-- Calculadora com Bases -->
+<div class="calc-overlay" id="calc-overlay">
+  <div class="calc-modal">
+    <div class="calc-header">
+      <div class="calc-header-text">
+        <span class="calc-header-eyebrow">Ferramenta</span>
+        <h3>Calculadora com Bases</h3>
+      </div>
+      <button class="calc-close" type="button" onclick="window.PropostaBuilder.fecharCalculadora()">✕</button>
+    </div>
+    <div class="calc-body">
+      <div class="calc-section">
+        <span class="calc-section-label">Bases</span>
+        <div class="calc-row">
+          <div class="calc-field">
+            <label>Salário Base (€/mês)</label>
+            <input type="number" id="calc-base" min="0" step="0.01" placeholder="920,00" oninput="window.PropostaBuilder.calcRecalcular()">
+          </div>
+          <div class="calc-field">
+            <label>Horas / mês</label>
+            <input type="number" id="calc-horas" min="1" step="1" value="176" oninput="window.PropostaBuilder.calcRecalcular()">
+          </div>
+        </div>
+      </div>
+      <div class="calc-section">
+        <span class="calc-section-label">Modelo de cálculo</span>
+        <div class="calc-model-tabs">
+          <button class="calc-tab active" id="calc-tab-m1" type="button" onclick="window.PropostaBuilder.calcSetModelo(1)">Modelo 1 — Coeficientes</button>
+          <button class="calc-tab" id="calc-tab-m2" type="button" onclick="window.PropostaBuilder.calcSetModelo(2)">Modelo 2 — Componentes anuais</button>
+        </div>
+      </div>
+      <div id="calc-panel-m1">
+        <div class="calc-section">
+          <span class="calc-section-label">Coeficientes sobre o salário base</span>
+          <div class="calc-breakdown">
+            <div class="calc-brow m1-row head">
+              <span class="bl">Componente</span><span class="br coef-col">Coeficiente</span><span class="br">Mensal (€)</span><span class="br"></span>
+            </div>
+            <div class="calc-brow m1-row"><span class="bl">Vencimento</span><span class="br coef-col muted">×1</span><span class="br" id="c1-venc">—</span><span></span></div>
+            <div class="calc-brow m1-row"><span class="bl">Sub. Férias</span><span class="br coef-col"><input class="calc-coef-inp" type="number" id="c1-cf" value="0.0833" step="0.0001" min="0" oninput="window.PropostaBuilder.calcRecalcular()"></span><span class="br" id="c1-subf">—</span><span></span></div>
+            <div class="calc-brow m1-row"><span class="bl">Sub. Natal</span><span class="br coef-col"><input class="calc-coef-inp" type="number" id="c1-cn" value="0.0833" step="0.0001" min="0" oninput="window.PropostaBuilder.calcRecalcular()"></span><span class="br" id="c1-subn">—</span><span></span></div>
+            <div class="calc-brow m1-row"><span class="bl">Férias</span><span class="br coef-col"><input class="calc-coef-inp" type="number" id="c1-cfer" value="0.0833" step="0.0001" min="0" oninput="window.PropostaBuilder.calcRecalcular()"></span><span class="br" id="c1-fer">—</span><span></span></div>
+            <div class="calc-brow m1-row"><span class="bl">Compensação</span><span class="br coef-col"><input class="calc-coef-inp" type="number" id="c1-ccomp" value="0.0667" step="0.0001" min="0" oninput="window.PropostaBuilder.calcRecalcular()"></span><span class="br" id="c1-comp">—</span><span></span></div>
+            <div class="calc-brow m1-row subtot"><span class="bl">Total Bruto</span><span class="br coef-col muted" id="c1-coef-total">—</span><span class="br" id="c1-gross">—</span><span></span></div>
+            <div class="calc-brow m1-row"><span class="bl">Seg. Social Patronal</span><span class="br coef-col muted" id="c1-tss-label">23,75%</span><span class="br" id="c1-ss">—</span><span></span></div>
+            <div class="calc-brow m1-row"><span class="bl">Seguro AT</span><span class="br coef-col muted" id="c1-tseg-label">2,50%</span><span class="br" id="c1-seg">—</span><span></span></div>
+            <div class="calc-brow m1-row tot"><span class="bl">Custo/Mês</span><span class="br coef-col"></span><span class="br" id="c1-total">—</span><span></span></div>
+          </div>
+          <div class="calc-rate-row">
+            <label>TSU Patronal</label><input class="calc-rate-inp" type="number" id="c1-tss" value="23.75" step="0.01" min="0" oninput="window.PropostaBuilder.calcRecalcular()"><span class="calc-rate-unit">%</span>
+            <label style="margin-left:12px">Seguro AT</label><input class="calc-rate-inp" type="number" id="c1-tseg" value="2.50" step="0.01" min="0" oninput="window.PropostaBuilder.calcRecalcular()"><span class="calc-rate-unit">%</span>
+          </div>
+        </div>
+      </div>
+      <div id="calc-panel-m2" style="display:none">
+        <div class="calc-section">
+          <span class="calc-section-label">Componentes a incluir no custo</span>
+          <div class="calc-checks">
+            <label class="calc-check"><input type="checkbox" id="calc2-ferias" checked onchange="window.PropostaBuilder.calcRecalcular()"><div class="ck-text"><span class="ck-label">Férias não gozadas</span><span class="ck-sub">1 mês de salário base adicional</span></div></label>
+            <label class="calc-check"><input type="checkbox" id="calc2-comp" checked onchange="window.PropostaBuilder.calcRecalcular()"><div class="ck-text"><span class="ck-label">Compensação (24 dias/ano)</span><span class="ck-sub">Base ÷ 30 × 24 dias</span></div></label>
+            <label class="calc-check"><input type="checkbox" id="calc2-form" checked onchange="window.PropostaBuilder.calcRecalcular()"><div class="ck-text"><span class="ck-label">Formação (40 h/ano)</span><span class="ck-sub">40 horas × valor/hora base</span></div></label>
+            <label class="calc-check"><input type="checkbox" id="calc2-medica" checked onchange="window.PropostaBuilder.calcRecalcular()"><div class="ck-text"><span class="ck-label">Inspecção médica</span><span class="ck-sub">17 € fixos por ano</span></div></label>
+          </div>
+        </div>
+        <div class="calc-section">
+          <span class="calc-section-label">Desdobramento mensal</span>
+          <div class="calc-breakdown">
+            <div class="calc-brow m2-row head"><span class="bl">Componente</span><span class="br">Mensal (€)</span></div>
+            <div class="calc-brow m2-row"><span class="bl">Vencimento (×12 / 12)</span><span class="br" id="c2-venc">—</span></div>
+            <div class="calc-brow m2-row"><span class="bl">Sub. Férias (/ 12)</span><span class="br" id="c2-subf">—</span></div>
+            <div class="calc-brow m2-row"><span class="bl">Sub. Natal (/ 12)</span><span class="br" id="c2-subn">—</span></div>
+            <div class="calc-brow m2-row"><span class="bl">Férias não gozadas (/ 12)</span><span class="br" id="c2-fer">—</span></div>
+            <div class="calc-brow m2-row"><span class="bl">Compensação 24 dias (/ 12)</span><span class="br" id="c2-comp">—</span></div>
+            <div class="calc-brow m2-row"><span class="bl">Formação 40 h (/ 12)</span><span class="br" id="c2-form">—</span></div>
+            <div class="calc-brow m2-row subtot"><span class="bl">Bruto mensal</span><span class="br" id="c2-bruto">—</span></div>
+            <div class="calc-brow m2-row"><span class="bl">Seg. Social Patronal</span><span class="br" id="c2-ss">—</span></div>
+            <div class="calc-brow m2-row"><span class="bl">Seguro AT</span><span class="br" id="c2-seg">—</span></div>
+            <div class="calc-brow m2-row"><span class="bl">Inspecção médica (/ 12)</span><span class="br" id="c2-med">—</span></div>
+            <div class="calc-brow m2-row tot"><span class="bl">Custo/Mês</span><span class="br" id="c2-total">—</span></div>
+          </div>
+          <div class="calc-rate-row">
+            <label>TSU Patronal</label><input class="calc-rate-inp" type="number" id="c2-tss" value="23.75" step="0.01" min="0" oninput="window.PropostaBuilder.calcRecalcular()"><span class="calc-rate-unit">%</span>
+            <label style="margin-left:12px">Seguro AT</label><input class="calc-rate-inp" type="number" id="c2-tseg" value="2.50" step="0.01" min="0" oninput="window.PropostaBuilder.calcRecalcular()"><span class="calc-rate-unit">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="calc-section">
+        <span class="calc-section-label">Margem comercial</span>
+        <div class="calc-margin-pills">
+          <button class="calc-mpill" data-m="5" type="button" onclick="window.PropostaBuilder.calcSetMargem(5)">5%</button>
+          <button class="calc-mpill" data-m="7" type="button" onclick="window.PropostaBuilder.calcSetMargem(7)">7%</button>
+          <button class="calc-mpill active" data-m="10" type="button" onclick="window.PropostaBuilder.calcSetMargem(10)">10%</button>
+          <button class="calc-mpill" data-m="13" type="button" onclick="window.PropostaBuilder.calcSetMargem(13)">13%</button>
+          <button class="calc-mpill" data-m="15" type="button" onclick="window.PropostaBuilder.calcSetMargem(15)">15%</button>
+          <div class="calc-mcustom" id="calc-mcustom-wrap">
+            <input type="number" id="calc-margem-custom" min="0" max="99" step="0.1" placeholder="outro" oninput="window.PropostaBuilder.calcSetMargemCustom(this.value)"><span>%</span>
+          </div>
+        </div>
+      </div>
+      <div class="calc-section">
+        <span class="calc-section-label">Resultado</span>
+        <div class="calc-results">
+          <div class="calc-res-item is-cost"><span class="calc-res-label">Custo / Mês</span><span class="calc-res-val" id="calc-res-custo-mes">—</span></div>
+          <div class="calc-res-item is-cost"><span class="calc-res-label">Custo / Hora</span><span class="calc-res-val" id="calc-res-custo-hora">—</span></div>
+          <div class="calc-res-item"><span class="calc-res-label">Preço / Mês</span><span class="calc-res-val" id="calc-res-preco-mes">—</span><span class="calc-res-sub">margem <span id="calc-res-margem-label">10%</span></span></div>
+          <div class="calc-res-item"><span class="calc-res-label">Preço / Hora</span><span class="calc-res-val" id="calc-res-preco-hora">—</span><span class="calc-res-sub">margem <span id="calc-res-margem-label2">10%</span></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="calc-footer">
+      <div class="calc-field">
+        <label>Categoria (para inserir na tabela)</label>
+        <input type="text" id="calc-categoria" placeholder="ex: Cozinheiro(a) 1.ª">
+      </div>
+      <button type="button" class="btn-calc-insert" onclick="window.PropostaBuilder.calcInserir()">→ Inserir na tabela</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/module-registry.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/offices-service.js"></script>
+<script src="js/config-escritorios.js"></script>
+<script src="js/app-platform.js"></script>
+<script src="js/auditoria.js"></script>
+<script src="js/clientes-service.js"></script>
+<script src="js/proposta-template.js"></script>
+<script src="js/proposta-builder.js"></script>
+</body>
+</html>
