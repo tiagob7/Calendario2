@@ -1,10 +1,13 @@
 /* ══════════════════════════════════════════════════════
    CHAT SERVICE
    Coleções: conversas/{id}, conversas/{id}/mensagens/{id},
-             chat_lidos/{uid}_{conversaId}
+             chat_lidos/{uid}_{conversaId},
+             conversas/{id}/typing/{uid}
    ══════════════════════════════════════════════════════ */
 (function () {
   const db = window.db || firebase.firestore();
+  const USERS_CACHE_KEY = 'chatUsersCache';
+  const USERS_CACHE_TTL = 5 * 60 * 1000; // 5 min
 
   /* ── ID determinístico para DMs ── */
   function getDmId(uidA, uidB) {
@@ -59,15 +62,13 @@
     return ref.id;
   }
 
-  /* ── Listener de conversas do utilizador ── */
+  /* ── Listener de conversas do utilizador (ordenadas por recência via índice) ── */
   function listenConversas(uid, cb) {
     return db.collection('conversas')
       .where('participantes', 'array-contains', uid)
+      .orderBy('ultimaMensagemTs', 'desc')
       .onSnapshot(snap => {
-        const docs = snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .sort((a, b) => (b.ultimaMensagemTs || 0) - (a.ultimaMensagemTs || 0));
-        cb(docs);
+        cb(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       }, err => console.warn('[chat] listenConversas error', err));
   }
 
@@ -83,19 +84,21 @@
   }
 
   /* ── Enviar mensagem (batch: msg + preview) ── */
-  async function sendMensagem(conversaId, texto, autorUid, autorNome) {
+  async function sendMensagem(conversaId, texto, autorUid, autorNome, replyTo) {
     const ts = Date.now();
     const batch = db.batch();
 
     const msgRef = db.collection('conversas').doc(conversaId)
       .collection('mensagens').doc();
-    batch.set(msgRef, {
+    const msgData = {
       texto: texto.slice(0, 4000),
       autorUid,
       autorNome: autorNome || 'Utilizador',
       ts,
       tipo: 'texto',
-    });
+    };
+    if (replyTo) msgData.replyTo = replyTo;
+    batch.set(msgRef, msgData);
 
     const conversaRef = db.collection('conversas').doc(conversaId);
     batch.update(conversaRef, {
@@ -117,7 +120,7 @@
     });
   }
 
-  /* ── Listener de read status (para badges de não lido) ── */
+  /* ── Listener de read status ── */
   function listenUnreadCounts(uid, cb) {
     return db.collection('chat_lidos')
       .where('uid', '==', uid)
@@ -141,10 +144,63 @@
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   }
 
-  /* ── Carregar utilizadores para o picker ── */
+  /* ── Carregar utilizadores (com cache sessionStorage 5 min) ── */
   async function loadUtilizadores() {
+    try {
+      const cached = sessionStorage.getItem(USERS_CACHE_KEY);
+      if (cached) {
+        const { ts, data } = JSON.parse(cached);
+        if (Date.now() - ts < USERS_CACHE_TTL) return data;
+      }
+    } catch (_) {}
     const snap = await db.collection('utilizadores').where('ativo', '==', true).get();
-    return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    const data = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    try { sessionStorage.setItem(USERS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
+    return data;
+  }
+
+  /* ── Typing indicators ── */
+  async function setTyping(conversaId, uid) {
+    await db.collection('conversas').doc(conversaId)
+      .collection('typing').doc(uid)
+      .set({ uid, ts: Date.now() });
+  }
+
+  async function clearTyping(conversaId, uid) {
+    try {
+      await db.collection('conversas').doc(conversaId)
+        .collection('typing').doc(uid)
+        .delete();
+    } catch (_) {}
+  }
+
+  function listenTyping(conversaId, cb) {
+    return db.collection('conversas').doc(conversaId)
+      .collection('typing')
+      .onSnapshot(snap => {
+        const now = Date.now();
+        const typing = snap.docs
+          .map(d => d.data())
+          .filter(d => now - (d.ts || 0) < 4000);
+        cb(typing);
+      }, err => console.warn('[chat] listenTyping error', err));
+  }
+
+  /* ── Gestão de grupos ── */
+  async function renameGroup(conversaId, nome) {
+    await db.collection('conversas').doc(conversaId).update({ nome: nome.trim() });
+  }
+
+  async function addGroupMembers(conversaId, uids) {
+    await db.collection('conversas').doc(conversaId).update({
+      participantes: firebase.firestore.FieldValue.arrayUnion(...uids),
+    });
+  }
+
+  async function removeMember(conversaId, uid) {
+    await db.collection('conversas').doc(conversaId).update({
+      participantes: firebase.firestore.FieldValue.arrayRemove(uid),
+    });
   }
 
   window.ChatService = {
@@ -158,5 +214,11 @@
     markRead,
     listenUnreadCounts,
     loadUtilizadores,
+    setTyping,
+    clearTyping,
+    listenTyping,
+    renameGroup,
+    addGroupMembers,
+    removeMember,
   };
 })();

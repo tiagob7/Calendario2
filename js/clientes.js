@@ -7,11 +7,16 @@
     activeTab: 'detalhe',  // 'detalhe' | 'precos' | 'historico'
     canImport: false,
     canEdit: false,
+    canPropose: false,
     preview: null,
     importBusy: false,
     saveBusy: false,
     editMode: null,   // null | 'cliente' | 'precos' | 'proposta'
     editData: null,
+    viewAno: null,    // ano selecionado na aba Preços (null = precosAtuais)
+    visibleCount: 20, // quantos clientes estão renderizados (paginação DOM)
+    expandedPropostas: new Set(),  // índices de propostas expandidas
+    expandedHistorico: new Set(),  // índices de eventos de histórico expandidos
   };
 
   const dom = {};
@@ -19,7 +24,6 @@
   // ---- DOM CACHE ----
 
   function cacheDom() {
-    dom.statsBar       = document.getElementById('statsBar');
     dom.clientesList   = document.getElementById('clientesList');
     dom.clienteDetail  = document.getElementById('clienteDetail');
     dom.drawerOverlay  = document.getElementById('drawerOverlay');
@@ -29,12 +33,18 @@
     dom.filterStatus   = document.getElementById('filterStatus');
     dom.viewBtnTabela  = document.getElementById('viewBtnTabela');
     dom.viewBtnCards   = document.getElementById('viewBtnCards');
-    dom.importPanel    = document.getElementById('importPanel');
-    dom.importDropzone = document.getElementById('importDropzone');
-    dom.importFile     = document.getElementById('clientesImportFile');
-    dom.importBusy     = document.getElementById('importBusyState');
-    dom.importPreview  = document.getElementById('importPreviewWrap');
-    dom.importHint     = document.getElementById('importPermissionHint');
+    dom.novoClienteBtn     = document.getElementById('btnNovoCliente');
+    dom.novoClienteModal   = document.getElementById('novoClienteModalOverlay');
+    dom.importBtn          = document.getElementById('btnImportExcel');
+    dom.formatoBtn         = document.getElementById('btnFormatoExcel');
+    dom.formatoModal       = document.getElementById('formatoModalOverlay');
+    dom.anoImportModal     = document.getElementById('anoImportModalOverlay');
+    dom.anoImportSelect    = document.getElementById('importAnoVigencia');
+    dom.importDropzone     = document.getElementById('importDropzone');
+    dom.importFile         = document.getElementById('clientesImportFile');
+    dom.importBusy         = document.getElementById('importBusyState');
+    dom.importPreview      = document.getElementById('importPreviewWrap');
+    dom.importHint         = document.getElementById('importPermissionHint');
   }
 
   // ---- HELPERS ----
@@ -90,23 +100,131 @@
 
   function updatePermissions() {
     const check = p => typeof window.temPermissao === 'function' && window.temPermissao(p);
-    state.canImport = check('modules.clientes.import');
-    state.canEdit   = check('modules.clientes.edit');
+    const isAdmin = typeof window.isAdmin === 'function' && window.isAdmin();
+    state.canImport  = check('modules.clientes.import');
+    state.canEdit    = check('modules.clientes.edit');
+    state.canPropose = check('modules.clientes.propose');
 
-    dom.importHint.textContent = state.canImport ? 'Importação disponível' : 'Sem permissão de importação';
+    // Novo cliente — utilizadores com permissão de edição
+    if (dom.novoClienteBtn) dom.novoClienteBtn.hidden = !state.canEdit;
+    // Importação e formato — apenas administradores
+    if (dom.importBtn)   dom.importBtn.hidden   = !isAdmin;
+    if (dom.formatoBtn)  dom.formatoBtn.hidden  = !isAdmin;
+  }
 
-    if (!state.canImport) {
-      dom.importDropzone.style.opacity = '.65';
-      dom.importDropzone.style.pointerEvents = 'none';
-      dom.importPreview.innerHTML = '<div class="clientes-preview-note">Sem permissão de importação (<code>modules.clientes.import</code>).</div>';
+  // ---- MODAL NOVO CLIENTE ----
+
+  function openNovoClienteModal() {
+    // Preencher select de escritórios
+    const sel = document.getElementById('novoClienteEscritorio');
+    if (sel) {
+      const escritorios = typeof window.getEscritoriosSync === 'function'
+        ? window.getEscritoriosSync().filter(e => e.ativo !== false)
+        : [];
+      sel.innerHTML = '<option value="">— Sem escritório —</option>' +
+        escritorios.map(e => `<option value="${window.escHtml(e.id)}">${window.escHtml(e.nome)}</option>`).join('');
+    }
+    // Limpar campos
+    ['novoClienteNome','novoClienteNumero','novoClienteGrupo','novoClienteObs'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const btn = document.getElementById('novoClienteSaveBtn');
+    if (btn) btn.disabled = false;
+    if (dom.novoClienteModal) dom.novoClienteModal.classList.add('open');
+    setTimeout(() => document.getElementById('novoClienteNome')?.focus(), 80);
+  }
+
+  function closeNovoClienteModal() {
+    if (dom.novoClienteModal) dom.novoClienteModal.classList.remove('open');
+  }
+
+  async function saveNovoCliente() {
+    const nome = (document.getElementById('novoClienteNome')?.value || '').trim();
+    if (!nome) { window.toast('O nome é obrigatório.'); document.getElementById('novoClienteNome')?.focus(); return; }
+
+    const btn = document.getElementById('novoClienteSaveBtn');
+    if (btn) btn.disabled = true;
+
+    try {
+      const id = await window.ClientesService.criarCliente({
+        nome,
+        numeroCliente: (document.getElementById('novoClienteNumero')?.value || '').trim(),
+        grupo:         (document.getElementById('novoClienteGrupo')?.value  || '').trim(),
+        escritorioOrigem: (document.getElementById('novoClienteEscritorio')?.value || '').trim(),
+        obs:           (document.getElementById('novoClienteObs')?.value    || '').trim(),
+      });
+      await audit('criado', id, nome);
+      closeNovoClienteModal();
+      window.toast('Cliente criado.');
+      // Abrir o drawer do novo cliente
+      state.selectedId = id;
+      state.activeTab  = 'detalhe';
+    } catch (err) {
+      console.error(err);
+      window.toast(err.message || 'Erro ao criar cliente.');
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  // ---- MODAL FORMATO ----
+
+  function openFormatoModal() {
+    if (dom.formatoModal) dom.formatoModal.classList.add('open');
+  }
+
+  function closeFormatoModal() {
+    if (dom.formatoModal) dom.formatoModal.classList.remove('open');
+  }
+
+  // ---- MODAL ANO IMPORT ----
+
+  function _populateAnoSelect() {
+    if (!dom.anoImportSelect) return;
+    const cur = new Date().getFullYear();
+    dom.anoImportSelect.innerHTML = '<option value="">Não especificar</option>' +
+      [cur - 1, cur, cur + 1].map(y =>
+        `<option value="${y}"${y === cur ? ' selected' : ''}>${y}</option>`
+      ).join('');
+  }
+
+  function openAnoImportModal() {
+    _populateAnoSelect();
+    if (dom.anoImportModal) dom.anoImportModal.classList.add('open');
+  }
+
+  function closeAnoImportModal() {
+    if (dom.anoImportModal) dom.anoImportModal.classList.remove('open');
+  }
+
+  function cancelImportAno() {
+    closeAnoImportModal();
+    state.preview = null;
+    dom.importFile.value = '';
+    dom.importPreview.innerHTML = '';
+  }
+
+  async function confirmImportAno() {
+    if (!state.preview || !state.canImport) return;
+    const anoVigencia = dom.anoImportSelect ? (Number(dom.anoImportSelect.value) || null) : null;
+    closeAnoImportModal();
+    try {
+      setImportBusy(true);
+      const result = await window.ClientesService.applyImport(state.preview, { anoVigencia });
+      await audit('importado', 'import-' + result.importedAt, result.sourceFile);
+      state.preview = null;
+      dom.importFile.value = '';
+      dom.importPreview.innerHTML = '';
+      window.toast('Importação concluída' + (anoVigencia ? ` (${anoVigencia})` : '') + '.');
+    } catch (err) {
+      console.error(err);
+      window.toast(err.message || 'Erro ao aplicar a importação.');
+    } finally {
+      setImportBusy(false);
     }
   }
 
   // ---- IMPORT ----
-
-  function toggleImportPanel() {
-    dom.importPanel && dom.importPanel.classList.toggle('open');
-  }
 
   function setImportBusy(v) {
     state.importBusy = !!v;
@@ -119,7 +237,6 @@
       setImportBusy(true);
       state.preview = await window.ClientesService.previewImport(file);
       renderImportPreview();
-      dom.importPanel.classList.add('open');
       window.toast('Preview de importação pronto.');
     } catch (err) {
       console.error(err);
@@ -131,22 +248,10 @@
     }
   }
 
-  async function confirmImport() {
+  function confirmImport() {
+    // Mostra modal de ano antes de aplicar
     if (!state.preview || !state.canImport) return;
-    try {
-      setImportBusy(true);
-      const result = await window.ClientesService.applyImport(state.preview);
-      await audit('importado', 'import-' + result.importedAt, result.sourceFile);
-      state.preview = null;
-      dom.importFile.value = '';
-      dom.importPreview.innerHTML = '';
-      window.toast('Importação concluída com sucesso.');
-    } catch (err) {
-      console.error(err);
-      window.toast(err.message || 'Erro ao aplicar a importação.');
-    } finally {
-      setImportBusy(false);
-    }
+    openAnoImportModal();
   }
 
   function cancelImportPreview() {
@@ -219,9 +324,9 @@
   // ---- FILTERS ----
 
   function bindFilters() {
-    dom.filterSearch.addEventListener('input', render);
-    dom.filterOffice.addEventListener('change', render);
-    dom.filterStatus.addEventListener('change', render);
+    dom.filterSearch.addEventListener('input', () => { state.visibleCount = 20; render(); });
+    dom.filterOffice.addEventListener('change', () => { state.visibleCount = 20; render(); });
+    dom.filterStatus.addEventListener('change', () => { state.visibleCount = 20; render(); });
 
     dom.viewBtnTabela.addEventListener('click', () => setView('tabela'));
     dom.viewBtnCards.addEventListener('click', () => setView('cards'));
@@ -279,38 +384,6 @@
     });
   }
 
-  // ---- RENDER STATS ----
-
-  function renderStats() {
-    const total = state.clientes.length;
-    const withPrices = state.clientes.filter(hasPrices).length;
-    const offices = new Set(state.clientes.map(c => c.escritorioOrigem).filter(Boolean)).size;
-    const revised = state.clientes.filter(c => !!lastRevision(c)).length;
-    const withoutPrices = Math.max(total - withPrices, 0);
-
-    dom.statsBar.innerHTML = `
-      <div class="cli-stat">
-        <div class="cli-stat-lbl">Total</div>
-        <div class="cli-stat-val">${total}</div>
-      </div>
-      <div class="cli-stat">
-        <div class="cli-stat-lbl">Com preços</div>
-        <div class="cli-stat-val" style="color:var(--blue)">${withPrices}</div>
-      </div>
-      <div class="cli-stat">
-        <div class="cli-stat-lbl">Sem preços</div>
-        <div class="cli-stat-val" style="color:var(--amber)">${withoutPrices}</div>
-      </div>
-      <div class="cli-stat">
-        <div class="cli-stat-lbl">Escritórios</div>
-        <div class="cli-stat-val" style="color:var(--teal)">${offices}</div>
-      </div>
-      <div class="cli-stat">
-        <div class="cli-stat-lbl">Com revisões</div>
-        <div class="cli-stat-val" style="color:var(--green)">${revised}</div>
-      </div>`;
-  }
-
   function renderOfficeOptions() {
     const cur = dom.filterOffice.value;
     const offices = Array.from(new Set(state.clientes.map(c => c.escritorioOrigem).filter(Boolean)))
@@ -344,10 +417,25 @@
     }
   }
 
+  function anoBadgeHtml(c) {
+    const ano = c.anoVigenciaAtual;
+    if (!ano) return '<span class="cli-muted">—</span>';
+    const anoAtual = new Date().getFullYear();
+    const cls = ano < anoAtual ? 'warning' : ano === anoAtual ? 'new' : 'update';
+    return `<span class="clientes-status-badge ${cls}">${ano}</span>`;
+  }
+
+  function loadMore() {
+    state.visibleCount += 20;
+    renderList();
+  }
+
   function renderTable() {
-    const rows = state.filtered.map(c => {
+    const visible = state.filtered.slice(0, state.visibleCount);
+    const remaining = state.filtered.length - visible.length;
+
+    const rows = visible.map(c => {
       const priceCount = Object.keys(c.precosAtuais || {}).length;
-      const rev = lastRevision(c);
       const initials = getAvatarInitials(c);
       const isActive = c.id === state.selectedId;
       return `
@@ -364,10 +452,18 @@
           <td><span class="cli-muted">${window.escHtml(c.grupo || '—')}</span></td>
           <td>${c.escritorioOrigem ? `<span class="clientes-soft-badge">${window.escHtml(c.escritorioOrigem)}</span>` : '<span class="cli-muted">—</span>'}</td>
           <td><span class="cli-muted">${priceCount}</span></td>
-          <td><span class="clientes-status-badge ${hasPrices(c) ? 'update' : 'warning'}">${hasPrices(c) ? 'Com preços' : 'Sem preços'}</span></td>
-          <td><span class="cli-tnum">${rev ? window.fmtDataHora(rev.importedAt) : '—'}</span></td>
+          <td>${anoBadgeHtml(c)}</td>
+          <td><span class="cli-tnum">${c.updatedAt ? window.fmtDataHora(c.updatedAt) : '—'}</span></td>
         </tr>`;
     }).join('');
+
+    const loadMoreBtn = remaining > 0
+      ? `<div class="cli-load-more">
+           <button class="btn btn-secondary btn-sm" onclick="window.ClientesPage.loadMore()">
+             Carregar mais ${remaining} cliente${remaining !== 1 ? 's' : ''}
+           </button>
+         </div>`
+      : '';
 
     dom.clientesList.innerHTML = `
       <div class="cli-table-wrap">
@@ -378,13 +474,14 @@
               <th>Grupo</th>
               <th>Escritório</th>
               <th>Categorias</th>
-              <th>Estado</th>
-              <th>Última importação</th>
+              <th>Ano vigência</th>
+              <th>Preços atualizados</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
-      </div>`;
+      </div>
+      ${loadMoreBtn}`;
 
     dom.clientesList.querySelectorAll('[data-id]').forEach(row => {
       row.addEventListener('click', () => openDetail(row.getAttribute('data-id')));
@@ -392,16 +489,18 @@
   }
 
   function renderCards() {
-    const cards = state.filtered.map(c => {
+    const visible = state.filtered.slice(0, state.visibleCount);
+    const remaining = state.filtered.length - visible.length;
+
+    const cards = visible.map(c => {
       const priceCount = Object.keys(c.precosAtuais || {}).length;
-      const rev = lastRevision(c);
       const initials = getAvatarInitials(c);
       const isActive = c.id === state.selectedId;
       return `
         <article class="cli-card${isActive ? ' active' : ''}" data-id="${window.escHtml(c.id)}">
           <div class="cli-card-head">
             <div class="cli-avatar lg empresa">${window.escHtml(initials)}</div>
-            <span class="clientes-status-badge ${hasPrices(c) ? 'update' : 'warning'}">${hasPrices(c) ? 'Com preços' : 'Sem preços'}</span>
+            ${anoBadgeHtml(c)}
           </div>
           <div class="cli-card-name">${window.escHtml(c.nome || 'Sem nome')}</div>
           ${c.grupo ? `<div class="cli-card-sub">${window.escHtml(c.grupo)}</div>` : ''}
@@ -415,15 +514,23 @@
               <div style="font-size:11.5px;font-weight:500;">${window.escHtml(c.escritorioOrigem || '—')}</div>
             </div>
             <div>
-              <div class="cli-stat-lbl">Última imp.</div>
-              <div class="cli-tnum">${rev ? window.fmtDataHora(rev.importedAt) : '—'}</div>
+              <div class="cli-stat-lbl">Atualizado</div>
+              <div class="cli-tnum">${c.updatedAt ? window.fmtDataHora(c.updatedAt) : '—'}</div>
             </div>
           </div>
           ${c.numeroCliente ? `<div class="cli-card-foot"><span>Nº ${window.escHtml(c.numeroCliente)}</span></div>` : ''}
         </article>`;
     }).join('');
 
-    dom.clientesList.innerHTML = `<div class="cli-grid">${cards}</div>`;
+    const loadMoreBtn = remaining > 0
+      ? `<div class="cli-load-more">
+           <button class="btn btn-secondary btn-sm" onclick="window.ClientesPage.loadMore()">
+             Carregar mais ${remaining} cliente${remaining !== 1 ? 's' : ''}
+           </button>
+         </div>`
+      : '';
+
+    dom.clientesList.innerHTML = `<div class="cli-grid">${cards}</div>${loadMoreBtn}`;
 
     dom.clientesList.querySelectorAll('[data-id]').forEach(card => {
       card.addEventListener('click', () => openDetail(card.getAttribute('data-id')));
@@ -457,6 +564,14 @@
 
   function switchDetailTab(tab) {
     state.activeTab = tab;
+    state.viewAno = null;
+    state.expandedPropostas.clear();
+    state.expandedHistorico.clear();
+    renderDetail();
+  }
+
+  function setViewAno(ano) {
+    state.viewAno = ano;
     renderDetail();
   }
 
@@ -476,7 +591,7 @@
       .sort((a, b) => String(a.categoria || '').localeCompare(String(b.categoria || ''), 'pt-PT'));
     const allRevs = c.revisoes || [];
     const proposals = allRevs.map((r, i) => ({ ...r, _idx: i })).filter(r => r.tipo === 'proposta').reverse();
-    const importRevs = allRevs.filter(r => r.tipo !== 'proposta').reverse();
+    const allEvents = allRevs.map((r, i) => ({ ...r, _idx: i })).slice().reverse();
     const rev = lastRevision(c);
 
     let tabContent = '';
@@ -503,7 +618,7 @@
             ${c.numeroCliente ? `<div><span class="cli-info-key">Nº cliente</span><span>${window.escHtml(c.numeroCliente)}</span></div>` : ''}
             ${c.grupo ? `<div><span class="cli-info-key">Grupo</span><span>${window.escHtml(c.grupo)}</span></div>` : ''}
             ${c.escritorioOrigem ? `<div><span class="cli-info-key">Escritório</span><span>${window.escHtml(c.escritorioOrigem)}</span></div>` : ''}
-            ${rev ? `<div><span class="cli-info-key">Última importação</span><span>${window.fmtDataHora(rev.importedAt)}</span></div>` : ''}
+            ${c.updatedAt ? `<div><span class="cli-info-key">Preços atualizados</span><span>${window.fmtDataHora(c.updatedAt)}</span></div>` : ''}
             ${c.ultimaPropostaData || (rev && rev.propostaDataRaw) ? `<div><span class="cli-info-key">Data proposta</span><span>${window.escHtml(c.ultimaPropostaData || (rev && rev.propostaDataRaw) || '—')}</span></div>` : ''}
           </div>
         </div>
@@ -515,108 +630,195 @@
     }
 
     else if (tab === 'precos') {
-      const pricesTable = priceEntries.length
+      // ── Selector de ano ──────────────────────────────────────
+      const precosPorAno = c.precosPorAno || {};
+      const anosDisponiveis = Object.keys(precosPorAno).map(Number).sort((a, b) => a - b);
+      const anoAtual = c.anoVigenciaAtual || null;
+      const viewingAno = state.viewAno; // null = precosAtuais
+
+      // Preços a mostrar: do ano selecionado ou precosAtuais
+      let viewEntries;
+      if (viewingAno && precosPorAno[String(viewingAno)]) {
+        viewEntries = Object.values(precosPorAno[String(viewingAno)])
+          .sort((a, b) => String(a.categoria || '').localeCompare(String(b.categoria || ''), 'pt-PT'));
+      } else {
+        viewEntries = priceEntries;
+      }
+      const isViewingCurrent = !viewingAno || viewingAno === anoAtual;
+
+      // Selector de ano (só aparece se houver histórico por ano)
+      const anoSelectorHtml = anosDisponiveis.length > 0 ? `
+        <div class="cli-ano-selector">
+          ${anosDisponiveis.map(a => `
+            <button class="cli-ano-btn${viewingAno === a ? ' active' : ''}"
+              onclick="window.ClientesPage.setViewAno(${a})">${a}</button>`).join('')}
+          <button class="cli-ano-btn${isViewingCurrent ? ' active' : ''}"
+            onclick="window.ClientesPage.setViewAno(null)">
+            ${anoAtual || 'Atual'} <span class="cli-ano-current-dot"></span>
+          </button>
+        </div>` : '';
+
+      const pricesTable = viewEntries.length
         ? `<div class="clientes-prices-wrap">
              <table class="clientes-prices-table">
-               <thead><tr><th>Categoria</th><th>22 dias</th><th>Valor dia</th><th>Hora</th></tr></thead>
+               <thead><tr><th>Categoria profissional</th><th>Valor/Hora</th><th>Valor/Mês</th></tr></thead>
                <tbody>
-                 ${priceEntries.map(p => `
+                 ${viewEntries.map(p => `
                    <tr>
                      <td>
                        <span class="clientes-price-main">${window.escHtml(p.categoria || '—')}</span>
                        ${p.obsLinha ? `<span class="clientes-price-sub">${window.escHtml(p.obsLinha)}</span>` : ''}
                      </td>
-                     <td>${formatMoney(p.preco22Dias)}</td>
-                     <td>${formatMoney(p.valorDia)}</td>
                      <td>${formatMoney(p.precoHora)}</td>
+                     <td>${formatMoney(p.preco22Dias)}</td>
                    </tr>`).join('')}
                </tbody>
              </table>
            </div>`
-        : `<div class="clientes-empty-note">${state.canEdit ? 'Ainda sem preços. Clica em "Editar" para adicionar.' : 'Ainda não existem preços importados para este cliente.'}</div>`;
+        : `<div class="clientes-empty-note">${isViewingCurrent && state.canEdit ? 'Ainda sem preços. Clica em "Editar" para adicionar.' : 'Sem preços registados para este ano.'}</div>`;
 
-      const proposalsHtml = proposals.length ? `
+      tabContent = `
+        <section class="clientes-section">
+          <div class="clientes-section-head">
+            <h3>Preços${viewingAno && !isViewingCurrent ? ` <span class="clientes-soft-badge" style="margin-left:6px;">${viewingAno}</span>` : ''}</h3>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="clientes-soft-badge">${viewEntries.length} cat.</span>
+              ${isViewingCurrent && state.canEdit ? `<button class="btn btn-secondary btn-sm" type="button" onclick="window.ClientesPage.enterEditPrecos()">Editar</button>` : ''}
+            </div>
+          </div>
+          ${anoSelectorHtml}
+          ${pricesTable}
+        </section>`;
+    }
+
+    else if (tab === 'propostas') {
+      const propostasHtml = proposals.length
+        ? `<div class="clientes-history-list">
+             ${proposals.map(p => {
+               const isRevisao = !!p.parentReferencia;
+               const versao = Number(p.versao) || 1;
+               const isOpen = state.expandedPropostas.has(p._idx);
+               const nCat = Array.isArray(p.linhas) ? p.linhas.length : 0;
+               return `
+              <article class="clientes-history-item clientes-collapsible${isRevisao ? ' is-revisao' : ''}${isOpen ? ' is-open' : ''}">
+                <div class="clientes-history-item-head clientes-collapsible-trigger" onclick="window.ClientesPage.toggleProposta(${p._idx})">
+                  <div class="clientes-collapsible-chevron">
+                    <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 7l3 3 3-3"/></svg>
+                  </div>
+                  <div style="flex:1;min-width:0;">
+                    <h4>${window.escHtml(p.referencia || p.nomeProposta || 'Proposta sem nome')}${versao > 1 ? ` <span class="clientes-soft-badge" style="margin-left:6px;">v${versao}</span>` : ''}${p.anoVigencia ? ` <span class="clientes-soft-badge" style="margin-left:6px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);">${p.anoVigencia}</span>` : ''}</h4>
+                    <p>${window.fmtDataHora(p.importedAt)} · ${window.escHtml(p.importedByName || 'Desconhecido')}${p.propostaDataRaw ? ' · ' + window.escHtml(p.propostaDataRaw) : ''}</p>
+                    ${isRevisao ? `<p style="margin-top:2px;font-size:11px;color:var(--text-3);">Revisão de <strong>${window.escHtml(p.parentReferencia)}</strong></p>` : ''}
+                  </div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+                    <span class="clientes-soft-badge">${nCat} cat.</span>
+                    ${p.aplicada
+                      ? '<span class="clientes-status-badge new">Aplicada</span>'
+                      : (state.canEdit ? `<button class="btn btn-secondary btn-sm" type="button" onclick="event.stopPropagation();window.ClientesPage.aplicarProposta(${p._idx})">Aplicar</button>` : '')}
+                  </div>
+                </div>
+                ${isOpen ? `
+                <div class="clientes-collapsible-body">
+                  ${p.nota ? `<p style="margin-bottom:8px;font-size:12px;color:var(--text-2);">${window.escHtml(p.nota)}</p>` : ''}
+                  <div class="clientes-history-actions">
+                    ${state.canPropose ? `<button class="btn btn-ghost btn-sm" type="button" onclick="window.ClientesPage.reabrirProposta(${p._idx})">Re-abrir</button>` : ''}
+                    ${state.canPropose ? `<button class="btn btn-ghost btn-sm" type="button" onclick="window.ClientesPage.criarRevisao(${p._idx})">↪ Criar revisão</button>` : ''}
+                  </div>
+                  ${nCat ? `
+                  <div class="clientes-proposal-preview">
+                    <table class="clientes-prices-table">
+                      <thead><tr><th>Categoria profissional</th><th>Valor/Hora</th><th>Valor/Mês</th></tr></thead>
+                      <tbody>
+                        ${p.linhas.map(l => `
+                          <tr>
+                            <td>${window.escHtml(l.categoria || '—')}</td>
+                            <td>${formatMoney(l.precoHora)}</td>
+                            <td>${formatMoney(l.preco22Dias)}</td>
+                          </tr>`).join('')}
+                      </tbody>
+                    </table>
+                  </div>` : '<p class="clientes-empty-note" style="margin-top:8px;">Sem categorias de preços.</p>'}
+                </div>` : ''}
+              </article>`;
+             }).join('')}
+           </div>`
+        : `<div class="clientes-empty-note">Ainda sem propostas. ${state.canPropose ? 'Clica em <strong>Nova proposta</strong> para criar uma.' : ''}</div>`;
+
+      tabContent = `
         <section class="clientes-section">
           <div class="clientes-section-head">
             <h3>Propostas</h3>
-            <span class="clientes-soft-badge">${proposals.length}</span>
+            <span class="clientes-soft-badge">${proposals.length} ${proposals.length === 1 ? 'proposta' : 'propostas'}</span>
           </div>
-          <div class="clientes-history-list">
-            ${proposals.map(p => `
-              <article class="clientes-history-item">
-                <div class="clientes-history-item-head">
-                  <div>
-                    <h4>${window.escHtml(p.nomeProposta || 'Proposta sem nome')}</h4>
-                    <p>${window.fmtDataHora(p.importedAt)} · ${window.escHtml(p.importedByName || 'Desconhecido')}${p.propostaDataRaw ? ' · ' + window.escHtml(p.propostaDataRaw) : ''}</p>
-                    ${p.nota ? `<p style="margin-top:4px;">${window.escHtml(p.nota)}</p>` : ''}
-                  </div>
-                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
-                    <span class="clientes-soft-badge">${Array.isArray(p.linhas) ? p.linhas.length : 0} cat.</span>
-                    ${p.aplicada
-                      ? '<span class="clientes-status-badge new">Aplicada</span>'
-                      : (state.canEdit ? `<button class="btn btn-secondary btn-sm" type="button" onclick="window.ClientesPage.aplicarProposta(${p._idx})">Aplicar</button>` : '')}
-                  </div>
-                </div>
-                ${Array.isArray(p.linhas) && p.linhas.length ? `
-                  <div class="clientes-proposal-preview">
-                    <table class="clientes-prices-table">
-                      <thead><tr><th>Categoria</th><th>22 dias</th><th>Valor dia</th><th>Hora</th></tr></thead>
-                      <tbody>
-                        ${p.linhas.slice(0, 5).map(l => `
-                          <tr>
-                            <td>${window.escHtml(l.categoria || '—')}</td>
-                            <td>${formatMoney(l.preco22Dias)}</td>
-                            <td>${formatMoney(l.valorDia)}</td>
-                            <td>${formatMoney(l.precoHora)}</td>
-                          </tr>`).join('')}
-                        ${p.linhas.length > 5 ? `<tr><td colspan="4" style="color:var(--muted);font-size:10px;padding:6px 10px;">…mais ${p.linhas.length - 5} categorias</td></tr>` : ''}
-                      </tbody>
-                    </table>
-                  </div>` : ''}
-              </article>`).join('')}
-          </div>
-        </section>` : '';
-
-      tabContent = `
-        <section class="clientes-section">
-          <div class="clientes-section-head">
-            <h3>Preços atuais</h3>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span class="clientes-soft-badge">${priceEntries.length} cat.</span>
-              ${state.canEdit ? `<button class="btn btn-secondary btn-sm" type="button" onclick="window.ClientesPage.enterEditPrecos()">Editar</button>` : ''}
-            </div>
-          </div>
-          ${pricesTable}
-        </section>
-        ${proposalsHtml}`;
+          ${propostasHtml}
+        </section>`;
     }
 
     else if (tab === 'historico') {
-      const historyHtml = importRevs.length
+      const eventLabel = (r) => {
+        switch (r.tipo) {
+          case 'proposta':       return { label: 'Proposta', cls: 'update' };
+          case 'importacao':     return { label: 'Importação Excel', cls: 'new' };
+          case 'edicao-manual':  return { label: 'Edição manual', cls: 'warning' };
+          default:               return { label: r.tipo || 'Evento', cls: '' };
+        }
+      };
+      const historyHtml = allEvents.length
         ? `<div class="clientes-history-list">
-             ${importRevs.map(r => `
-               <article class="clientes-history-item">
-                 <div class="clientes-history-item-head">
-                   <div>
-                     <h4>${window.fmtDataHora(r.importedAt)}</h4>
-                     <p>${window.escHtml(r.importedByName || 'Utilizador desconhecido')} · ${window.escHtml(r.sourceFile || 'Importação manual')}${r.tipo === 'edicao-manual' ? ' · Edição manual' : ''}</p>
+             ${allEvents.map(r => {
+               const ev = eventLabel(r);
+               const subtitle = r.tipo === 'proposta'
+                 ? (r.referencia || r.nomeProposta || 'Proposta sem nome')
+                 : (r.sourceFile || 'Sem ficheiro');
+               const nCat = Array.isArray(r.linhas) ? r.linhas.length : 0;
+               const isOpen = state.expandedHistorico.has(r._idx);
+               return `
+               <article class="clientes-history-item clientes-collapsible${isOpen ? ' is-open' : ''}">
+                 <div class="clientes-history-item-head clientes-collapsible-trigger" onclick="window.ClientesPage.toggleHistorico(${r._idx})">
+                   <div class="clientes-collapsible-chevron">
+                     <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 7l3 3 3-3"/></svg>
                    </div>
-                   <span class="clientes-soft-badge">${Array.isArray(r.linhas) ? r.linhas.length : 0} cat.</span>
+                   <div style="flex:1;min-width:0;">
+                     <h4>${window.escHtml(subtitle)}${r.aplicada ? ' <span class="clientes-status-badge new" style="margin-left:6px;">Aplicada</span>' : ''}${r.anoVigencia ? ` <span class="clientes-soft-badge" style="margin-left:6px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);">${r.anoVigencia}</span>` : ''}</h4>
+                     <p>${window.fmtDataHora(r.importedAt)} · ${window.escHtml(r.importedByName || 'Utilizador desconhecido')}</p>
+                   </div>
+                   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+                     <span class="clientes-status-badge ${ev.cls}">${ev.label}</span>
+                     <span class="clientes-soft-badge">${nCat} cat.</span>
+                   </div>
                  </div>
-                 <div class="clientes-history-tags">
-                   ${r.propostaDataRaw ? `<span class="clientes-soft-badge">Proposta: ${window.escHtml(r.propostaDataRaw)}</span>` : ''}
-                   <span class="clientes-soft-badge">${Array.isArray(r.linhas) ? r.linhas.filter(l => l.precoHora != null).length : 0} c/ hora</span>
-                   <span class="clientes-soft-badge">${Array.isArray(r.linhas) ? r.linhas.filter(l => l.valorDia != null).length : 0} c/ dia</span>
-                 </div>
-               </article>`).join('')}
+                 ${isOpen ? `
+                 <div class="clientes-collapsible-body">
+                   <div class="clientes-history-tags" style="margin-bottom:${nCat ? '10px' : '0'};">
+                     ${r.propostaDataRaw ? `<span class="clientes-soft-badge">Data: ${window.escHtml(r.propostaDataRaw)}</span>` : ''}
+                     ${r.parentReferencia ? `<span class="clientes-soft-badge">↪ ${window.escHtml(r.parentReferencia)}</span>` : ''}
+                     ${r.atualizadoEm ? `<span class="clientes-soft-badge">Editado ${window.fmtDataHora(r.atualizadoEm)}</span>` : ''}
+                   </div>
+                   ${nCat ? `
+                   <div class="clientes-proposal-preview">
+                     <table class="clientes-prices-table">
+                       <thead><tr><th>Categoria profissional</th><th>Valor/Hora</th><th>Valor/Mês</th></tr></thead>
+                       <tbody>
+                         ${r.linhas.map(l => `
+                           <tr>
+                             <td>${window.escHtml(l.categoria || '—')}</td>
+                             <td>${formatMoney(l.precoHora)}</td>
+                             <td>${formatMoney(l.preco22Dias)}</td>
+                           </tr>`).join('')}
+                       </tbody>
+                     </table>
+                   </div>` : '<p class="clientes-empty-note" style="margin-top:4px;">Sem categorias registadas.</p>'}
+                 </div>` : ''}
+               </article>`;
+             }).join('')}
            </div>`
-        : '<div class="clientes-empty-note">Sem histórico de importações.</div>';
+        : '<div class="clientes-empty-note">Sem eventos no histórico.</div>';
 
       tabContent = `
         <section class="clientes-section">
           <div class="clientes-section-head">
-            <h3>Histórico de importações</h3>
-            <span class="clientes-soft-badge">${importRevs.length} entrada${importRevs.length !== 1 ? 's' : ''}</span>
+            <h3>Histórico completo</h3>
+            <span class="clientes-soft-badge">${allEvents.length} ${allEvents.length === 1 ? 'evento' : 'eventos'}</span>
           </div>
           ${historyHtml}
         </section>`;
@@ -636,21 +838,22 @@
         </button>
       </header>
 
-      ${state.canEdit ? `
+      ${state.canEdit || state.canPropose ? `
       <div class="side-drawer-actions">
-        <button class="btn btn-secondary btn-sm" onclick="window.ClientesPage.enterEditCliente()">
+        ${state.canEdit ? `<button class="btn btn-secondary btn-sm" onclick="window.ClientesPage.enterEditCliente()">
           <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 2l3 3-8 8H3v-3l8-8z"/></svg>
           Editar
-        </button>
-        <button class="btn btn-primary btn-sm" onclick="window.ClientesPage.enterNovaProposta()">
+        </button>` : ''}
+        ${state.canPropose ? `<button class="btn btn-primary btn-sm" onclick="window.ClientesPage.novaProposta()">
           <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v10M3 8h10"/></svg>
           Nova proposta
-        </button>
+        </button>` : ''}
       </div>` : ''}
 
       <nav class="cli-drawer-tabs">
         <button class="cli-tab-btn ${tab === 'detalhe' ? 'active' : ''}" onclick="window.ClientesPage.switchDetailTab('detalhe')">Detalhe</button>
         <button class="cli-tab-btn ${tab === 'precos' ? 'active' : ''}" onclick="window.ClientesPage.switchDetailTab('precos')">Preços</button>
+        <button class="cli-tab-btn ${tab === 'propostas' ? 'active' : ''}" onclick="window.ClientesPage.switchDetailTab('propostas')">Propostas${proposals.length ? ' <span class="clientes-soft-badge" style="margin-left:4px;">' + proposals.length + '</span>' : ''}</button>
         <button class="cli-tab-btn ${tab === 'historico' ? 'active' : ''}" onclick="window.ClientesPage.switchDetailTab('historico')">Histórico</button>
       </nav>
 
@@ -769,7 +972,7 @@
     return Array.from(dom.clienteDetail.querySelectorAll('[data-price-row]')).map(row => ({
       categoria:    row.querySelector('[data-field="categoria"]').value.trim(),
       preco22Dias:  parseNumInput(row.querySelector('[data-field="preco22Dias"]').value),
-      valorDia:     parseNumInput(row.querySelector('[data-field="valorDia"]').value),
+      valorDia:     null,
       precoHora:    parseNumInput(row.querySelector('[data-field="precoHora"]').value),
       obsLinha:     '',
     })).filter(r => r.categoria);
@@ -781,10 +984,9 @@
 
   function priceRowHtml(l, i) {
     return `<tr data-price-row="${i}">
-      <td><input class="form-input" data-field="categoria" value="${window.escHtml(l.categoria || '')}" placeholder="Categoria"></td>
-      <td><input class="form-input" type="number" step="0.01" min="0" data-field="preco22Dias" value="${l.preco22Dias != null ? l.preco22Dias : ''}"></td>
-      <td><input class="form-input" type="number" step="0.01" min="0" data-field="valorDia" value="${l.valorDia != null ? l.valorDia : ''}"></td>
-      <td><input class="form-input" type="number" step="0.01" min="0" data-field="precoHora" value="${l.precoHora != null ? l.precoHora : ''}"></td>
+      <td><input class="form-input" data-field="categoria" value="${window.escHtml(l.categoria || '')}" placeholder="Categoria profissional"></td>
+      <td><input class="form-input" type="number" step="0.01" min="0" data-field="precoHora" value="${l.precoHora != null ? l.precoHora : ''}" placeholder="0.00"></td>
+      <td><input class="form-input" type="number" step="0.01" min="0" data-field="preco22Dias" value="${l.preco22Dias != null ? l.preco22Dias : ''}" placeholder="0.00"></td>
       <td><button class="clientes-row-remove" type="button" onclick="window.ClientesPage.removePriceRow(${i})" title="Remover">×</button></td>
     </tr>`;
   }
@@ -793,7 +995,7 @@
     return `
       <div class="clientes-prices-wrap">
         <table class="clientes-prices-table edit-mode">
-          <thead><tr><th>Categoria</th><th>Preço 22 dias</th><th>Valor dia</th><th>Preço hora</th><th></th></tr></thead>
+          <thead><tr><th>Categoria profissional</th><th>Valor/Hora</th><th>Valor/Mês</th><th></th></tr></thead>
           <tbody>${linhas.map(priceRowHtml).join('')}</tbody>
         </table>
       </div>
@@ -891,10 +1093,12 @@
     const c = getSelected();
     if (!c || !state.canEdit) return;
     state.editMode = 'proposta';
+    const proximoAno = new Date().getFullYear() + 1;
     state.editData = {
       nomeProposta: '',
       dataPropostaRaw: '',
       nota: '',
+      anoVigencia: String(c.anoVigenciaAtual ? c.anoVigenciaAtual + 1 : proximoAno),
       linhas: linhasFromPrecos(c.precosAtuais),
     };
     renderNovaProposta();
@@ -902,12 +1106,14 @@
 
   function syncPropostaData() {
     if (!state.editData || state.editMode !== 'proposta') return;
-    const n = document.getElementById('propostaNome');
-    const d = document.getElementById('propostaData');
+    const n    = document.getElementById('propostaNome');
+    const d    = document.getElementById('propostaData');
     const nota = document.getElementById('propostaNota');
-    if (n) state.editData.nomeProposta = n.value;
-    if (d) state.editData.dataPropostaRaw = d.value;
-    if (nota) state.editData.nota = nota.value;
+    const ano  = document.getElementById('propostaAno');
+    if (n)    state.editData.nomeProposta    = n.value;
+    if (d)    state.editData.dataPropostaRaw = d.value;
+    if (nota) state.editData.nota            = nota.value;
+    if (ano)  state.editData.anoVigencia     = ano.value;
     state.editData.linhas = readPriceRows();
   }
 
@@ -921,7 +1127,10 @@
         <div class="cli-detail-header">
           <div class="cli-avatar xl empresa">${window.escHtml(getAvatarInitials(c))}</div>
           <div class="cli-detail-titleblock">
-            <div class="cli-detail-kicker">Nova proposta para</div>
+            <div class="cli-detail-kicker">Nova proposta</div>
+            <div style="margin-bottom:4px;">
+              <span class="cli-ano-vigencia-badge" id="propostaAnoKicker">${window.escHtml(String(d.anoVigencia))}</span>
+            </div>
             <h2 class="cli-detail-name">${window.escHtml(c.nome || 'Sem nome')}</h2>
           </div>
         </div>
@@ -933,11 +1142,24 @@
         <div class="clientes-edit-grid">
           <label class="clientes-edit-field">
             <span class="field-label">Nome da proposta</span>
-            <input class="form-input" id="propostaNome" value="${window.escHtml(d.nomeProposta)}" placeholder="Ex: Revisão anual 2025">
+            <input class="form-input" id="propostaNome" value="${window.escHtml(d.nomeProposta)}" placeholder="Ex: Revisão anual 2027">
           </label>
           <label class="clientes-edit-field">
             <span class="field-label">Data</span>
             <input class="form-input" type="date" id="propostaData" value="${window.escHtml(d.dataPropostaRaw)}">
+          </label>
+        </div>
+        <div class="clientes-edit-grid" style="margin-top:0;">
+          <label class="clientes-edit-field">
+            <span class="field-label">Ano de vigência</span>
+            <select class="form-input" id="propostaAno"
+              onchange="const k=document.getElementById('propostaAnoKicker');if(k)k.textContent=this.value;"
+>
+              ${[0,1,2].map(offset => {
+                const y = new Date().getFullYear() + offset;
+                return `<option value="${y}"${String(d.anoVigencia) === String(y) ? ' selected' : ''}>${y}</option>`;
+              }).join('')}
+            </select>
           </label>
         </div>
         <label class="clientes-edit-field" style="margin-bottom:16px;">
@@ -979,6 +1201,7 @@
     const nomeProposta    = state.editData.nomeProposta.trim() || 'Proposta sem nome';
     const dataPropostaRaw = state.editData.dataPropostaRaw;
     const nota            = state.editData.nota.trim();
+    const anoVigencia     = Number(state.editData.anoVigencia) || null;
     const linhas          = state.editData.linhas.filter(l => l.categoria.trim());
 
     const btn = document.getElementById('savePropostaBtn');
@@ -986,7 +1209,7 @@
     state.saveBusy = true;
 
     try {
-      await window.ClientesService.criarProposta(c.id, { nomeProposta, dataPropostaRaw, nota, linhas });
+      await window.ClientesService.criarProposta(c.id, { nomeProposta, dataPropostaRaw, nota, anoVigencia, linhas });
       await audit('proposta-criada', c.id, nomeProposta + ' — ' + c.nome);
       state.editMode = null;
       state.editData = null;
@@ -1027,7 +1250,6 @@
 
   function render() {
     state.filtered = getFiltered();
-    renderStats();
     renderOfficeOptions();
     renderList();
 
@@ -1054,12 +1276,17 @@
     renderLoading();
     window.setStatus('A ligar…', '#d97706');
 
+    let firstLoad = true;
     const unsubscribe = window.ClientesService.listenAll({
       onData(clientes) {
         state.clientes = clientes;
         render();
         window.setStatus('✓ Sincronizado', '#16a34a');
         setTimeout(() => window.setStatus(''), 2800);
+        if (firstLoad) {
+          firstLoad = false;
+          autoOpenFromHash();
+        }
       },
       onError(err) {
         console.error(err);
@@ -1075,10 +1302,69 @@
 
   // ---- EXPOSE ----
 
+  function novaProposta() {
+    const c = getSelected();
+    if (!c || !state.canPropose) return;
+    window.location.href = 'proposta-builder.html?cliente=' + encodeURIComponent(c.id);
+  }
+
+  function reabrirProposta(propostaIndex) {
+    const c = getSelected();
+    if (!c) return;
+    window.location.href = 'proposta-builder.html?cliente=' + encodeURIComponent(c.id) +
+      '&proposta=' + encodeURIComponent(propostaIndex);
+  }
+
+  function criarRevisao(propostaIndex) {
+    const c = getSelected();
+    if (!c || !state.canPropose) return;
+    window.location.href = 'proposta-builder.html?cliente=' + encodeURIComponent(c.id) +
+      '&parent=' + encodeURIComponent(propostaIndex);
+  }
+
+  function autoOpenFromHash() {
+    if (!window.location.hash) return;
+    const m = window.location.hash.match(/cliente=([^&]+)/);
+    if (!m) return;
+    const id = decodeURIComponent(m[1]);
+    const exists = state.clientes.some(c => c.id === id);
+    if (exists) {
+      openDetail(id);
+      // Se hash tem tab=propostas|historico|precos|detalhe, usa isso; senão propostas por default
+      const tabMatch = window.location.hash.match(/tab=([a-z]+)/i);
+      const tab = (tabMatch && ['detalhe', 'precos', 'propostas', 'historico'].includes(tabMatch[1])) ? tabMatch[1] : 'propostas';
+      switchDetailTab(tab);
+    }
+  }
+
+  function toggleProposta(idx) {
+    if (state.expandedPropostas.has(idx)) {
+      state.expandedPropostas.delete(idx);
+    } else {
+      state.expandedPropostas.add(idx);
+    }
+    renderDetail();
+  }
+
+  function toggleHistorico(idx) {
+    if (state.expandedHistorico.has(idx)) {
+      state.expandedHistorico.delete(idx);
+    } else {
+      state.expandedHistorico.add(idx);
+    }
+    renderDetail();
+  }
+
   window.ClientesPage = {
-    toggleImportPanel,
+    openNovoClienteModal,
+    closeNovoClienteModal,
+    saveNovoCliente,
     confirmImport,
     cancelImportPreview,
+    openFormatoModal,
+    closeFormatoModal,
+    confirmImportAno,
+    cancelImportAno,
     openDetail,
     closeDetail,
     switchDetailTab,
@@ -1094,6 +1380,13 @@
     removeProposalPriceRow,
     saveProposta,
     aplicarProposta,
+    setViewAno,
+    loadMore,
+    novaProposta,
+    reabrirProposta,
+    criarRevisao,
+    toggleProposta,
+    toggleHistorico,
   };
 
   window.bootProtectedPage({

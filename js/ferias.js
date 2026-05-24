@@ -45,9 +45,7 @@
     const btnTotais = document.getElementById('btnTotaisAdmin');
     if (btnTotais && podeGerir) btnTotais.style.display = '';
     popularEscritorios();
-    if (podeGerir) {
-      document.getElementById('fEscritorioWrap').style.display = '';
-    } else if (profile.escritorio) {
+    if (profile.escritorio) {
       filtroEscritorio = profile.escritorio;
       const sel = document.getElementById('filterEscritorio');
       if (sel) sel.value = profile.escritorio;
@@ -625,9 +623,7 @@
     }
 
     const profile = window.userProfile;
-    const escritorio = isAdmin
-      ? (document.getElementById('fEscritorio').value || window.escritorioAtivo())
-      : window.escritorioAtivo();
+    const escritorio = profile.escritorio || window.escritorioAtivo();
     const data = {
       uid: profile.uid,
       nomeCompleto: profile.nomeCompleto || profile.nome || profile.email,

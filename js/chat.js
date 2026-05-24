@@ -10,6 +10,7 @@ let _currentConversaId = null;
 let _unsubConversas = null;
 let _unsubMensagens = null;
 let _unsubLidos = null;
+let _unsubTyping = null;
 let _allUsers = [];
 let _groupSelected = [];
 let _showInfo = false;
@@ -17,6 +18,12 @@ let _allMsgs = [];
 let _oldestTs = null;
 let _loadingOlder = false;
 let _hasMoreOlder = true;
+let _renderedMsgIds = new Set();
+let _replyingTo = null;       // { msgId, texto, autorNome }
+let _searchActive = false;
+let _searchQuery = '';
+let _typingTimer = null;
+let _lastTypingCallTime = 0;
 
 /* ══════════════════════════════════════════════════════
    UTILITÁRIOS
@@ -157,13 +164,11 @@ function buildConversaItem(c) {
   item.dataset.id = c.id;
 
   if (isGrupo) {
-    // Hash icon for groups
     const hash = document.createElement('div');
     hash.className = 'chat-hash';
     hash.textContent = '#';
     item.appendChild(hash);
   } else {
-    // Avatar with status dot wrap
     const wrap = document.createElement('div');
     wrap.className = 'chat-ava-wrap';
     wrap.appendChild(buildAvatar(nome, uid, 36));
@@ -183,12 +188,77 @@ function buildConversaItem(c) {
     </div>
     <div class="chat-item-row">
       <span class="chat-item-preview">${esc(c.ultimaMensagem || 'Sem mensagens')}</span>
-      ${unread ? '<span class="chat-unread-badge">1</span>' : ''}
+      ${unread ? '<span class="chat-unread-badge"></span>' : ''}
     </div>`;
   item.appendChild(meta);
 
   item.addEventListener('click', () => openConversa(c.id));
   return item;
+}
+
+/* ══════════════════════════════════════════════════════
+   CONSTRUÇÃO DE ELEMENTO DE MENSAGEM
+   ══════════════════════════════════════════════════════ */
+function buildMsgEl(msg, grouped, isGroup, highlight) {
+  const isOwn = msg.autorUid === _uid;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap ' + (isOwn ? 'msg-own' : 'msg-other') + (grouped ? ' grouped' : '');
+  wrap.dataset.msgId = msg.id;
+
+  // Avatar slot
+  const avaSlot = document.createElement('div');
+  avaSlot.className = 'msg-avatar-slot';
+  if (!grouped && !isOwn) avaSlot.appendChild(buildAvatar(msg.autorNome, msg.autorUid, 32));
+  wrap.appendChild(avaSlot);
+
+  // Message body
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  // Floating action toolbar (reply button)
+  const actions = document.createElement('div');
+  actions.className = 'msg-actions';
+  const replyBtn = document.createElement('button');
+  replyBtn.className = 'msg-action-btn';
+  replyBtn.title = 'Responder';
+  replyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>`;
+  replyBtn.addEventListener('click', e => { e.stopPropagation(); setReplyTo(msg); });
+  actions.appendChild(replyBtn);
+  body.appendChild(actions);
+
+  if (!grouped) {
+    const meta = document.createElement('div');
+    meta.className = 'msg-meta';
+    if (isOwn) {
+      meta.innerHTML = `<span class="msg-time">${formatTs(msg.ts)}</span><span class="msg-name">Tu</span>`;
+      meta.style.flexDirection = 'row-reverse';
+    } else {
+      meta.innerHTML = `<span class="msg-name">${esc(msg.autorNome || 'Utilizador')}</span><span class="msg-time">${formatTs(msg.ts)}</span>`;
+    }
+    body.appendChild(meta);
+  }
+
+  // Reply quote context
+  if (msg.replyTo) {
+    const quote = document.createElement('div');
+    quote.className = 'msg-reply-quote';
+    quote.innerHTML = `<span class="reply-quote-name">${esc(msg.replyTo.autorNome || '')}</span><span class="reply-quote-text">${esc((msg.replyTo.texto || '').slice(0, 120))}</span>`;
+    body.appendChild(quote);
+  }
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  let textHtml = esc(msg.texto).replace(/\n/g, '<br>');
+  if (highlight && highlight.length >= 1) {
+    const escapedTerm = esc(highlight).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    textHtml = textHtml.replace(new RegExp(escapedTerm, 'gi'), m => `<mark class="msg-highlight">${m}</mark>`);
+  }
+  bubble.innerHTML = textHtml;
+  body.appendChild(bubble);
+
+  wrap.appendChild(body);
+  return wrap;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -199,9 +269,9 @@ function openConversa(conversaId) {
   const conversa = _conversas.find(c => c.id === conversaId);
 
   // Mobile slide
-  const wrap = document.getElementById('chatWrap');
-  if (!wrap.classList.contains('chat-view-thread')) {
-    wrap.classList.add('chat-view-thread');
+  const chatWrap = document.getElementById('chatWrap');
+  if (!chatWrap.classList.contains('chat-view-thread')) {
+    chatWrap.classList.add('chat-view-thread');
     history.pushState({ chatThread: conversaId }, '');
   }
 
@@ -211,27 +281,47 @@ function openConversa(conversaId) {
   renderThreadHead(conversa);
   renderConversaList(document.getElementById('chatSearch').value);
 
+  // Cleanup previous listeners and state
   if (_unsubMensagens) { _unsubMensagens(); _unsubMensagens = null; }
+  if (_unsubTyping) { _unsubTyping(); _unsubTyping = null; }
+  if (_typingTimer) { clearTimeout(_typingTimer); _typingTimer = null; }
+  clearReply();
   document.getElementById('chatMessages').innerHTML = '';
+  document.getElementById('chatTyping').innerHTML = '';
   _allMsgs = [];
   _oldestTs = null;
   _loadingOlder = false;
   _hasMoreOlder = true;
+  _renderedMsgIds = new Set();
 
+  // If search was active, close it
+  if (_searchActive) {
+    _searchActive = false;
+    _searchQuery = '';
+    document.getElementById('chatSearchBar').style.display = 'none';
+    document.getElementById('chatSearchInput').value = '';
+  }
+
+  let isFirstSnapshot = true;
   _unsubMensagens = ChatService.listenMensagens(conversaId, 40, msgs => {
-    // Merge live snapshot: only add messages not already in _allMsgs
-    if (_allMsgs.length === 0) {
+    if (isFirstSnapshot) {
+      isFirstSnapshot = false;
       _allMsgs = msgs;
+      if (msgs.length > 0) {
+        _oldestTs = msgs[0].ts;
+        if (msgs.length < 40) _hasMoreOlder = false;
+      }
+      renderMensagens(_allMsgs, conversa || { tipo: 'dm' });
+      _renderedMsgIds = new Set(_allMsgs.map(m => m.id));
     } else {
-      const known = new Set(_allMsgs.map(m => m.id));
-      const newOnes = msgs.filter(m => !known.has(m.id));
-      if (newOnes.length) _allMsgs = [..._allMsgs, ...newOnes];
+      const newOnes = msgs.filter(m => !_renderedMsgIds.has(m.id));
+      if (newOnes.length) {
+        const prevMsg = _allMsgs.length ? _allMsgs[_allMsgs.length - 1] : null;
+        _allMsgs = [..._allMsgs, ...newOnes];
+        appendMessages(newOnes, conversa || { tipo: 'dm' }, prevMsg);
+      }
     }
-    if (_allMsgs.length > 0 && _oldestTs === null) {
-      _oldestTs = _allMsgs[0].ts;
-      if (msgs.length < 40) _hasMoreOlder = false;
-    }
-    renderMensagens(_allMsgs, conversa || { tipo: 'dm' });
+
     if (_allMsgs.length) {
       const lastTs = _allMsgs[_allMsgs.length - 1].ts;
       ChatService.markRead(_uid, conversaId, lastTs).catch(() => {});
@@ -240,7 +330,11 @@ function openConversa(conversaId) {
     }
   });
 
-  // Show info panel if open
+  // Typing listener
+  _unsubTyping = ChatService.listenTyping(conversaId, typingUsers => {
+    renderTypingIndicator(typingUsers.filter(t => t.uid !== _uid));
+  });
+
   if (_showInfo) renderInfoPanel(conversa);
 
   setTimeout(() => document.getElementById('chatInput').focus(), 80);
@@ -269,8 +363,7 @@ function renderThreadHead(conversa) {
     hash.textContent = '#';
     head.appendChild(hash);
   } else {
-    const ava = buildAvatar(nome, uid, 36);
-    head.appendChild(ava);
+    head.appendChild(buildAvatar(nome, uid, 36));
   }
 
   // Name + sub
@@ -284,10 +377,18 @@ function renderThreadHead(conversa) {
     <div class="thread-sub">${sub}</div>`;
   head.appendChild(info);
 
-  // Spacer
   const spacer = document.createElement('div');
   spacer.style.flex = '1';
   head.appendChild(spacer);
+
+  // Search toggle btn
+  const searchBtn = document.createElement('button');
+  searchBtn.className = 'head-icon-btn' + (_searchActive ? ' active' : '');
+  searchBtn.id = 'btnToggleSearch';
+  searchBtn.title = 'Pesquisar na conversa';
+  searchBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
+  searchBtn.onclick = toggleThreadSearch;
+  head.appendChild(searchBtn);
 
   // Info toggle btn
   const infoBtn = document.createElement('button');
@@ -320,31 +421,84 @@ function renderInfoPanel(conversa) {
   const nome    = conversaNome(conversa);
   const uid     = conversaUidRef(conversa);
   const isGrupo = conversa.tipo === 'grupo';
+  const isCreator = conversa.criadoPor === _uid;
+  const canManage = window.isAdmin ? window.isAdmin() : false;
 
   if (isGrupo) {
     const memberCount = (conversa.participantes || []).length;
-    body.innerHTML = `
-      <div>
+    body.innerHTML = '';
+
+    // Group name with rename button
+    const nameSection = document.createElement('div');
+    nameSection.id = 'infoGroupNameSection';
+    nameSection.innerHTML = `
+      <div class="chat-info-name-display" id="infoNameDisplay">
         <div class="chat-info-big">#${esc(nome)}</div>
-        <div class="chat-info-sub">${memberCount} participantes</div>
+        ${(isCreator || canManage) ? `<button class="info-rename-btn" id="btnRenameGroup" title="Renomear">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>` : ''}
       </div>
-      <div class="chat-info-section">
-        <div class="chat-info-label">Membros · ${memberCount}</div>
-        ${(conversa.participantes || []).slice(0, 8).map(pUid => {
-          const u = _allUsers.find(x => x.uid === pUid);
-          const uNome = u ? (u.nomeCompleto || u.nome || 'Utilizador') : (pUid === _uid ? 'Tu' : 'Utilizador');
-          return `<div class="chat-member">
-            <div class="msg-ava" style="width:28px;height:28px;background:${uidColor(pUid)};font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Poppins',sans-serif;font-weight:700;flex-shrink:0;">${initials(uNome)}</div>
-            <span>${esc(uNome)}${pUid === _uid ? ' <span style="color:var(--text-4);font-size:11px">(tu)</span>' : ''}</span>
-          </div>`;
-        }).join('')}
-        ${memberCount > 8 ? `<div style="font-size:11.5px;color:var(--text-3);padding-top:2px;">+ ${memberCount - 8} outros</div>` : ''}
-      </div>
-      <div class="chat-info-section">
-        <div class="chat-info-label">Fixados</div>
-        <div style="font-size:12.5px;color:var(--text-3)">Sem mensagens fixadas.</div>
-      </div>`;
+      <div class="chat-info-sub">${memberCount} participantes</div>`;
+    body.appendChild(nameSection);
+
+    if (isCreator || canManage) {
+      document.getElementById('btnRenameGroup').onclick = () => startRenameGroup(conversa);
+    }
+
+    // Members section
+    const membersSection = document.createElement('div');
+    membersSection.className = 'chat-info-section';
+    const membersLabel = document.createElement('div');
+    membersLabel.className = 'chat-info-label';
+    membersLabel.innerHTML = `Membros · ${memberCount}
+      ${(isCreator || canManage) ? `<button class="info-add-member-btn" id="btnAddMember" title="Adicionar membro">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
+        Adicionar
+      </button>` : ''}`;
+    membersSection.appendChild(membersLabel);
+
+    if (isCreator || canManage) {
+      membersLabel.querySelector('#btnAddMember').onclick = () => openAddMemberModal(conversa.id);
+    }
+
+    (conversa.participantes || []).forEach(pUid => {
+      const u = _allUsers.find(x => x.uid === pUid);
+      const uNome = u ? (u.nomeCompleto || u.nome || 'Utilizador') : (pUid === _uid ? ((_profile && _profile.nomeCompleto) || 'Tu') : 'Utilizador');
+      const memberRow = document.createElement('div');
+      memberRow.className = 'chat-member';
+      const ava = document.createElement('div');
+      ava.className = 'msg-ava';
+      ava.style.cssText = `width:28px;height:28px;background:${uidColor(pUid)};font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Poppins',sans-serif;font-weight:700;flex-shrink:0;`;
+      ava.textContent = initials(uNome);
+      memberRow.appendChild(ava);
+      const nameSpan = document.createElement('span');
+      nameSpan.style.flex = '1';
+      nameSpan.innerHTML = `${esc(uNome)}${pUid === _uid ? ' <span style="color:var(--text-4);font-size:11px">(tu)</span>' : ''}`;
+      memberRow.appendChild(nameSpan);
+      if ((isCreator || canManage) && pUid !== _uid) {
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'member-remove-btn';
+        removeBtn.title = 'Remover do grupo';
+        removeBtn.textContent = '✕';
+        removeBtn.onclick = () => doRemoveMember(conversa.id, pUid, uNome);
+        memberRow.appendChild(removeBtn);
+      }
+      membersSection.appendChild(memberRow);
+    });
+    body.appendChild(membersSection);
+
+    // Leave group button
+    const actionsSection = document.createElement('div');
+    actionsSection.className = 'chat-info-section';
+    const leaveBtn = document.createElement('button');
+    leaveBtn.className = 'info-action-btn danger';
+    leaveBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sair do grupo`;
+    leaveBtn.onclick = () => doLeaveGroup(conversa.id);
+    actionsSection.appendChild(leaveBtn);
+    body.appendChild(actionsSection);
+
   } else {
+    // DM info — simplified (removed dead "chamada áudio" button)
     const other = _allUsers.find(u => u.uid === uid);
     const oNome = other ? (other.nomeCompleto || other.nome || 'Utilizador') : 'Utilizador';
     body.innerHTML = `
@@ -359,40 +513,170 @@ function renderInfoPanel(conversa) {
         <div class="chat-info-label">Informação</div>
         <div class="chat-info-row"><span class="muted">Função</span><span>${esc(other?.funcao || '—')}</span></div>
         <div class="chat-info-row"><span class="muted">Escritório</span><span>${esc(other?.escritorio || '—')}</span></div>
-      </div>
-      <div class="chat-info-section">
-        <button class="btn-full">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.65A2 2 0 012 .18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8a16 16 0 006.29 6.29l1.17-1.17a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7a2 2 0 011.72 2.03z"/></svg>
-          Chamada áudio
-        </button>
       </div>`;
+  }
+}
+
+/* ── Renomear grupo ── */
+function startRenameGroup(conversa) {
+  const section = document.getElementById('infoGroupNameSection');
+  if (!section) return;
+  const display = document.getElementById('infoNameDisplay');
+  if (!display) return;
+  const nomeAtual = conversa.nome || '';
+  display.innerHTML = `
+    <div class="chat-info-name-edit">
+      <input class="chat-info-name-input" id="renameInput" value="${esc(nomeAtual)}" maxlength="60">
+      <button class="chat-info-name-save" id="btnSaveRename">Guardar</button>
+      <button class="chat-info-name-cancel" id="btnCancelRename">✕</button>
+    </div>`;
+  const inp = document.getElementById('renameInput');
+  inp.focus();
+  inp.select();
+  document.getElementById('btnSaveRename').onclick = () => saveGroupName(conversa.id, conversa);
+  document.getElementById('btnCancelRename').onclick = () => renderInfoPanel(conversa);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveGroupName(conversa.id, conversa);
+    if (e.key === 'Escape') renderInfoPanel(conversa);
+  });
+}
+
+async function saveGroupName(conversaId, conversa) {
+  const inp = document.getElementById('renameInput');
+  if (!inp) return;
+  const nome = inp.value.trim();
+  if (!nome) return;
+  try {
+    await ChatService.renameGroup(conversaId, nome);
+    // Update local state
+    const idx = _conversas.findIndex(c => c.id === conversaId);
+    if (idx !== -1) _conversas[idx].nome = nome;
+    renderConversaList(document.getElementById('chatSearch').value);
+    const updatedConversa = { ...conversa, nome };
+    renderInfoPanel(updatedConversa);
+    renderThreadHead(updatedConversa);
+  } catch (e) {
+    console.error('[chat] renameGroup error', e);
+    if (typeof window.toast === 'function') window.toast('Erro ao renomear grupo.', 'error');
+  }
+}
+
+/* ── Adicionar membros ── */
+function openAddMemberModal(conversaId) {
+  const modal = document.getElementById('addMemberModal');
+  if (!modal) return;
+  modal.classList.add('open');
+  modal.dataset.conversaId = conversaId;
+  renderAddMemberList('', conversaId);
+  setTimeout(() => document.getElementById('addMemberSearch').focus(), 80);
+}
+
+function closeAddMemberModal() {
+  const modal = document.getElementById('addMemberModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  document.getElementById('addMemberSearch').value = '';
+}
+
+function renderAddMemberList(search, conversaId) {
+  const el = document.getElementById('addMemberList');
+  if (!el) return;
+  const conversaIdToUse = conversaId || document.getElementById('addMemberModal').dataset.conversaId;
+  const conversa = _conversas.find(c => c.id === conversaIdToUse);
+  const existing = new Set((conversa && conversa.participantes) || []);
+
+  const q = (search || '').toLowerCase().trim();
+  const users = _allUsers.filter(u => {
+    if (existing.has(u.uid)) return false;
+    const nome = (u.nomeCompleto || u.nome || '').toLowerCase();
+    return !q || nome.includes(q);
+  });
+
+  if (!users.length) {
+    el.innerHTML = '<div class="picker-empty">Sem utilizadores para adicionar.</div>';
+    return;
+  }
+
+  el.innerHTML = '';
+  users.slice(0, 20).forEach(u => {
+    const nome = u.nomeCompleto || u.nome || 'Utilizador';
+    const row = document.createElement('div');
+    row.className = 'picker-row';
+    row.appendChild(buildAvatar(nome, u.uid, 32));
+    const nameEl = document.createElement('span');
+    nameEl.className = 'picker-name';
+    nameEl.textContent = nome;
+    if (u.funcao) {
+      const sub = document.createElement('span');
+      sub.className = 'picker-sub';
+      sub.textContent = u.funcao;
+      nameEl.appendChild(sub);
+    }
+    row.appendChild(nameEl);
+    row.onclick = async () => {
+      row.style.opacity = '.5';
+      row.style.pointerEvents = 'none';
+      try {
+        await ChatService.addGroupMembers(conversaIdToUse, [u.uid]);
+        closeAddMemberModal();
+      } catch (e) {
+        console.error('[chat] addGroupMembers error', e);
+        if (typeof window.toast === 'function') window.toast('Erro ao adicionar membro.', 'error');
+        row.style.opacity = '';
+        row.style.pointerEvents = '';
+      }
+    };
+    el.appendChild(row);
+  });
+}
+
+async function doRemoveMember(conversaId, uid, nome) {
+  if (!confirm(`Remover ${nome || 'este membro'} do grupo?`)) return;
+  try {
+    await ChatService.removeMember(conversaId, uid);
+  } catch (e) {
+    console.error('[chat] removeMember error', e);
+    if (typeof window.toast === 'function') window.toast('Erro ao remover membro.', 'error');
+  }
+}
+
+async function doLeaveGroup(conversaId) {
+  if (!confirm('Sair deste grupo? Não poderás voltar a ver as mensagens.')) return;
+  try {
+    await ChatService.removeMember(conversaId, _uid);
+    closeThread();
+  } catch (e) {
+    console.error('[chat] leaveGroup error', e);
+    if (typeof window.toast === 'function') window.toast('Erro ao sair do grupo.', 'error');
   }
 }
 
 /* ── Fechar thread (mobile back) ── */
 function closeThread() {
+  if (_unsubMensagens) { _unsubMensagens(); _unsubMensagens = null; }
+  if (_unsubTyping) { _unsubTyping(); _unsubTyping = null; }
+  if (_typingTimer) { clearTimeout(_typingTimer); _typingTimer = null; }
+  ChatService.clearTyping(_currentConversaId, _uid).catch(() => {});
   _currentConversaId = null;
   document.getElementById('chatWrap').classList.remove('chat-view-thread');
-  if (_unsubMensagens) { _unsubMensagens(); _unsubMensagens = null; }
   document.getElementById('chatEmpty').style.display = 'flex';
   document.getElementById('threadInner').style.display = 'none';
+  clearReply();
   renderConversaList(document.getElementById('chatSearch').value);
 }
 
 /* ══════════════════════════════════════════════════════
-   RENDER — MENSAGENS
+   RENDER — MENSAGENS (full re-render)
    ══════════════════════════════════════════════════════ */
 function renderMensagens(msgs, conversa, skipScroll) {
   const el = document.getElementById('chatMessages');
   const isGroup = conversa && conversa.tipo === 'grupo';
   el.innerHTML = '';
+  _renderedMsgIds = new Set();
   let lastDay = null;
 
   msgs.forEach((msg, i) => {
-    const isOwn  = msg.autorUid === _uid;
     const dayKey = new Date(msg.ts).toDateString();
-
-    // Day separator
     if (dayKey !== lastDay) {
       lastDay = dayKey;
       const sep = document.createElement('div');
@@ -401,47 +685,56 @@ function renderMensagens(msgs, conversa, skipScroll) {
       el.appendChild(sep);
     }
 
-    // Group consecutive messages from same sender (same minute)
     const prev = msgs[i - 1];
     const prevMin = prev ? Math.floor(prev.ts / 60000) : -1;
     const currMin = Math.floor(msg.ts / 60000);
     const grouped = prev && prev.autorUid === msg.autorUid && prevMin === currMin;
 
-    const wrap = document.createElement('div');
-    wrap.className = 'msg-wrap ' + (isOwn ? 'msg-own' : 'msg-other') + (grouped ? ' grouped' : '');
-
-    // Avatar slot
-    const avaSlot = document.createElement('div');
-    avaSlot.className = 'msg-avatar-slot';
-    if (!grouped && !isOwn) avaSlot.appendChild(buildAvatar(msg.autorNome, msg.autorUid, 32));
-    wrap.appendChild(avaSlot);
-
-    // Message body
-    const body = document.createElement('div');
-    body.className = 'msg-body';
-
-    if (!grouped) {
-      const meta = document.createElement('div');
-      meta.className = 'msg-meta';
-      if (isOwn) {
-        meta.innerHTML = `<span class="msg-time">${formatTs(msg.ts)}</span><span class="msg-name">Tu</span>`;
-        meta.style.flexDirection = 'row-reverse';
-      } else {
-        meta.innerHTML = `<span class="msg-name">${esc(msg.autorNome || 'Utilizador')}</span><span class="msg-time">${formatTs(msg.ts)}</span>`;
-      }
-      body.appendChild(meta);
-    }
-
-    const bubble = document.createElement('div');
-    bubble.className = 'msg-bubble';
-    bubble.innerHTML = esc(msg.texto).replace(/\n/g, '<br>');
-    body.appendChild(bubble);
-
-    wrap.appendChild(body);
-    el.appendChild(wrap);
+    el.appendChild(buildMsgEl(msg, grouped, isGroup, _searchQuery));
+    _renderedMsgIds.add(msg.id);
   });
 
   if (!skipScroll) scrollToBottom(true);
+}
+
+/* ══════════════════════════════════════════════════════
+   APPEND MESSAGES — incremental (só novas mensagens)
+   ══════════════════════════════════════════════════════ */
+function appendMessages(newMsgs, conversa, prevMsg) {
+  if (!newMsgs.length) return;
+  const el = document.getElementById('chatMessages');
+  const isGroup = conversa && conversa.tipo === 'grupo';
+
+  let lastDay = prevMsg ? new Date(prevMsg.ts).toDateString() : null;
+  let lastAuthorUid = prevMsg ? prevMsg.autorUid : null;
+  let lastMin = prevMsg ? Math.floor(prevMsg.ts / 60000) : -1;
+
+  newMsgs.forEach(msg => {
+    const dayKey = new Date(msg.ts).toDateString();
+    if (dayKey !== lastDay) {
+      lastDay = dayKey;
+      const sep = document.createElement('div');
+      sep.className = 'msg-day-sep';
+      sep.textContent = formatMsgDay(msg.ts);
+      el.appendChild(sep);
+    }
+
+    const currMin = Math.floor(msg.ts / 60000);
+    const grouped = lastAuthorUid === msg.autorUid && lastMin === currMin;
+    lastAuthorUid = msg.autorUid;
+    lastMin = currMin;
+
+    el.appendChild(buildMsgEl(msg, grouped, isGroup, _searchQuery));
+    _renderedMsgIds.add(msg.id);
+  });
+
+  // Only scroll to bottom if user was already near bottom
+  scrollToBottom(false);
+
+  // Push notification for messages from others while tab is hidden
+  newMsgs.forEach(msg => {
+    if (msg.autorUid !== _uid) showNotification(conversa, msg);
+  });
 }
 
 /* ══════════════════════════════════════════════════════
@@ -484,6 +777,118 @@ async function loadOlderMessages() {
 }
 
 /* ══════════════════════════════════════════════════════
+   TYPING INDICATOR
+   ══════════════════════════════════════════════════════ */
+function handleInputTyping() {
+  if (!_currentConversaId) return;
+  const now = Date.now();
+  if (_typingTimer) clearTimeout(_typingTimer);
+  // Throttle: só escreve no Firestore se passaram mais de 3s
+  if (now - _lastTypingCallTime > 3000) {
+    _lastTypingCallTime = now;
+    ChatService.setTyping(_currentConversaId, _uid).catch(() => {});
+  }
+  // Apaga após 4s de inatividade
+  _typingTimer = setTimeout(() => {
+    _typingTimer = null;
+    ChatService.clearTyping(_currentConversaId, _uid).catch(() => {});
+  }, 4000);
+}
+
+function renderTypingIndicator(typingUsers) {
+  const el = document.getElementById('chatTyping');
+  if (!el) return;
+  if (!typingUsers.length) { el.innerHTML = ''; return; }
+
+  const names = typingUsers.map(t => {
+    const u = _allUsers.find(x => x.uid === t.uid);
+    return u ? (u.nomeCompleto || u.nome || 'Alguém').split(' ')[0] : 'Alguém';
+  });
+
+  let text;
+  if (names.length === 1) text = `${names[0]} está a escrever`;
+  else if (names.length === 2) text = `${names[0]} e ${names[1]} estão a escrever`;
+  else text = 'Vários utilizadores estão a escrever';
+
+  el.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div><span>${esc(text)}…</span>`;
+}
+
+/* ══════════════════════════════════════════════════════
+   REPLY / QUOTE
+   ══════════════════════════════════════════════════════ */
+function setReplyTo(msg) {
+  _replyingTo = { msgId: msg.id, texto: msg.texto, autorNome: msg.autorNome || 'Utilizador' };
+  document.getElementById('replyToName').textContent = msg.autorUid === _uid ? 'ti' : (msg.autorNome || 'Utilizador');
+  document.getElementById('replyToText').textContent = (msg.texto || '').slice(0, 100);
+  document.getElementById('chatReplyBar').style.display = '';
+  document.getElementById('chatInput').focus();
+}
+
+function clearReply() {
+  _replyingTo = null;
+  const bar = document.getElementById('chatReplyBar');
+  if (bar) bar.style.display = 'none';
+  const nameEl = document.getElementById('replyToName');
+  const textEl = document.getElementById('replyToText');
+  if (nameEl) nameEl.textContent = '';
+  if (textEl) textEl.textContent = '';
+}
+
+/* ══════════════════════════════════════════════════════
+   PESQUISA DENTRO DA CONVERSA
+   ══════════════════════════════════════════════════════ */
+function toggleThreadSearch() {
+  _searchActive = !_searchActive;
+  const bar = document.getElementById('chatSearchBar');
+  const btn = document.getElementById('btnToggleSearch');
+  bar.style.display = _searchActive ? '' : 'none';
+  if (btn) btn.classList.toggle('active', _searchActive);
+  if (_searchActive) {
+    document.getElementById('chatSearchInput').focus();
+  } else {
+    _searchQuery = '';
+    document.getElementById('chatSearchInput').value = '';
+    // Re-render without highlight
+    const conversa = _conversas.find(c => c.id === _currentConversaId);
+    renderMensagens(_allMsgs, conversa || { tipo: 'dm' });
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   PUSH NOTIFICATIONS
+   ══════════════════════════════════════════════════════ */
+function initNotifications() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    // Pede permissão após interação com o chat (primeira mensagem enviada)
+  }
+}
+
+function requestNotificationPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().catch(() => {});
+  }
+}
+
+function showNotification(conversa, msg) {
+  if (!document.hidden) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (!msg || msg.autorUid === _uid) return;
+
+  const nome = conversaNome(conversa);
+  const body = `${msg.autorNome || 'Utilizador'}: ${(msg.texto || '').slice(0, 80)}`;
+  try {
+    const n = new Notification(nome, { body, tag: conversa.id, icon: 'favicon.ico' });
+    n.onclick = () => {
+      window.focus();
+      if (conversa) openConversa(conversa.id);
+      n.close();
+    };
+  } catch (_) {}
+}
+
+/* ══════════════════════════════════════════════════════
    ENVIAR MENSAGEM
    ══════════════════════════════════════════════════════ */
 function sendMessage() {
@@ -495,10 +900,21 @@ function sendMessage() {
   input.style.height = 'auto';
   updateSendBtn();
 
+  // Limpar typing e reply
+  if (_typingTimer) { clearTimeout(_typingTimer); _typingTimer = null; }
+  ChatService.clearTyping(_currentConversaId, _uid).catch(() => {});
+  const replyTo = _replyingTo ? { ..._replyingTo } : null;
+  clearReply();
+
+  // Pedir permissão de notificações na primeira mensagem enviada
+  requestNotificationPermission();
+
   const nome = _profile ? (_profile.nomeCompleto || _profile.nome || 'Utilizador') : 'Utilizador';
-  ChatService.sendMensagem(_currentConversaId, texto, _uid, nome)
+  ChatService.sendMensagem(_currentConversaId, texto, _uid, nome, replyTo)
     .then(() => scrollToBottom(true))
-    .catch(err => console.error('[chat] send error', err));
+    .catch(() => {
+      if (typeof window.toast === 'function') window.toast('Erro ao enviar mensagem. Tenta novamente.', 'error');
+    });
 }
 
 function updateSendBtn() {
@@ -629,6 +1045,7 @@ async function doCreateGroup() {
     openConversa(id);
   } catch(e) {
     console.error('[chat] createGroup error', e);
+    if (typeof window.toast === 'function') window.toast('Erro ao criar grupo. Tenta novamente.', 'error');
     btn.disabled = false;
     btn.textContent = 'Criar grupo';
   }
@@ -641,9 +1058,9 @@ window.bootProtectedPage({ activePage:'chat', moduleId:'chat' }, ({ profile }) =
   _profile = profile;
   _uid = (profile && profile.uid) || (window.currentUser && window.currentUser.uid) || '';
   const chatList = document.getElementById('chatList');
-  if (chatList) {
-    chatList.innerHTML = '<div class="chat-list-empty">A carregar conversas...</div>';
-  }
+  if (chatList) chatList.innerHTML = '<div class="chat-list-empty">A carregar conversas...</div>';
+
+  initNotifications();
 
   function refreshUsers() {
     ChatService.loadUtilizadores()
@@ -654,7 +1071,8 @@ window.bootProtectedPage({ activePage:'chat', moduleId:'chat' }, ({ profile }) =
       .catch(err => console.warn('[chat] loadUtilizadores error', err));
   }
   refreshUsers();
-  setInterval(refreshUsers, 120000);
+  // Refresh silencioso a cada 10 min (cache já trata do Firestore)
+  setInterval(refreshUsers, 600000);
 
   _unsubLidos = ChatService.listenUnreadCounts(_uid, lidos => {
     _lidos = lidos;
@@ -664,9 +1082,14 @@ window.bootProtectedPage({ activePage:'chat', moduleId:'chat' }, ({ profile }) =
   _unsubConversas = ChatService.listenConversas(_uid, conversas => {
     _conversas = conversas;
     renderConversaList(document.getElementById('chatSearch').value);
+    // Atualiza info panel se aberto
+    if (_showInfo && _currentConversaId) {
+      const c = _conversas.find(x => x.id === _currentConversaId);
+      if (c) renderInfoPanel(c);
+    }
   });
 
-  // Search
+  // Pesquisa na sidebar
   document.getElementById('chatSearch').addEventListener('input', e => {
     renderConversaList(e.target.value);
   });
@@ -696,23 +1119,18 @@ window.bootProtectedPage({ activePage:'chat', moduleId:'chat' }, ({ profile }) =
   document.getElementById('btnCreateGroup').addEventListener('click', doCreateGroup);
   document.getElementById('btnCancelGroup').addEventListener('click', closeNewChatModal);
   document.getElementById('groupName').addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      doCreateGroup();
-    }
+    if (e.key === 'Enter') { e.preventDefault(); doCreateGroup(); }
   });
 
-  // Attachments are not implemented yet: keep users informed instead of a dead button.
+  // Botão annexos (ainda não implementado)
   const attachBtn = document.querySelector('.attach-btn');
   if (attachBtn) {
     attachBtn.addEventListener('click', () => {
-      if (typeof window.toast === 'function') {
-        window.toast('Anexos no chat estao a caminho.');
-      }
+      if (typeof window.toast === 'function') window.toast('Anexos estão a caminho numa próxima versão.');
     });
   }
 
-  // Composer
+  // Composer — typing e envio
   const chatInput = document.getElementById('chatInput');
   chatInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -721,8 +1139,35 @@ window.bootProtectedPage({ activePage:'chat', moduleId:'chat' }, ({ profile }) =
     chatInput.style.height = 'auto';
     chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + 'px';
     updateSendBtn();
+    handleInputTyping();
   });
   document.getElementById('btnSend').addEventListener('click', sendMessage);
+
+  // Cancelar reply
+  document.getElementById('btnCancelReply').addEventListener('click', clearReply);
+
+  // Pesquisa dentro da conversa
+  document.getElementById('chatSearchInput').addEventListener('input', e => {
+    _searchQuery = e.target.value.trim();
+    const conversa = _conversas.find(c => c.id === _currentConversaId);
+    const filtered = _searchQuery
+      ? _allMsgs.filter(m => m.texto && m.texto.toLowerCase().includes(_searchQuery.toLowerCase()))
+      : _allMsgs;
+    renderMensagens(filtered, conversa || { tipo: 'dm' });
+  });
+  document.getElementById('btnCloseSearch').addEventListener('click', () => {
+    _searchActive = true; // toggleThreadSearch vai inverter para false
+    toggleThreadSearch();
+  });
+
+  // Modal de adicionar membro
+  document.getElementById('btnCloseAddMember').addEventListener('click', closeAddMemberModal);
+  document.getElementById('addMemberModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('addMemberModal')) closeAddMemberModal();
+  });
+  document.getElementById('addMemberSearch').addEventListener('input', e => {
+    renderAddMemberList(e.target.value);
+  });
 
   // Scroll-up para carregar mensagens anteriores
   document.getElementById('chatMessages').addEventListener('scroll', function () {
@@ -735,19 +1180,27 @@ window.bootProtectedPage({ activePage:'chat', moduleId:'chat' }, ({ profile }) =
   });
 
   window.addEventListener('beforeunload', () => {
+    if (_currentConversaId) ChatService.clearTyping(_currentConversaId, _uid).catch(() => {});
     if (_unsubConversas) _unsubConversas();
     if (_unsubMensagens) _unsubMensagens();
     if (_unsubLidos)     _unsubLidos();
+    if (_unsubTyping)    _unsubTyping();
   });
 
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
 
+    const addMemberModal = document.getElementById('addMemberModal');
+    if (addMemberModal && addMemberModal.classList.contains('open')) {
+      closeAddMemberModal(); return;
+    }
+
     const newChatModal = document.getElementById('newChatModal');
     if (newChatModal && newChatModal.classList.contains('open')) {
-      closeNewChatModal();
-      return;
+      closeNewChatModal(); return;
     }
+
+    if (_searchActive) { toggleThreadSearch(); return; }
 
     if (_showInfo) {
       _showInfo = false;
@@ -757,6 +1210,8 @@ window.bootProtectedPage({ activePage:'chat', moduleId:'chat' }, ({ profile }) =
       if (btn) btn.classList.remove('active');
       return;
     }
+
+    if (_replyingTo) { clearReply(); return; }
 
     if (document.getElementById('chatWrap').classList.contains('chat-view-thread')) {
       closeThread();

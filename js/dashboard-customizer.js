@@ -10,13 +10,13 @@
   ];
 
   const KPI_DEFAULTS = [
-    { id: 'activas', label: 'Tarefas activas', className: 'k-total' },
-    { id: 'urgentes', label: 'Urgentes', className: 'k-urgente' },
-    { id: 'progresso', label: 'Em progresso', className: 'k-progresso' },
-    { id: 'pendentes', label: 'Pendentes', className: 'k-pendente' },
-    { id: 'concluidas', label: 'Concluidas', className: 'k-concluido' },
-    { id: 'comunicados', label: 'Comunicados', className: 'k-com' },
-    { id: 'admissoes', label: 'Admissoes', className: 'k-adm' },
+    { id: 'activas',     label: 'Tarefas activas', className: 'k-total',     source: 'tasks',       tsField: 'criadaEm', polarity: 'bad-up' },
+    { id: 'urgentes',    label: 'Urgentes',        className: 'k-urgente',   source: 'tasks',       tsField: 'criadaEm', polarity: 'bad-up', filter: (t) => t.prioridade === 'urgente' },
+    { id: 'progresso',   label: 'Em progresso',    className: 'k-progresso', source: 'tasks',       tsField: 'criadaEm', polarity: 'neutral' },
+    { id: 'pendentes',   label: 'Pendentes',       className: 'k-pendente',  source: 'tasks',       tsField: 'criadaEm', polarity: 'bad-up' },
+    { id: 'concluidas',  label: 'Concluidas',      className: 'k-concluido', source: 'tasks',       tsField: 'criadaEm', polarity: 'good-up' },
+    { id: 'comunicados', label: 'Comunicados',     className: 'k-com',       source: 'comunicados', tsField: 'criadoEm', polarity: 'neutral' },
+    { id: 'admissoes',   label: 'Admissoes',       className: 'k-adm',       source: 'admissoes',   tsField: 'criadoEm', polarity: 'neutral' },
   ];
 
   const THEME_PRESETS = [
@@ -359,6 +359,104 @@
     `).join('');
   }
 
+  // ── KPI TREND DATA ──────────────────────────────────────────────
+  const SERIES_DAYS = 14;
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  let trendData = { tasks: [], comunicados: [], admissoes: [] };
+  let trendLoaded = false;
+  let trendLoading = false;
+
+  function dayStartTs(ts) {
+    const d = new Date(ts);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  }
+
+  function buildSeries(items, tsField, days) {
+    const today = new Date();
+    const startTs = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime() - (days - 1) * DAY_MS;
+    const buckets = new Array(days).fill(0);
+    items.forEach(item => {
+      const ts = item && item[tsField];
+      if (!ts) return;
+      const idx = Math.floor((dayStartTs(ts) - startTs) / DAY_MS);
+      if (idx >= 0 && idx < days) buckets[idx]++;
+    });
+    return buckets;
+  }
+
+  function computeDelta(series) {
+    if (!series || series.length < 14) return { value: null, pct: null };
+    const recent = series.slice(7).reduce((a, b) => a + b, 0);
+    const prior  = series.slice(0, 7).reduce((a, b) => a + b, 0);
+    if (prior === 0) {
+      if (recent === 0) return { value: 0, pct: 0 };
+      return { value: recent, pct: null };
+    }
+    return { value: recent - prior, pct: ((recent - prior) / prior) * 100 };
+  }
+
+  function sparklineSVG(series) {
+    if (!series || !series.length) return '';
+    const W = 84, H = 26;
+    const max = Math.max(1, ...series);
+    const n = series.length;
+    const xStep = W / (n - 1);
+    const pts = series.map((v, i) => [i * xStep, H - (v / max) * (H - 4) - 2]);
+    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    const area = `${line} L${W},${H} L0,${H} Z`;
+    const dots = pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="1.1" class="kpi-spark-dot"/>`).join('');
+    return `<svg class="kpi-spark" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="none" aria-hidden="true">`
+      + `<path d="${area}" class="kpi-spark-area"/>`
+      + `<path d="${line}" class="kpi-spark-line"/>`
+      + dots
+      + `</svg>`;
+  }
+
+  function deltaChip(delta, polarity) {
+    if (delta.value === null) return '';
+    if (delta.pct === null) {
+      const sign = delta.value > 0 ? '+' : '';
+      return `<span class="kpi-delta neutral" title="Sem actividade na semana anterior">${sign}${delta.value} esta sem.</span>`;
+    }
+    if (delta.pct === 0) {
+      return `<span class="kpi-delta flat" title="Igual a semana anterior">= 0%</span>`;
+    }
+    const isUp = delta.pct > 0;
+    let tone = 'neutral';
+    if (polarity === 'good-up') tone = isUp ? 'good' : 'bad';
+    else if (polarity === 'bad-up') tone = isUp ? 'bad' : 'good';
+    const arrow = isUp ? '▲' : '▼';
+    const pct = Math.abs(delta.pct);
+    const pctStr = pct >= 100 ? '' + Math.round(pct) : pct < 10 ? pct.toFixed(1) : '' + Math.round(pct);
+    const sign = isUp ? '+' : '-';
+    return `<span class="kpi-delta ${tone}" title="${sign}${Math.abs(delta.value)} novas vs semana anterior">${arrow} ${pctStr}%</span>`;
+  }
+
+  async function loadKpiTrendData() {
+    if (trendLoading || trendLoaded) return;
+    trendLoading = true;
+    const db = firebase.firestore();
+    const since = Date.now() - SERIES_DAYS * DAY_MS;
+    try {
+      const [tT, tC, tA] = await Promise.all([
+        db.collection('tarefas_todo').where('criadaEm', '>=', since).get().catch(() => ({ docs: [] })),
+        db.collection('comunicados').where('criadoEm', '>=', since).get().catch(() => ({ docs: [] })),
+        db.collection('admissoes').where('criadoEm', '>=', since).get().catch(() => ({ docs: [] })),
+      ]);
+      trendData = {
+        tasks: tT.docs.map(d => ({ id: d.id, ...d.data() })),
+        comunicados: tC.docs.map(d => ({ id: d.id, ...d.data() })),
+        admissoes: tA.docs.map(d => ({ id: d.id, ...d.data() })),
+      };
+      trendLoaded = true;
+      if (typeof window.renderKPIs === 'function') window.renderKPIs();
+    } catch (e) {
+      console.warn('[dashboard-customizer] Falha a carregar tendencia KPI:', e);
+    } finally {
+      trendLoading = false;
+    }
+  }
+
   window.renderKPIs = function() {
     const filtT = (escritorioAtivoDash && escritorioAtivoDash !== 'todos')
       ? tasks.filter(t => matchEscritorioDoc(t, escritorioAtivoDash))
@@ -372,13 +470,23 @@
 
     const activas = filtT.filter(t => t.estado !== 'concluido' && t.estado !== 'cancelado');
     const values = {
-      activas: { value: activas.length, sub: `${tasks.length} no total` },
-      urgentes: { value: activas.filter(t => t.prioridade === 'urgente').length, sub: 'requerem atencao' },
-      progresso: { value: activas.filter(t => t.estado === 'progresso').length, sub: 'a ser trabalhadas' },
-      pendentes: { value: activas.filter(t => t.estado === 'pendente').length, sub: 'aguardam resposta' },
-      concluidas: { value: filtT.filter(t => t.estado === 'concluido').length, sub: 'total historico' },
+      activas:     { value: activas.length, sub: `${tasks.length} no total` },
+      urgentes:    { value: activas.filter(t => t.prioridade === 'urgente').length, sub: 'requerem atencao' },
+      progresso:   { value: activas.filter(t => t.estado === 'progresso').length, sub: 'a ser trabalhadas' },
+      pendentes:   { value: activas.filter(t => t.estado === 'pendente').length, sub: 'aguardam resposta' },
+      concluidas:  { value: filtT.filter(t => t.estado === 'concluido').length, sub: 'total historico' },
       comunicados: { value: filtC.filter(c => !c.arquivado).length, sub: 'activos' },
-      admissoes: { value: filtA.filter(a => a.estado !== 'concluido' && a.estado !== 'cancelado').length, sub: 'em processamento' },
+      admissoes:   { value: filtA.filter(a => a.estado !== 'concluido' && a.estado !== 'cancelado').length, sub: 'em processamento' },
+    };
+
+    const trendForKpi = (kpi) => {
+      const raw = trendData[kpi.source] || [];
+      const byOffice = (escritorioAtivoDash && escritorioAtivoDash !== 'todos')
+        ? raw.filter(it => kpi.source === 'comunicados'
+            ? matchComunicadoEscritorioDash(it, escritorioAtivoDash)
+            : matchEscritorioDoc(it, escritorioAtivoDash))
+        : raw;
+      return kpi.filter ? byOffice.filter(kpi.filter) : byOffice;
     };
 
     const visible = state.kpis.order
@@ -388,13 +496,31 @@
 
     const row = document.getElementById('kpiRow');
     if (!row) return;
-    row.innerHTML = visible.map(kpi => `
-      <div class="kpi-card ${kpi.className} ${state.kpis.highlighted.includes(kpi.id) ? 'kpi-highlighted' : ''}">
-        <div class="kpi-val">${values[kpi.id].value}</div>
-        <div class="kpi-lbl">${kpi.label}</div>
-        <div class="kpi-sub">${values[kpi.id].sub}</div>
-      </div>
-    `).join('');
+
+    row.innerHTML = visible.map(kpi => {
+      const series = buildSeries(trendForKpi(kpi), kpi.tsField, SERIES_DAYS);
+      const delta  = computeDelta(series);
+      const spark  = trendLoaded ? sparklineSVG(series) : '<span class="kpi-spark-placeholder"></span>';
+      const chip   = trendLoaded ? deltaChip(delta, kpi.polarity) : '';
+      const highlighted = state.kpis.highlighted.includes(kpi.id) ? 'kpi-highlighted' : '';
+      return `
+        <div class="kpi-card ${kpi.className} ${highlighted}">
+          <div class="kpi-card-head">
+            <div class="kpi-lbl">${kpi.label}</div>
+            ${spark}
+          </div>
+          <div class="kpi-val-row">
+            <div class="kpi-val">${values[kpi.id].value}</div>
+            ${chip}
+          </div>
+          <div class="kpi-sub">${values[kpi.id].sub}</div>
+        </div>
+      `;
+    }).join('');
+
+    if (!trendLoaded && !trendLoading) {
+      loadKpiTrendData();
+    }
   };
 
   document.addEventListener('authReady', ({ detail }) => {
