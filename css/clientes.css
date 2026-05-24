@@ -19,105 +19,51 @@ html.dark {
   max-width: 1320px;
 }
 
-.header-row {
-  margin-bottom: 18px;
-}
-
-/* ── KPI Stats ─────────────────────────────────────────────── */
-.cli-stats {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-@media (max-width: 900px) {
-  .cli-stats { grid-template-columns: repeat(3, 1fr); }
-}
-
-@media (max-width: 540px) {
-  .cli-stats { grid-template-columns: repeat(2, 1fr); }
-}
-
-.cli-stat {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  padding: 14px 16px;
-  box-shadow: var(--shadow-sm);
-}
-
-.cli-stat-lbl {
-  font-size: 10px;
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  font-weight: 600;
-  margin-bottom: 5px;
-}
-
-.cli-stat-val {
-  font-family: 'Poppins', sans-serif;
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -.03em;
-  color: var(--text);
-  line-height: 1;
-}
-
-/* ── Import Panel ──────────────────────────────────────────── */
-.clientes-import-panel {
-  margin-bottom: 18px;
-}
-
-.clientes-import-panel .panel-title {
-  align-items: center;
-}
-
-.clientes-import-hint {
-  margin-left: auto;
-  font-size: 10px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.clientes-import-drop {
+/* ── Selector de ano (aba Preços) ──────────────────────────── */
+.cli-ano-selector {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 20px 22px;
-  border: 1px dashed color-mix(in srgb, var(--accent) 24%, var(--border));
-  border-radius: 16px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--blue-bg) 82%, var(--surface)) 0%, var(--surface) 62%),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 46%);
-  transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: fit-content;
 }
 
-.clientes-import-drop.drag {
-  border-color: var(--accent);
-  transform: translateY(-1px);
-  box-shadow: 0 14px 34px rgba(2,132,199,.08);
+.cli-ano-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
 }
-
-.clientes-import-drop input[type="file"] {
-  display: none;
-}
-
-.clientes-import-copy {
-  min-width: 0;
-}
-
-.clientes-import-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
+.cli-ano-btn:hover { background: var(--surface); color: var(--text); }
+.cli-ano-btn.active {
+  background: var(--surface);
+  color: var(--accent);
   font-weight: 700;
-  letter-spacing: -.02em;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
 }
 
-.clientes-import-copy p,
+.cli-ano-current-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green, #16a34a);
+  flex-shrink: 0;
+}
+
 .clientes-import-status p {
   margin-top: 5px;
   font-size: 11px;
@@ -126,7 +72,7 @@ html.dark {
 }
 
 .clientes-import-status {
-  margin-top: 14px;
+  margin-bottom: 14px;
 }
 
 .clientes-import-preview {
@@ -352,6 +298,61 @@ html.dark {
   color: var(--text-3);
   text-transform: uppercase;
   letter-spacing: .06em;
+}
+
+/* ── Modal estrutura (head/body/foot) ──────────────────────── */
+.modal-head {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+.modal-head h3 {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  flex: 1;
+}
+.modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+.modal-foot {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── Tabela de formato Excel ───────────────────────────────── */
+.cli-formato-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.cli-formato-table th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-3);
+  padding: 0 10px 8px;
+}
+.cli-formato-table td {
+  padding: 7px 10px;
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+}
+.cli-formato-table tr:first-child td { border-top: none; }
+.cli-formato-table td:first-child { font-size: 12.5px; color: var(--text); }
+.cli-formato-table td.cli-muted { color: var(--text-3); font-size: 11px; }
+
+/* ── Carregar mais ─────────────────────────────────────────── */
+.cli-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0 8px;
 }
 
 /* ── Avatar ────────────────────────────────────────────────── */
@@ -719,6 +720,19 @@ html.dark {
   margin-bottom: 3px;
 }
 
+.cli-ano-vigencia-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
 .cli-detail-name {
   font-family: 'Poppins', sans-serif;
   font-size: 17px;
@@ -869,6 +883,7 @@ html.dark {
   border-radius: var(--r-md);
   background: var(--surface2);
   border: 1px solid var(--border);
+  transition: border-color .15s;
 }
 
 .clientes-history-item-head {
@@ -895,6 +910,50 @@ html.dark {
   flex-wrap: wrap;
   gap: 5px;
   margin-top: 8px;
+}
+
+/* ── Collapsible cards (propostas + histórico) ─────────────── */
+.clientes-collapsible .clientes-collapsible-trigger {
+  cursor: pointer;
+  user-select: none;
+  gap: 8px;
+}
+.clientes-collapsible .clientes-collapsible-trigger:hover h4 {
+  color: var(--accent);
+}
+
+.clientes-collapsible-chevron {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--muted);
+  transition: transform .2s var(--cli-ease);
+}
+.clientes-collapsible.is-open .clientes-collapsible-chevron {
+  transform: rotate(180deg);
+}
+.clientes-collapsible.is-open {
+  border-color: var(--accent);
+}
+
+.clientes-collapsible-body {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.clientes-history-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.clientes-history-actions:empty {
+  display: none;
 }
 
 .clientes-empty-note {

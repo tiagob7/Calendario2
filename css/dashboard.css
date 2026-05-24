@@ -772,6 +772,83 @@ html.dark .stat-tile { box-shadow: 0 1px 5px rgba(0,0,0,.4); }
   background: color-mix(in srgb, var(--accent-light) 58%, var(--surface) 42%);
 }
 
+/* ── KPI Card v2: sparkline + delta ─────────────────────────────── */
+.kpi-card .kpi-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+  min-height: 26px;
+}
+
+.kpi-card .kpi-card-head .kpi-lbl {
+  margin-top: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.kpi-card .kpi-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.kpi-card .kpi-val-row .kpi-val { line-height: 1; }
+
+.kpi-card .kpi-spark,
+.kpi-card .kpi-spark-placeholder {
+  flex-shrink: 0;
+  display: block;
+  width: 84px;
+  height: 26px;
+}
+
+.kpi-card .kpi-spark { color: var(--muted); overflow: visible; }
+.kpi-card .kpi-spark-area  { fill: currentColor; fill-opacity: .14; stroke: none; }
+.kpi-card .kpi-spark-line  { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.kpi-card .kpi-spark-dot   { fill: currentColor; opacity: 0; transition: opacity .15s ease; }
+.kpi-card:hover .kpi-spark-dot { opacity: .55; }
+.kpi-card .kpi-spark-dot:last-of-type { opacity: 1; }
+
+.kpi-card.k-total .kpi-spark      { color: var(--text); }
+.kpi-card.k-urgente .kpi-spark    { color: var(--red); }
+.kpi-card.k-progresso .kpi-spark  { color: var(--blue); }
+.kpi-card.k-concluido .kpi-spark  { color: var(--green); }
+.kpi-card.k-com .kpi-spark        { color: var(--purple); }
+.kpi-card.k-pendente .kpi-spark   { color: var(--amber); }
+.kpi-card.k-adm .kpi-spark        { color: var(--purple); }
+
+/* ── Delta chip ─────────────────────────────────────────────────── */
+.kpi-delta {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  white-space: nowrap;
+  line-height: 1.35;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: default;
+}
+.kpi-delta.good    { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+.kpi-delta.bad     { background: var(--red-bg);   color: var(--red);   border-color: var(--red-border); }
+.kpi-delta.flat,
+.kpi-delta.neutral { background: var(--surface2); color: var(--muted); border-color: var(--border); }
+
+@media (max-width: 480px) {
+  .kpi-card .kpi-spark,
+  .kpi-card .kpi-spark-placeholder { width: 60px; height: 22px; }
+  .kpi-delta { font-size: 10px; padding: 1px 6px; }
+}
+
 /* ════════════════════════════════════════════════════════════════
    MAIN GRID + PANELS
    ════════════════════════════════════════════════════════════════ */
